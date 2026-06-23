@@ -15,6 +15,13 @@
       "when": 1782171316462,
       "tag": "0001_careless_salo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1782177762383,
+      "tag": "0002_left_matthew_murdock",
+      "breakpoints": true
     }
   ]
 }

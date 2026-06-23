@@ -6,6 +6,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { storagePut } from "./storage";
+import { getDb } from "./db";
 import {
   upsertUser, getUserByOpenId,
   createDocument, getDocumentsByUser, getDocumentById, deleteDocument, updateDocumentText,
@@ -20,9 +21,7 @@ import {
 } from "./db";
 import { nanoid } from "nanoid";
 import { docxToText, docxToHtml, textToDocx, imageToPdf, textToPdf } from "./conversion";
-import { createRequire } from "module";
-const _require = createRequire(import.meta.url);
-const pdfParse: (buffer: Buffer) => Promise<{ text: string; numpages: number; info: any }> = _require("pdf-parse");
+import { PDFParse } from "pdf-parse";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 async function callAI(systemPrompt: string, userContent: string, jsonSchema?: object): Promise<string> {
@@ -85,7 +84,19 @@ export const appRouter = router({
   system: systemRouter,
 
   auth: router({
-    me: publicProcedure.query((opts) => opts.ctx.user),
+    me: publicProcedure.query(opts => opts.ctx.user),
+    acceptTerms: protectedProcedure.input(z.object({
+      version: z.string().default("1.0"),
+    })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database unavailable");
+      const { eq } = await import("drizzle-orm");
+      const { users: usersTable } = await import("../drizzle/schema");
+      await db.update(usersTable)
+        .set({ acceptedTermsAt: new Date(), termsVersion: input.version })
+        .where(eq(usersTable.id, ctx.user.id));
+      return { success: true };
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -117,9 +128,11 @@ export const appRouter = router({
       let wordCount = 0;
       try {
         if (input.mimeType === "application/pdf") {
-          const parsed = await pdfParse(buffer);
-          extractedText = parsed.text.trim();
+          const parser = new PDFParse({ data: buffer, verbosity: 0 });
+          const result = await parser.getText();
+          extractedText = result.text.trim();
           wordCount = extractedText.split(/\s+/).filter(Boolean).length;
+          await parser.destroy();
         } else if (
           input.mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
           input.mimeType === "application/msword"
@@ -447,10 +460,76 @@ flowchart TD
           additionalProperties: false,
         }
       );
-      const parsed = JSON.parse(raw);
+            const parsed = JSON.parse(raw);
       return { deadlines: parsed.deadlines };
     }),
-
+    parseSyllabus: protectedProcedure.input(z.object({
+      fileBase64: z.string(),
+      filename: z.string(),
+      mimeType: z.string(),
+    })).mutation(async ({ ctx, input }) => {
+      // Decode and extract text
+      const buffer = Buffer.from(input.fileBase64, "base64");
+      let extractedText = "";
+      try {
+        if (input.mimeType === "application/pdf") {
+          const parser = new PDFParse({ data: buffer, verbosity: 0 });
+          const result = await parser.getText();
+          extractedText = result.text.trim();
+          await parser.destroy();
+        } else if (
+          input.mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+          input.mimeType === "application/msword"
+        ) {
+          extractedText = await docxToText(buffer);
+        } else if (input.mimeType === "text/plain") {
+          extractedText = buffer.toString("utf-8");
+        } else {
+          throw new Error("Unsupported file type for syllabus parsing");
+        }
+      } catch (err) {
+        throw new Error("Could not extract text from this file. Please upload a PDF, DOCX, or TXT syllabus.");
+      }
+      if (!extractedText || extractedText.length < 50) {
+        throw new Error("The file appears to be empty or contains no readable text.");
+      }
+      // AI extraction of deadlines + course info
+      const raw = await callAI(
+        `You are an expert academic advisor specializing in syllabus analysis. Extract ALL deadlines, assignments, exams, quizzes, projects, readings, and important dates from this syllabus. Also extract the course name and instructor if present. Be thorough — include every item with a date or due date. For dates without a year, assume the current or upcoming academic year. Return a JSON object.`,
+        extractedText.slice(0, 6000),
+        {
+          type: "object",
+          properties: {
+            courseName: { type: "string" },
+            instructor: { type: "string" },
+            deadlines: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  date: { type: "string" },
+                  type: { type: "string", enum: ["assignment", "exam", "reading", "other"] },
+                  description: { type: "string" },
+                  priority: { type: "string", enum: ["low", "medium", "high"] },
+                },
+                required: ["title", "date", "type", "description", "priority"],
+                additionalProperties: false,
+              },
+            },
+          },
+          required: ["courseName", "instructor", "deadlines"],
+          additionalProperties: false,
+        }
+      );
+      const parsed = JSON.parse(raw);
+      return {
+        courseName: parsed.courseName,
+        instructor: parsed.instructor,
+        deadlines: parsed.deadlines,
+        wordCount: extractedText.split(/\s+/).filter(Boolean).length,
+      };
+    }),
     simulation: protectedProcedure.input(z.object({
       domain: z.enum(["medical", "finance", "coding", "history"]),
       scenario: z.string().max(2000),
@@ -619,12 +698,34 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
       return { success: true };
     }),
 
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+        delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
       await deleteTask(input.id, ctx.user.id);
       return { success: true };
     }),
+    bulkCreate: protectedProcedure.input(z.object({
+      tasks: z.array(z.object({
+        title: z.string(),
+        description: z.string().optional(),
+        dueDate: z.string().optional(),
+        priority: z.enum(["low", "medium", "high"]).optional(),
+        type: z.enum(["assignment", "exam", "reading", "other"]).optional(),
+        documentId: z.number().optional(),
+      })),
+    })).mutation(async ({ ctx, input }) => {
+      for (const task of input.tasks) {
+        await createTask({
+          userId: ctx.user.id,
+          title: task.title,
+          description: task.description,
+          dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+          priority: task.priority ?? "medium",
+          type: task.type ?? "other",
+          documentId: task.documentId,
+        });
+      }
+      return { success: true, count: input.tasks.length };
+    }),
   }),
-
   // ── Timer ─────────────────────────────────────────────────────────────────
   timer: router({
     saveSession: protectedProcedure.input(z.object({

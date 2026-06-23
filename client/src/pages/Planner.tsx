@@ -7,11 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import {
-  Plus, Calendar, CheckCircle2, Circle, Clock, Trash2, Sparkles,
+import { Plus, Calendar, CheckCircle2, Circle, Clock, Trash2, Sparkles,
   BookOpen, GraduationCap, FileText, MoreHorizontal, Loader2, AlertTriangle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import SyllabusUpload from "@/components/SyllabusUpload";
 import { format, isToday, isTomorrow, isPast, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth } from "date-fns";
 
 const PRIORITY_COLORS = {
@@ -104,7 +104,7 @@ export default function Planner() {
       {/* Header */}
       <div className="flex items-center justify-between animate-slide-up">
         <div>
-          <h1 className="text-2xl font-bold font-serif">Planner</h1>
+          <h1 className="text-2xl font-bold font-display">Planner</h1>
           <p className="text-muted-foreground text-sm mt-0.5">{tasks?.filter(t => t.status !== "done").length ?? 0} tasks pending</p>
         </div>
         <div className="flex gap-2">
@@ -115,6 +115,11 @@ export default function Planner() {
             <Plus className="w-4 h-4" /> Add Task
           </Button>
         </div>
+      </div>
+
+      {/* Syllabus Upload */}
+      <div className="animate-fade-in">
+        <SyllabusUpload onTasksCreated={() => utils.tasks.list.invalidate()} />
       </div>
 
       {/* View Toggle + Filter */}

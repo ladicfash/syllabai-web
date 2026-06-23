@@ -55,3 +55,11 @@
 - [x] Error handling and toast notifications
 - [x] Vitest unit tests for server routes (8 tests passing)
 - [x] Final checkpoint and delivery
+
+## Phase 8: Fixes & New Features
+- [ ] Fix PDF text extraction (pdf-parse ESM/CJS import error)
+- [ ] Fix DOCX text extraction (mammoth)
+- [ ] Add syllabus upload with AI deadline extraction and auto-task creation in Planner
+- [ ] Draft Terms & Conditions content (privacy, usage, AI disclaimer)
+- [ ] Add hasAcceptedTerms column to users table
+- [ ] Build first-time T&C agreement modal (two checkboxes required, stored in DB, blocks app until accepted)

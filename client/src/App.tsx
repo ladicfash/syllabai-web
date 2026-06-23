@@ -16,7 +16,9 @@ import Simulations from "./pages/Simulations";
 import VoiceNotes from "./pages/VoiceNotes";
 import StudyLayout from "./components/StudyLayout";
 import LogoIntro from "./components/LogoIntro";
+import TermsModal from "./components/TermsModal";
 import { useAuth } from "./_core/hooks/useAuth";
+import { trpc } from "./lib/trpc";
 import { useEffect, useRef, useState, useCallback } from "react";
 
 // Load Mermaid.js from CDN
@@ -35,9 +37,12 @@ function MermaidLoader() {
 const SESSION_KEY = "syllabai_intro_shown";
 
 function AppRoutes() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const [showIntro, setShowIntro] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const prevAuth = useRef<boolean | null>(null);
+  const utils = trpc.useUtils();
 
   // Show the intro animation exactly once per browser session, when the user
   // transitions from unauthenticated → authenticated (i.e. just logged in).
@@ -52,9 +57,25 @@ function AppRoutes() {
     prevAuth.current = isAuthenticated;
   }, [isAuthenticated, loading]);
 
+  // Show terms if user is authenticated but hasn't accepted yet
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      const hasAccepted = !!(user as any).acceptedTermsAt;
+      if (!hasAccepted && !termsAccepted) {
+        setShowTerms(true);
+      }
+    }
+  }, [isAuthenticated, loading, user, termsAccepted]);
+
   const handleIntroComplete = useCallback(() => {
     setShowIntro(false);
   }, []);
+
+  const handleTermsAccepted = useCallback(() => {
+    setShowTerms(false);
+    setTermsAccepted(true);
+    utils.auth.me.invalidate();
+  }, [utils]);
 
   if (loading) {
     return (
@@ -73,6 +94,7 @@ function AppRoutes() {
   return (
     <>
       {showIntro && <LogoIntro onComplete={handleIntroComplete} />}
+      <TermsModal open={showTerms} onAccepted={handleTermsAccepted} />
 
       <Switch>
         {/* Public landing */}
