@@ -17,6 +17,7 @@ import VoiceNotes from "./pages/VoiceNotes";
 import Explore from "./pages/Explore";
 import Profile from "./pages/Profile";
 import CollabSpace from "./pages/CollabSpace";
+import Settings from "./pages/Settings";
 import StudyLayout from "./components/StudyLayout";
 import LogoIntro from "./components/LogoIntro";
 import TermsModal from "./components/TermsModal";
@@ -167,6 +168,11 @@ function AppRoutes() {
           {isAuthenticated
             ? <StudyLayout><Explore /></StudyLayout>
             : <Explore />}
+        </Route>
+
+        {/* Settings — protected */}
+        <Route path="/settings">
+          {isAuthenticated ? <StudyLayout><Settings /></StudyLayout> : <Landing />}
         </Route>
 
         <Route path="/404" component={NotFound} />

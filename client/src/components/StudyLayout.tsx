@@ -8,7 +8,7 @@ import {
   LayoutDashboard, BookOpen, Brain, Clock, Calendar,
   Mic, ChevronLeft, ChevronRight, Sun, Moon,
   LogOut, Menu, X, StickyNote, Zap, FlaskConical,
-  Compass, Timer, ListTodo, Users
+  Compass, Timer, ListTodo, Users, Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +37,12 @@ const navSections = [
       { path: "/notes",   icon: StickyNote, label: "Notes"       },
       { path: "/planner", icon: ListTodo,   label: "Planner"     },
       { path: "/timer",   icon: Timer,      label: "Study Timer" },
+    ],
+  },
+  {
+    label: "Account",
+    items: [
+      { path: "/settings", icon: Settings, label: "Settings" },
     ],
   },
 ];

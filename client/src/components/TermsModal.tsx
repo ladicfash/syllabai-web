@@ -2,11 +2,8 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { ShieldCheck, Loader2 } from "lucide-react";
+import { ShieldCheck, Loader2, ChevronDown } from "lucide-react";
 
 const TERMS_VERSION = "1.0";
 
@@ -32,225 +29,212 @@ export default function TermsModal({ open, onAccepted }: TermsModalProps) {
 
   const canAccept = checkedTerms && checkedPrivacy && checkedAge;
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent
-        className="max-w-2xl max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden [&>button]:hidden"
-        onInteractOutside={e => e.preventDefault()}
-        onEscapeKeyDown={e => e.preventDefault()}
+    <div
+      className="fixed inset-0 z-[9999] flex flex-col"
+      style={{ background: "oklch(0.09 0.03 258)" }}
+    >
+      {/* Top bar */}
+      <div
+        className="flex-shrink-0 flex items-center gap-3 px-6 py-4 border-b"
+        style={{ borderColor: "rgba(255,255,255,0.08)" }}
       >
-        {/* Header */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2.5 text-lg font-display">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4 text-primary" />
-            </div>
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ background: "rgba(37,139,255,0.15)" }}
+        >
+          <ShieldCheck className="w-4 h-4" style={{ color: "#258bff" }} />
+        </div>
+        <div>
+          <h1 className="font-display font-bold text-white text-base leading-tight">
             Terms of Service &amp; Privacy Policy
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            Please read and agree to the following before using SyllabAI. This is required to continue.
+          </h1>
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+            Please read and agree before using SyllabAI — Version {TERMS_VERSION}
           </p>
-        </DialogHeader>
+        </div>
+      </div>
 
-        {/* Scrollable Terms Content */}
-        <ScrollArea className="flex-1 min-h-0">
-          <div className="px-6 py-5 space-y-6 text-sm leading-relaxed text-foreground">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        <div
+          className="max-w-2xl mx-auto px-6 py-8 space-y-8 text-sm leading-relaxed"
+          style={{ color: "rgba(255,255,255,0.65)" }}
+        >
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+            Effective Date: June 2025 &nbsp;·&nbsp; Version {TERMS_VERSION}
+          </p>
 
-            {/* Effective Date */}
-            <p className="text-xs text-muted-foreground">
-              Effective Date: June 2025 &nbsp;·&nbsp; Version {TERMS_VERSION}
-            </p>
-
-            {/* Section 1 */}
-            <section>
-              <h3 className="font-semibold text-base mb-2">1. Acceptance of Terms</h3>
-              <p className="text-muted-foreground">
-                By creating an account and accessing SyllabAI ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Service. These Terms constitute a legally binding agreement between you and SyllabAI.
-              </p>
+          {[
+            {
+              title: "1. Acceptance of Terms",
+              body: "By creating an account and accessing SyllabAI ('the Service'), you agree to be bound by these Terms of Service. If you do not agree, you may not use the Service. These Terms form a legally binding agreement between you and SyllabAI.",
+            },
+            {
+              title: "2. Description of Service",
+              body: "SyllabAI is an AI-powered academic productivity platform providing study tools including document upload and analysis, AI-generated flashcards, mind maps, study guides, quiz generation, spaced repetition, a Pomodoro timer, assignment planning, voice transcription, and simulation environments. The Service is provided for educational and personal productivity use.",
+            },
+            {
+              title: "3. Eligibility",
+              body: "You must be at least 13 years of age to use the Service. If you are under 18, you represent that you have obtained parental or guardian consent. By using the Service, you represent and warrant that you meet these eligibility requirements.",
+            },
+            {
+              title: "4. Acceptable Use Policy",
+              body: "You agree not to use the Service to: (a) violate any applicable law or regulation; (b) infringe the intellectual property rights of others; (c) upload content that is harmful, abusive, defamatory, or obscene; (d) attempt to gain unauthorised access to any part of the Service; (e) use automated means to scrape, crawl, or extract data from the Service; or (f) engage in academic dishonesty or plagiarism in violation of your institution's policies.",
+            },
+            {
+              title: "5. Intellectual Property",
+              body: "All content, features, and functionality of the Service — including but not limited to software, text, graphics, logos, and icons — are the exclusive property of SyllabAI and are protected by applicable intellectual property laws. Content you upload remains yours; by uploading it you grant SyllabAI a limited, non-exclusive licence to process it solely for the purpose of providing the Service to you.",
+            },
+            {
+              title: "6. AI Content Disclaimer",
+              body: "SyllabAI uses artificial intelligence to generate study materials including flashcards, summaries, mind maps, quizzes, and notes. AI-generated content may contain inaccuracies, errors, or omissions. You are solely responsible for verifying the accuracy of AI-generated content before relying on it for academic, professional, or any other purpose. SyllabAI makes no warranty regarding the accuracy, completeness, or fitness for purpose of any AI-generated output.",
+            },
+            {
+              title: "7. Privacy Policy",
+              body: "We collect information you provide directly (name, email, uploaded documents) and information generated through your use of the Service (study sessions, quiz scores, timer data). We use this data to provide and improve the Service. We do not sell your personal data to third parties. Uploaded documents are stored securely and processed only to deliver the features you request. You may request deletion of your data at any time by deactivating your account or contacting us. We use third-party services including Manus OAuth for authentication and cloud storage providers for file hosting, each subject to their own privacy policies.",
+            },
+            {
+              title: "8. Data Retention",
+              body: "We retain your account data and uploaded documents for as long as your account is active. If you deactivate your account, your personal data and uploaded files will be scheduled for deletion within 30 days. Anonymised, aggregated usage statistics may be retained indefinitely.",
+            },
+            {
+              title: "9. Disclaimers & Limitation of Liability",
+              body: 'The Service is provided "as is" and "as available" without warranties of any kind, either express or implied. SyllabAI does not warrant that the Service will be uninterrupted, error-free, or free of harmful components. To the fullest extent permitted by law, SyllabAI shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service.',
+            },
+            {
+              title: "10. Changes to These Terms",
+              body: "We may update these Terms from time to time. We will notify you of material changes by displaying a notice within the Service or by email. Your continued use of the Service after changes take effect constitutes your acceptance of the revised Terms.",
+            },
+            {
+              title: "11. Contact",
+              body: "If you have questions about these Terms or our Privacy Policy, please contact us through the SyllabAI support channel. We aim to respond to all enquiries within 5 business days.",
+            },
+          ].map((section) => (
+            <section key={section.title}>
+              <h3
+                className="font-semibold mb-2"
+                style={{ color: "rgba(255,255,255,0.9)", fontSize: "0.875rem" }}
+              >
+                {section.title}
+              </h3>
+              <p>{section.body}</p>
             </section>
+          ))}
 
-            <Separator />
+          {/* Spacer so content doesn't sit right above the footer */}
+          <div className="h-4" />
+        </div>
+      </div>
 
-            {/* Section 2 */}
-            <section>
-              <h3 className="font-semibold text-base mb-2">2. Description of Service</h3>
-              <p className="text-muted-foreground">
-                SyllabAI is an AI-powered academic productivity platform that provides study tools including, but not limited to: document upload and analysis, AI-generated flashcards, mind maps, study guides, quiz generation, spaced repetition, a Pomodoro timer, assignment planning, voice transcription, and simulation environments. The Service is provided "as is" and is intended for educational and personal productivity use.
-              </p>
-            </section>
-
-            <Separator />
-
-            {/* Section 3 */}
-            <section>
-              <h3 className="font-semibold text-base mb-2">3. User Accounts &amp; Eligibility</h3>
-              <p className="text-muted-foreground mb-2">
-                You must be at least 13 years of age to use the Service. By using SyllabAI, you represent and warrant that you meet this age requirement. Users under 18 should have parental or guardian consent.
-              </p>
-              <p className="text-muted-foreground">
-                You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account. You agree to notify us immediately of any unauthorized use of your account.
-              </p>
-            </section>
-
-            <Separator />
-
-            {/* Section 4 */}
-            <section>
-              <h3 className="font-semibold text-base mb-2">4. Acceptable Use</h3>
-              <p className="text-muted-foreground mb-2">You agree not to use the Service to:</p>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground pl-2">
-                <li>Upload content that is illegal, harmful, defamatory, or infringes on third-party intellectual property rights</li>
-                <li>Attempt to reverse-engineer, decompile, or otherwise extract the source code of the Service</li>
-                <li>Use the Service to generate academic work intended to be submitted as your own in violation of your institution's academic integrity policies</li>
-                <li>Circumvent, disable, or interfere with security features of the Service</li>
-                <li>Use automated scripts or bots to access the Service in a manner that exceeds normal usage</li>
-                <li>Attempt to gain unauthorized access to other users' data or accounts</li>
-              </ul>
-            </section>
-
-            <Separator />
-
-            {/* Section 5 */}
-            <section>
-              <h3 className="font-semibold text-base mb-2">5. Uploaded Content &amp; Intellectual Property</h3>
-              <p className="text-muted-foreground mb-2">
-                You retain full ownership of any documents, notes, or content you upload to SyllabAI ("User Content"). By uploading content, you grant SyllabAI a limited, non-exclusive, royalty-free license to process, store, and analyze your content solely for the purpose of providing the Service to you.
-              </p>
-              <p className="text-muted-foreground">
-                SyllabAI does not claim ownership of your User Content and will not share, sell, or use it to train AI models without your explicit consent. You are solely responsible for ensuring that any content you upload does not violate applicable laws or third-party rights.
-              </p>
-            </section>
-
-            <Separator />
-
-            {/* Section 6 */}
-            <section>
-              <h3 className="font-semibold text-base mb-2">6. AI-Generated Content</h3>
-              <p className="text-muted-foreground">
-                SyllabAI uses large language models (LLMs) to generate study materials including flashcards, summaries, mind maps, and quiz questions. AI-generated content may contain inaccuracies, omissions, or errors. You acknowledge that AI-generated content is provided for study assistance only and should not be relied upon as a substitute for verified academic sources, professional advice, or authoritative reference materials. SyllabAI makes no warranty as to the accuracy, completeness, or fitness for purpose of any AI-generated output.
-              </p>
-            </section>
-
-            <Separator />
-
-            {/* Section 7 — Privacy */}
-            <section>
-              <h3 className="font-semibold text-base mb-2">7. Privacy Policy</h3>
-              <p className="text-muted-foreground mb-2">
-                Your privacy is important to us. This section summarizes how we collect, use, and protect your information.
-              </p>
-              <div className="space-y-3 text-muted-foreground">
-                <div>
-                  <p className="font-medium text-foreground text-xs uppercase tracking-wide mb-1">Information We Collect</p>
-                  <p>We collect information you provide directly (account profile, uploaded documents, notes, tasks) and information generated through your use of the Service (study session data, quiz scores, timer history). We do not collect payment information.</p>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground text-xs uppercase tracking-wide mb-1">How We Use Your Information</p>
-                  <p>We use your information solely to provide and improve the Service, personalize your study experience (e.g., spaced repetition scheduling), and communicate service-related updates. We do not sell your personal data to third parties.</p>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground text-xs uppercase tracking-wide mb-1">Data Storage &amp; Security</p>
-                  <p>Your uploaded files are stored securely using cloud object storage (S3-compatible). We implement industry-standard security measures including encrypted connections (HTTPS/TLS) and hashed session tokens. No security system is impenetrable, and we cannot guarantee absolute security.</p>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground text-xs uppercase tracking-wide mb-1">Data Retention &amp; Deletion</p>
-                  <p>You may delete your uploaded documents and notes at any time through the Service. Upon account deletion request, we will remove your personal data within 30 days, except where retention is required by law.</p>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground text-xs uppercase tracking-wide mb-1">Third-Party Services</p>
-                  <p>The Service uses third-party AI APIs to process your content for study tool generation. These providers are bound by their own privacy policies and data processing agreements. We do not share your identity with AI providers — only the text content you submit for processing.</p>
-                </div>
-              </div>
-            </section>
-
-            <Separator />
-
-            {/* Section 8 */}
-            <section>
-              <h3 className="font-semibold text-base mb-2">8. Disclaimers &amp; Limitation of Liability</h3>
-              <p className="text-muted-foreground mb-2">
-                The Service is provided "as is" without warranties of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement.
-              </p>
-              <p className="text-muted-foreground">
-                To the maximum extent permitted by applicable law, SyllabAI shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of data, loss of study materials, or academic consequences arising from the use or inability to use the Service.
-              </p>
-            </section>
-
-            <Separator />
-
-            {/* Section 9 */}
-            <section>
-              <h3 className="font-semibold text-base mb-2">9. Changes to Terms</h3>
-              <p className="text-muted-foreground">
-                We reserve the right to modify these Terms at any time. We will notify you of material changes by updating the version number and effective date above. Continued use of the Service after changes constitutes acceptance of the revised Terms.
-              </p>
-            </section>
-
-            <Separator />
-
-            {/* Section 10 */}
-            <section>
-              <h3 className="font-semibold text-base mb-2">10. Contact</h3>
-              <p className="text-muted-foreground">
-                If you have questions about these Terms or our Privacy Policy, please contact us through the SyllabAI platform. We are committed to addressing your concerns promptly.
-              </p>
-            </section>
-
-            <div className="h-2" />
+      {/* Sticky footer with checkboxes + button */}
+      <div
+        className="flex-shrink-0 border-t"
+        style={{
+          borderColor: "rgba(255,255,255,0.08)",
+          background: "oklch(0.12 0.03 258)",
+        }}
+      >
+        <div className="max-w-2xl mx-auto px-6 py-5 space-y-4">
+          {/* Scroll hint */}
+          <div
+            className="flex items-center gap-1.5 text-xs mb-1"
+            style={{ color: "rgba(255,255,255,0.3)" }}
+          >
+            <ChevronDown className="w-3 h-3" />
+            Scroll up to read all sections before agreeing
           </div>
-        </ScrollArea>
 
-        {/* Agreement Checkboxes + CTA */}
-        <div className="px-6 py-5 border-t border-border flex-shrink-0 space-y-4 bg-muted/20">
+          {/* Checkboxes */}
           <div className="space-y-3">
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <Checkbox
-                id="terms-check"
-                checked={checkedTerms}
-                onCheckedChange={v => setCheckedTerms(!!v)}
-                className="mt-0.5 flex-shrink-0"
-              />
-              <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                I have read and agree to the <strong className="text-foreground">Terms of Service</strong>, including the Acceptable Use Policy and AI content disclaimer.
-              </span>
-            </label>
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <Checkbox
-                id="privacy-check"
-                checked={checkedPrivacy}
-                onCheckedChange={v => setCheckedPrivacy(!!v)}
-                className="mt-0.5 flex-shrink-0"
-              />
-              <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                I have read and agree to the <strong className="text-foreground">Privacy Policy</strong> and consent to the collection and processing of my data as described.
-              </span>
-            </label>
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <Checkbox
-                id="age-check"
-                checked={checkedAge}
-                onCheckedChange={v => setCheckedAge(!!v)}
-                className="mt-0.5 flex-shrink-0"
-              />
-              <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                I confirm that I am at least <strong className="text-foreground">13 years of age</strong>, or that I have obtained parental or guardian consent.
-              </span>
-            </label>
+            {[
+              {
+                id: "terms",
+                checked: checkedTerms,
+                onChange: setCheckedTerms,
+                label: (
+                  <>
+                    I have read and agree to the{" "}
+                    <strong style={{ color: "rgba(255,255,255,0.9)" }}>Terms of Service</strong>,
+                    including the Acceptable Use Policy and AI content disclaimer.
+                  </>
+                ),
+              },
+              {
+                id: "privacy",
+                checked: checkedPrivacy,
+                onChange: setCheckedPrivacy,
+                label: (
+                  <>
+                    I have read and agree to the{" "}
+                    <strong style={{ color: "rgba(255,255,255,0.9)" }}>Privacy Policy</strong> and
+                    consent to the collection and processing of my data as described.
+                  </>
+                ),
+              },
+              {
+                id: "age",
+                checked: checkedAge,
+                onChange: setCheckedAge,
+                label: (
+                  <>
+                    I confirm that I am at least{" "}
+                    <strong style={{ color: "rgba(255,255,255,0.9)" }}>13 years of age</strong>, or
+                    that I have obtained parental or guardian consent.
+                  </>
+                ),
+              },
+            ].map((item) => (
+              <label
+                key={item.id}
+                htmlFor={`tc-${item.id}`}
+                className="flex items-start gap-3 cursor-pointer"
+              >
+                <Checkbox
+                  id={`tc-${item.id}`}
+                  checked={item.checked}
+                  onCheckedChange={(v) => item.onChange(!!v)}
+                  className="mt-0.5 flex-shrink-0"
+                  style={
+                    item.checked
+                      ? { background: "#258bff", borderColor: "#258bff" }
+                      : { borderColor: "rgba(255,255,255,0.2)" }
+                  }
+                />
+                <span className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
+                  {item.label}
+                </span>
+              </label>
+            ))}
           </div>
 
+          {/* Agree button */}
           <Button
-            className="w-full gap-2 h-11 text-base font-semibold"
+            className="w-full gap-2 h-11 text-sm font-semibold mt-1"
             disabled={!canAccept || acceptTerms.isPending}
             onClick={() => acceptTerms.mutate({ version: TERMS_VERSION })}
+            style={
+              canAccept
+                ? { background: "#258bff", color: "#fff" }
+                : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.25)" }
+            }
           >
             {acceptTerms.isPending ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Saving your agreement...</>
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving your agreement...
+              </>
             ) : (
-              <><ShieldCheck className="w-4 h-4" /> I Agree — Continue to SyllabAI</>
+              <>
+                <ShieldCheck className="w-4 h-4" />
+                I Agree — Continue to SyllabAI
+              </>
             )}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

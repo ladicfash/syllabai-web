@@ -2,7 +2,7 @@ import { eq, desc, and, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   users, documents, flashcardDecks, flashcards, notes, tasks,
-  timerSessions, aiOutputs, quizSessions, shareTokens,
+  timerSessions, aiOutputs, quizSessions, shareTokens, userSettings,
   type InsertUser, type Document, type InsertDocument,
 } from "../drizzle/schema";
 
@@ -355,4 +355,34 @@ export async function getPublicCardsByDeck(deckId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(flashcards).where(eq(flashcards.deckId, deckId));
+}
+
+export async function getUserSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function upsertUserSettings(userId: number, data: {
+  notificationEmail?: string;
+  notificationPhone?: string;
+  notifyFrequency?: "every_hour" | "24_hours_before" | "as_approaching" | "every_few_days" | "disabled";
+  notifyEnabled?: boolean;
+  shareDeadlinesEnabled?: boolean;
+  shareDeadlinesRecipients?: string;
+  displayName?: string;
+  bio?: string;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  const values: Record<string, unknown> = { userId };
+  const updateSet: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (v !== undefined) {
+      values[k] = v === "" ? null : v;
+      updateSet[k] = v === "" ? null : v;
+    }
+  }
+  await db.insert(userSettings).values(values as Parameters<typeof db.insert>[0] extends infer T ? T extends { values: (v: infer V) => unknown } ? V : never : never).onDuplicateKeyUpdate({ set: updateSet });
 }

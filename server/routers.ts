@@ -21,6 +21,7 @@ import {
   publishDeck, publishNote,
   getPublicDecks, getPublicNotes,
   getDeckBySlug, getNoteBySlug, getPublicCardsByDeck,
+  getUserSettings, upsertUserSettings,
 } from "./db";
 import { nanoid } from "nanoid";
 import { docxToText, docxToHtml, textToDocx, imageToPdf, textToPdf } from "./conversion";
@@ -817,6 +818,43 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
       const cards = await getPublicCardsByDeck(input.deckId);
       if (!ctx.user) return { cards: cards.slice(0, 3), locked: cards.length > 3, total: cards.length };
       return { cards, locked: false, total: cards.length };
+    }),
+  }),
+  settings: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return getUserSettings(ctx.user.id);
+    }),
+    save: protectedProcedure
+      .input(z.object({
+        notificationEmail: z.string().email().optional().or(z.literal("")),
+        notificationPhone: z.string().optional(),
+        notifyFrequency: z.enum(["every_hour", "24_hours_before", "as_approaching", "every_few_days", "disabled"]).optional(),
+        notifyEnabled: z.boolean().optional(),
+        shareDeadlinesEnabled: z.boolean().optional(),
+        shareDeadlinesRecipients: z.string().optional(), // JSON string
+        displayName: z.string().max(128).optional(),
+        bio: z.string().max(500).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+    deactivate: protectedProcedure.mutation(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database unavailable");
+      const { userSettings } = await import("../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      await db.insert(userSettings).values({
+        userId: ctx.user.id,
+        isDeactivated: true,
+        deactivatedAt: new Date(),
+      }).onDuplicateKeyUpdate({
+        set: { isDeactivated: true, deactivatedAt: new Date() },
+      });
+      // Clear session cookie
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      return { success: true };
     }),
   }),
 });

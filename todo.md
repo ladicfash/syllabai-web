@@ -75,3 +75,13 @@
 - [x] Build Collab Space: community browse, My Shared Content tab, share guide dialog, stats bar
 - [x] Add public profile page: user's shared decks and notes browsable by others
 - [x] Access gate component: blur/lock overlay on content for logged-out users (AccessGate.tsx)
+
+## Phase 10: T&C Fix & Settings Page
+- [ ] Fix T&C modal: scrollable legal text, working checkboxes, agree button always reachable
+- [ ] Add user_settings table to DB schema (notificationEmail, notificationPhone, notifyFrequency, shareDeadlinesEnabled, shareDeadlinesRecipients)
+- [ ] Build Settings page: Profile section, Notifications section, Deadline Sharing section, Account section
+- [ ] Notification frequency options: every hour, 24 hours before, as deadlines approach, every few days
+- [ ] "Send deadlines to a friend or classmate" with email/phone input and save
+- [ ] Deactivate account option with confirmation dialog
+- [ ] Add Settings link to sidebar navigation
+- [ ] Wire all settings to DB via tRPC (save + load)

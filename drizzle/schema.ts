@@ -160,3 +160,32 @@ export type Task = typeof tasks.$inferSelect;
 export type TimerSession = typeof timerSessions.$inferSelect;
 export type AiOutput = typeof aiOutputs.$inferSelect;
 export type FlashcardDeckWithCount = FlashcardDeck & { cardCount: number };
+
+export const userSettings = mysqlTable("user_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  // Notification preferences
+  notificationEmail: varchar("notificationEmail", { length: 320 }),
+  notificationPhone: varchar("notificationPhone", { length: 32 }),
+  notifyFrequency: mysqlEnum("notifyFrequency", [
+    "every_hour",
+    "24_hours_before",
+    "as_approaching",
+    "every_few_days",
+    "disabled",
+  ]).default("as_approaching").notNull(),
+  notifyEnabled: boolean("notifyEnabled").default(false).notNull(),
+  // Deadline sharing
+  shareDeadlinesEnabled: boolean("shareDeadlinesEnabled").default(false).notNull(),
+  shareDeadlinesRecipients: text("shareDeadlinesRecipients"), // JSON array of {name, email/phone}
+  // Account
+  displayName: varchar("displayName", { length: 128 }),
+  bio: text("bio"),
+  isDeactivated: boolean("isDeactivated").default(false).notNull(),
+  deactivatedAt: timestamp("deactivatedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserSettings = typeof userSettings.$inferSelect;
+export type InsertUserSettings = typeof userSettings.$inferInsert;
