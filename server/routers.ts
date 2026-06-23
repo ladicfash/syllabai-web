@@ -5,7 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
 import { transcribeAudio } from "./_core/voiceTranscription";
-import { storagePut } from "./storage";
+import { storagePut, storageGetSignedUrl } from "./storage";
 import { getDb } from "./db";
 import {
   upsertUser, getUserByOpenId,
@@ -29,6 +29,8 @@ import {
 import { nanoid } from "nanoid";
 import { docxToText, docxToHtml, textToDocx, imageToPdf, textToPdf } from "./conversion";
 import { PDFParse } from "pdf-parse";
+import { sendDeadlineReminder } from "./email";
+import { sendDeadlinePushNotifications } from "./webpush";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 async function callAI(systemPrompt: string, userContent: string, jsonSchema?: object): Promise<string> {
@@ -316,12 +318,14 @@ export const appRouter = router({
       );
       const parsed = JSON.parse(raw);
       const cards = parsed.cards as { question: string; answer: string }[];
-      // Create deck and save cards
-      await createDeck(ctx.user.id, "Generated Flashcards", input.documentId);
+      // Create deck and save cards (documentId=0 means voice/video source, use null)
+      const docId = input.documentId > 0 ? input.documentId : undefined;
+      await createDeck(ctx.user.id, "Generated Flashcards", docId);
       const decks = await getDecksByUser(ctx.user.id);
       const deck = decks[0];
       await createFlashcards(cards.map((c) => ({ deckId: deck.id, userId: ctx.user.id, ...c })));
-      await saveAiOutput(ctx.user.id, input.documentId, "flashcards", JSON.stringify(cards));
+      // Only save AI output when linked to a real document
+      if (docId) await saveAiOutput(ctx.user.id, docId, "flashcards", JSON.stringify(cards));
       return { deckId: deck.id, cards };
     }),
 
@@ -812,7 +816,13 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
       audioUrl: z.string(),
       language: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
-      const result = await transcribeAudio({ audioUrl: input.audioUrl, language: input.language });
+      // /manus-storage/<key> is a relative proxy path — resolve to a presigned S3 URL
+      let resolvedUrl = input.audioUrl;
+      if (input.audioUrl.startsWith("/manus-storage/")) {
+        const relKey = input.audioUrl.replace(/^\/manus-storage\//, "");
+        resolvedUrl = await storageGetSignedUrl(relKey);
+      }
+      const result = await transcribeAudio({ audioUrl: resolvedUrl, language: input.language });
       if ('error' in result) throw new Error(result.error);
       return { text: result.text };
     }),
@@ -907,13 +917,18 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
       audioUrl: z.string(),
       language: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
-      const result = await transcribeAudio({ audioUrl: input.audioUrl, language: input.language });
+      // /manus-storage/<key> is a relative proxy path — resolve to a presigned S3 URL
+      let resolvedUrl = input.audioUrl;
+      if (input.audioUrl.startsWith("/manus-storage/")) {
+        const relKey = input.audioUrl.replace(/^\/manus-storage\//, "");
+        resolvedUrl = await storageGetSignedUrl(relKey);
+      }
+      const result = await transcribeAudio({ audioUrl: resolvedUrl, language: input.language });
       if ('error' in result) throw new Error(result.error);
       await updateVideoNoteTranscript(input.id, ctx.user.id, result.text);
       return { text: result.text };
     }),
   }),
-
   // ── Share ─────────────────────────────────────────────────────────────────
   share: router({
     getShared: publicProcedure.input(z.object({ token: z.string() })).query(async ({ input }) => {
@@ -983,11 +998,114 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
         shareDeadlinesRecipients: z.string().optional(), // JSON string
         displayName: z.string().max(128).optional(),
         bio: z.string().max(500).optional(),
+        accentColor: z.string().max(16).optional().nullable(),
       }))
       .mutation(async ({ ctx, input }) => {
         await upsertUserSettings(ctx.user.id, input);
         return { success: true };
       }),
+    // ── Push Subscription Management ──────────────────────────────────────
+    subscribePush: protectedProcedure
+      .input(z.object({
+        endpoint: z.string(),
+        p256dh: z.string(),
+        auth: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database unavailable");
+        const { pushSubscriptions } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        // Upsert by endpoint (replace if already exists for this user)
+        const existing = await db.select().from(pushSubscriptions)
+          .where(and(eq(pushSubscriptions.userId, ctx.user.id), eq(pushSubscriptions.endpoint, input.endpoint)))
+          .limit(1);
+        if (existing.length > 0) {
+          await db.update(pushSubscriptions)
+            .set({ p256dh: input.p256dh, auth: input.auth })
+            .where(eq(pushSubscriptions.id, existing[0].id));
+        } else {
+          await db.insert(pushSubscriptions).values({
+            userId: ctx.user.id,
+            endpoint: input.endpoint,
+            p256dh: input.p256dh,
+            auth: input.auth,
+          });
+        }
+        return { success: true };
+      }),
+
+    unsubscribePush: protectedProcedure
+      .input(z.object({ endpoint: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database unavailable");
+        const { pushSubscriptions } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        await db.delete(pushSubscriptions)
+          .where(and(eq(pushSubscriptions.userId, ctx.user.id), eq(pushSubscriptions.endpoint, input.endpoint)));
+        return { success: true };
+      }),
+
+    // Send deadline reminders now (called by heartbeat or manually)
+    sendDeadlineNotifications: protectedProcedure.mutation(async ({ ctx }) => {
+      const settings = await getUserSettings(ctx.user.id);
+      if (!settings?.notifyEnabled) return { sent: 0 };
+
+      // Get upcoming tasks (due within next 3 days)
+      const tasks = await getTasksByUser(ctx.user.id);
+      const now = Date.now();
+      const threeDays = 3 * 24 * 60 * 60 * 1000;
+      const upcoming = tasks.filter(
+        (t) => t.dueDate && t.status !== "done" && Number(t.dueDate) > now && Number(t.dueDate) - now <= threeDays
+      );
+      if (upcoming.length === 0) return { sent: 0 };
+
+      const deadlines = upcoming.map((t) => ({
+        title: t.title,
+        dueDate: Number(t.dueDate),
+        subject: t.type,
+        priority: t.priority,
+      }));
+
+      let sent = 0;
+
+      // Email
+      if (settings.notificationEmail) {
+        try {
+          await sendDeadlineReminder({
+            toEmail: settings.notificationEmail,
+            toName: settings.displayName ?? ctx.user.name ?? "Student",
+            deadlines,
+          });
+          sent++;
+        } catch (err) {
+          console.error("[Notifications] Email send failed:", err);
+        }
+      }
+
+      // Push
+      const db = await getDb();
+      if (db) {
+        const { pushSubscriptions } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const subs = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, ctx.user.id));
+        if (subs.length > 0) {
+          try {
+            await sendDeadlinePushNotifications(
+              subs.map((s) => ({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } })),
+              deadlines
+            );
+            sent++;
+          } catch (err) {
+            console.error("[Notifications] Push send failed:", err);
+          }
+        }
+      }
+
+      return { sent };
+    }),
+
     deactivate: protectedProcedure.mutation(async ({ ctx }) => {
       const db = await getDb();
       if (!db) throw new Error("Database unavailable");

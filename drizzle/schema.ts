@@ -180,6 +180,7 @@ export const userSettings = mysqlTable("user_settings", {
   shareDeadlinesEnabled: boolean("shareDeadlinesEnabled").default(false).notNull(),
   shareDeadlinesRecipients: text("shareDeadlinesRecipients"), // JSON array of {name, email/phone}
   // Account
+  accentColor: varchar("accentColor", { length: 16 }), // user-chosen accent hex
   displayName: varchar("displayName", { length: 128 }),
   bio: text("bio"),
   isDeactivated: boolean("isDeactivated").default(false).notNull(),
@@ -230,3 +231,15 @@ export const noteFolders = mysqlTable("note_folders", {
 });
 export type NoteFolder = typeof noteFolders.$inferSelect;
 export type InsertNoteFolder = typeof noteFolders.$inferInsert;
+
+// Web Push subscriptions (one per browser/device per user)
+export const pushSubscriptions = mysqlTable("push_subscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscriptionRow = typeof pushSubscriptions.$inferInsert;

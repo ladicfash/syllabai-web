@@ -437,6 +437,7 @@ export async function upsertUserSettings(userId: number, data: {
   shareDeadlinesRecipients?: string;
   displayName?: string;
   bio?: string;
+  accentColor?: string | null;
 }) {
   const db = await getDb();
   if (!db) return;

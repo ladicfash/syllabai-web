@@ -120,3 +120,15 @@
 - [x] Ensure dashboard, notes, explore, profile, collab, dialogs, and sidebar use full-page true dark backgrounds in dark mode
 - [x] Tune note cards, modal surfaces, badges, and status chips for readable contrast in dark mode
 - [x] Verify both light and dark modes visually across the main app pages
+
+## Phase 15: Note Card UX, Accent Picker, Voice/Video Fixes, Notifications
+- [ ] Fix voice note transcription/flashcard generation errors
+- [ ] Fix video note transcription/flashcard generation errors
+- [ ] Add inline video playback for saved video notes
+- [ ] Build note card color wheel picker (ROYGBIV gradient, large palette)
+- [ ] Auto-contrast text color on note cards based on background
+- [ ] Improve note card UX/UI overall
+- [ ] Add accent color picker in Settings (persisted to user profile)
+- [ ] Apply user accent color globally via CSS variable
+- [ ] Fix email notifications
+- [ ] Fix phone number notifications

@@ -1,16 +1,16 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
-  Video, Square, Play, Pause, Loader2, Trash2,
-  Upload, Camera, RefreshCw, FileVideo, AlertTriangle, Brain,
+  Video, Square, Loader2, Trash2,
+  Upload, Camera, RefreshCw, FileVideo, AlertTriangle, Brain, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
 const MAX_VIDEOS = 20;
-const MAX_FILE_SIZE_MB = 200; // Practical limit for base64 JSON upload; true 500MB requires direct-to-S3 presigned URL
+const MAX_FILE_SIZE_MB = 200;
 
 type CaptureMode = "idle" | "camera" | "uploading" | "preview";
 
@@ -21,13 +21,13 @@ export default function VideoNotes() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoMimeType, setVideoMimeType] = useState("video/webm");
   const [duration, setDuration] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [transcribing, setTranscribing] = useState<number | null>(null);
+  const [convertingFlash, setConvertingFlash] = useState<number | null>(null);
+  const [expandedVideoId, setExpandedVideoId] = useState<number | null>(null);
   const [noteTitle, setNoteTitle] = useState("Video Note");
 
   const videoPreviewRef = useRef<HTMLVideoElement | null>(null);
-  const videoPlaybackRef = useRef<HTMLVideoElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -36,6 +36,7 @@ export default function VideoNotes() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const utils = trpc.useUtils();
+
   const uploadMut = trpc.videoNotes.upload.useMutation({
     onSuccess: () => {
       utils.videoNotes.list.invalidate();
@@ -44,33 +45,25 @@ export default function VideoNotes() {
     },
     onError: (err) => toast.error("Upload failed: " + err.message),
   });
+
   const deleteMut = trpc.videoNotes.delete.useMutation({
     onSuccess: () => { utils.videoNotes.list.invalidate(); toast.success("Video deleted"); },
     onError: (err) => toast.error("Delete failed: " + err.message),
   });
+
   const transcribeMut = trpc.videoNotes.transcribe.useMutation({
-    onSuccess: (_, vars) => {
+    onSuccess: () => {
       utils.videoNotes.list.invalidate();
       toast.success("Transcription complete!");
       setTranscribing(null);
     },
     onError: (err) => { toast.error("Transcription failed: " + err.message); setTranscribing(null); },
   });
+
   const convertToFlashMut = trpc.ai.generateFlashcards.useMutation({
-    onSuccess: () => { utils.decks.list.invalidate(); toast.success("Flashcards created from video transcript!"); },
+    onSuccess: () => { utils.decks.list.invalidate(); toast.success("Flashcards created!"); },
     onError: (err) => toast.error("Flashcard creation failed: " + err.message),
   });
-  const [convertingFlash, setConvertingFlash] = useState<number | null>(null);
-
-  const handleConvertToFlash = async (note: { id: number; transcript: string | null }) => {
-    if (!note.transcript) return;
-    setConvertingFlash(note.id);
-    try {
-      await convertToFlashMut.mutateAsync({ documentId: 0, text: note.transcript.slice(0, 7500) });
-    } finally {
-      setConvertingFlash(null);
-    }
-  };
 
   const { data: videoNotes, isLoading: notesLoading } = trpc.videoNotes.list.useQuery();
   const videoCount = videoNotes?.length ?? 0;
@@ -82,7 +75,6 @@ export default function VideoNotes() {
     setNoteTitle("Video Note");
     setCaptureMode("idle");
     setIsRecording(false);
-    setIsPlaying(false);
   };
 
   const startCamera = async () => {
@@ -186,6 +178,16 @@ export default function VideoNotes() {
     await transcribeMut.mutateAsync({ id: note.id, audioUrl: note.s3Url });
   };
 
+  const handleConvertToFlash = async (note: { id: number; transcript: string | null }) => {
+    if (!note.transcript) return;
+    setConvertingFlash(note.id);
+    try {
+      await convertToFlashMut.mutateAsync({ documentId: 0, text: note.transcript.slice(0, 7500) });
+    } finally {
+      setConvertingFlash(null);
+    }
+  };
+
   const formatDuration = (s: number) =>
     `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
@@ -195,7 +197,7 @@ export default function VideoNotes() {
       <div className="animate-slide-up">
         <h1 className="text-2xl font-bold font-serif">Video Notes</h1>
         <p className="text-muted-foreground text-sm mt-0.5">
-          Record or upload video notes — up to {MAX_VIDEOS} videos, 500MB each
+          Record or upload video notes — up to {MAX_VIDEOS} videos, {MAX_FILE_SIZE_MB}MB each
         </p>
       </div>
 
@@ -292,13 +294,10 @@ export default function VideoNotes() {
         <div className="study-card p-6 space-y-4 animate-slide-up">
           <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
             <video
-              ref={videoPlaybackRef}
               src={videoUrl}
               controls
               playsInline
               className="w-full h-full object-contain"
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
             />
           </div>
           <div className="flex items-center gap-2">
@@ -344,66 +343,93 @@ export default function VideoNotes() {
             No saved video notes yet. Record or upload a video above.
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {videoNotes.map((note) => (
-              <div key={note.id} className="study-card p-4 flex items-start gap-3 group">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <FileVideo className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{note.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {formatDuration(note.duration)} · {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
-                  </p>
-                  {note.transcript ? (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-                      {note.transcript}
+              <div key={note.id} className="study-card overflow-hidden">
+                {/* Note header row */}
+                <div className="p-4 flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <FileVideo className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{note.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatDuration(note.duration)} · {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
                     </p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground/50 mt-1 italic">No transcript</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                  <a
-                    href={note.s3Url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-                    title="Open video"
-                  >
-                    <Play className="w-3.5 h-3.5 text-muted-foreground" />
-                  </a>
-                  {!note.transcript ? (
+                    {note.transcript && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                        {note.transcript}
+                      </p>
+                    )}
+                    {!note.transcript && (
+                      <p className="text-xs text-muted-foreground/50 mt-1 italic">No transcript yet</p>
+                    )}
+                  </div>
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Expand/collapse video player */}
                     <button
-                      onClick={() => handleTranscribe(note)}
-                      disabled={transcribing === note.id}
-                      className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
-                      title="Transcribe audio"
+                      onClick={() => setExpandedVideoId(expandedVideoId === note.id ? null : note.id)}
+                      className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                      title={expandedVideoId === note.id ? "Hide video" : "Play video"}
                     >
-                      {transcribing === note.id
-                        ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
-                        : <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />}
+                      {expandedVideoId === note.id
+                        ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
+                        : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
                     </button>
-                  ) : (
+                    {/* Transcribe */}
+                    {!note.transcript && (
+                      <button
+                        onClick={() => handleTranscribe(note)}
+                        disabled={transcribing === note.id}
+                        className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
+                        title="Transcribe with Whisper"
+                      >
+                        {transcribing === note.id
+                          ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+                          : <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />}
+                      </button>
+                    )}
+                    {/* Convert to flashcards */}
+                    {note.transcript && (
+                      <button
+                        onClick={() => handleConvertToFlash(note)}
+                        disabled={convertingFlash === note.id}
+                        className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
+                        title="Convert transcript to flashcards"
+                      >
+                        {convertingFlash === note.id
+                          ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+                          : <Brain className="w-3.5 h-3.5 text-muted-foreground" />}
+                      </button>
+                    )}
+                    {/* Delete */}
                     <button
-                      onClick={() => handleConvertToFlash(note)}
-                      disabled={convertingFlash === note.id}
-                      className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
-                      title="Convert transcript to flashcards"
+                      onClick={() => {
+                        deleteMut.mutate({ id: note.id });
+                        if (expandedVideoId === note.id) setExpandedVideoId(null);
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
+                      title="Delete"
                     >
-                      {convertingFlash === note.id
-                        ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
-                        : <Brain className="w-3.5 h-3.5 text-muted-foreground" />}
+                      <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
                     </button>
-                  )}
-                  <button
-                    onClick={() => deleteMut.mutate({ id: note.id })}
-                    className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                  </button>
+                  </div>
                 </div>
+
+                {/* Inline video player (expanded) */}
+                {expandedVideoId === note.id && (
+                  <div className="border-t border-border bg-black">
+                    <video
+                      src={note.s3Url}
+                      controls
+                      playsInline
+                      autoPlay
+                      className="w-full max-h-80 object-contain"
+                      onError={() => toast.error("Could not load video. The file may have expired or been removed.")}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
