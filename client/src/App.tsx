@@ -15,13 +15,14 @@ import Notes from "./pages/Notes";
 import Simulations from "./pages/Simulations";
 import VoiceNotes from "./pages/VoiceNotes";
 import StudyLayout from "./components/StudyLayout";
+import LogoIntro from "./components/LogoIntro";
 import { useAuth } from "./_core/hooks/useAuth";
-import { useEffect } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 // Load Mermaid.js from CDN
 function MermaidLoader() {
   useEffect(() => {
-    if (typeof window !== "undefined" && !window.mermaid) {
+    if (typeof window !== "undefined" && !(window as any).mermaid) {
       const script = document.createElement("script");
       script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
       script.async = true;
@@ -31,65 +32,91 @@ function MermaidLoader() {
   return null;
 }
 
+const SESSION_KEY = "syllabai_intro_shown";
+
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
+  const [showIntro, setShowIntro] = useState(false);
+  const prevAuth = useRef<boolean | null>(null);
+
+  // Show the intro animation exactly once per browser session, when the user
+  // transitions from unauthenticated → authenticated (i.e. just logged in).
+  useEffect(() => {
+    if (loading) return;
+    const justLoggedIn = prevAuth.current === false && isAuthenticated;
+    const neverShown = !sessionStorage.getItem(SESSION_KEY);
+    if (isAuthenticated && (justLoggedIn || neverShown)) {
+      sessionStorage.setItem(SESSION_KEY, "1");
+      setShowIntro(true);
+    }
+    prevAuth.current = isAuthenticated;
+  }, [isAuthenticated, loading]);
+
+  const handleIntroComplete = useCallback(() => {
+    setShowIntro(false);
+  }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "oklch(0.09 0.03 258)" }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-          <p className="text-sm text-muted-foreground">Loading SyllibAI...</p>
+          <img
+            src="/manus-storage/syllibai-icon_7a0c12a1.jpeg"
+            alt="syllabAI"
+            className="w-12 h-12 rounded-2xl object-cover animate-pulse"
+          />
         </div>
       </div>
     );
   }
 
   return (
-    <Switch>
-      {/* Public landing */}
-      <Route path="/" component={Landing} />
+    <>
+      {showIntro && <LogoIntro onComplete={handleIntroComplete} />}
 
-      {/* Protected app routes inside StudyLayout */}
-      <Route path="/dashboard">
-        {isAuthenticated ? <StudyLayout><Dashboard /></StudyLayout> : <Landing />}
-      </Route>
-      <Route path="/library">
-        {isAuthenticated ? <StudyLayout><Library /></StudyLayout> : <Landing />}
-      </Route>
-      <Route path="/study-tools">
-        {isAuthenticated ? <StudyLayout><StudyTools /></StudyLayout> : <Landing />}
-      </Route>
-      <Route path="/timer">
-        {isAuthenticated ? <StudyLayout><Timer /></StudyLayout> : <Landing />}
-      </Route>
-      <Route path="/planner">
-        {isAuthenticated ? <StudyLayout><Planner /></StudyLayout> : <Landing />}
-      </Route>
-      <Route path="/spaced-rep">
-        {isAuthenticated ? <StudyLayout><SpacedRep /></StudyLayout> : <Landing />}
-      </Route>
-      <Route path="/spaced-repetition">
-        {isAuthenticated ? <StudyLayout><SpacedRep /></StudyLayout> : <Landing />}
-      </Route>
-      <Route path="/notes">
-        {isAuthenticated ? <StudyLayout><Notes /></StudyLayout> : <Landing />}
-      </Route>
-      <Route path="/simulations">
-        {isAuthenticated ? <StudyLayout><Simulations /></StudyLayout> : <Landing />}
-      </Route>
-      <Route path="/voice">
-        {isAuthenticated ? <StudyLayout><VoiceNotes /></StudyLayout> : <Landing />}
-      </Route>
-      <Route path="/voice-notes">
-        {isAuthenticated ? <StudyLayout><VoiceNotes /></StudyLayout> : <Landing />}
-      </Route>
+      <Switch>
+        {/* Public landing */}
+        <Route path="/" component={Landing} />
 
-      <Route path="/404" component={NotFound} />
-      <Route component={NotFound} />
-    </Switch>
+        {/* Protected app routes inside StudyLayout */}
+        <Route path="/dashboard">
+          {isAuthenticated ? <StudyLayout><Dashboard /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/library">
+          {isAuthenticated ? <StudyLayout><Library /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/study-tools">
+          {isAuthenticated ? <StudyLayout><StudyTools /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/timer">
+          {isAuthenticated ? <StudyLayout><Timer /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/planner">
+          {isAuthenticated ? <StudyLayout><Planner /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/spaced-rep">
+          {isAuthenticated ? <StudyLayout><SpacedRep /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/spaced-repetition">
+          {isAuthenticated ? <StudyLayout><SpacedRep /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/notes">
+          {isAuthenticated ? <StudyLayout><Notes /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/simulations">
+          {isAuthenticated ? <StudyLayout><Simulations /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/voice">
+          {isAuthenticated ? <StudyLayout><VoiceNotes /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/voice-notes">
+          {isAuthenticated ? <StudyLayout><VoiceNotes /></StudyLayout> : <Landing />}
+        </Route>
+
+        <Route path="/404" component={NotFound} />
+        <Route component={NotFound} />
+      </Switch>
+    </>
   );
 }
 

@@ -41,7 +41,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="animate-slide-up">
         <h1 className="text-3xl font-bold font-serif">
-          {greeting()}, {user?.name?.split(" ")[0] ?? "Student"} 👋
+          {greeting()}, {user?.name?.split(" ")[0] ?? "Student"}
         </h1>
         <p className="text-muted-foreground mt-1">Here's your study overview for today.</p>
       </div>

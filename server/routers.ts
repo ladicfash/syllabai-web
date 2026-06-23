@@ -20,6 +20,9 @@ import {
 } from "./db";
 import { nanoid } from "nanoid";
 import { docxToText, docxToHtml, textToDocx, imageToPdf, textToPdf } from "./conversion";
+import { createRequire } from "module";
+const _require = createRequire(import.meta.url);
+const pdfParse: (buffer: Buffer) => Promise<{ text: string; numpages: number; info: any }> = _require("pdf-parse");
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 async function callAI(systemPrompt: string, userContent: string, jsonSchema?: object): Promise<string> {
@@ -108,6 +111,29 @@ export const appRouter = router({
       const buffer = Buffer.from(input.fileData, "base64");
       const fileKey = `${ctx.user.id}/docs/${nanoid()}-${input.filename}`;
       const { url } = await storagePut(fileKey, buffer, input.mimeType);
+
+      // Auto-extract text based on file type
+      let extractedText = "";
+      let wordCount = 0;
+      try {
+        if (input.mimeType === "application/pdf") {
+          const parsed = await pdfParse(buffer);
+          extractedText = parsed.text.trim();
+          wordCount = extractedText.split(/\s+/).filter(Boolean).length;
+        } else if (
+          input.mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+          input.mimeType === "application/msword"
+        ) {
+          extractedText = await docxToText(buffer);
+          wordCount = extractedText.split(/\s+/).filter(Boolean).length;
+        } else if (input.mimeType === "text/plain") {
+          extractedText = buffer.toString("utf-8");
+          wordCount = extractedText.split(/\s+/).filter(Boolean).length;
+        }
+      } catch (err) {
+        console.warn("[Upload] Text extraction failed:", err);
+      }
+
       const result = await createDocument({
         userId: ctx.user.id,
         filename: input.filename,
@@ -116,8 +142,10 @@ export const appRouter = router({
         fileKey,
         fileUrl: url,
         fileSize: input.fileSize,
+        extractedText: extractedText || undefined,
+        wordCount: wordCount || undefined,
       });
-      return { success: true, url, fileKey };
+      return { success: true, url, fileKey, extractedText, wordCount };
     }),
 
     updateText: protectedProcedure.input(z.object({

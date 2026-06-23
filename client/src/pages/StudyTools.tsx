@@ -156,7 +156,7 @@ function FlashcardView({ cards, deckId }: { cards: any[]; deckId: number }) {
       {isComplete && (
         <div className="study-card p-4 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-center animate-scale-in">
           <p className="font-semibold text-emerald-700 dark:text-emerald-400 mb-2">
-            🎉 Session Complete! Score: {Math.round((known.size / cards.length) * 100)}%
+            Session Complete — Score: {Math.round((known.size / cards.length) * 100)}%
           </p>
           <Button size="sm" onClick={handleFinish} className="gap-1.5">
             <Zap className="w-3.5 h-3.5" /> Save & Continue

@@ -178,10 +178,12 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
-              <GraduationCap className="w-3.5 h-3.5 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-sm">SyllibAI</span>
+            <img
+              src="/manus-storage/syllibai-icon_7a0c12a1.jpeg"
+              alt="syllabAI"
+              className="w-7 h-7 rounded-lg object-cover"
+            />
+            <span className="font-display font-bold text-sm tracking-tight">syllabAI</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <button onClick={toggleTheme} className="text-muted-foreground hover:text-foreground transition-colors p-1.5">

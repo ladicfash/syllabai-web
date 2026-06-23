@@ -97,7 +97,7 @@ export default function Timer() {
             const mins = sessionType === "work" ? workMins : sessionType === "short_break" ? shortBreakMins : longBreakMins;
             saveSession.mutate({ sessionType, durationMinutes: mins });
             if (sessionType === "work") setSessionsCompleted((c) => c + 1);
-            toast.success(`${SESSION_LABELS[sessionType]} complete! 🎉`);
+            toast.success(`${SESSION_LABELS[sessionType]} complete!`);
             return 0;
           }
           if (prev === 60) playBeep(440, 0.15, 0.2);
