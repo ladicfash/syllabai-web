@@ -15,6 +15,8 @@ import Notes from "./pages/Notes";
 import Simulations from "./pages/Simulations";
 import VoiceNotes from "./pages/VoiceNotes";
 import Explore from "./pages/Explore";
+import Profile from "./pages/Profile";
+import CollabSpace from "./pages/CollabSpace";
 import StudyLayout from "./components/StudyLayout";
 import LogoIntro from "./components/LogoIntro";
 import TermsModal from "./components/TermsModal";
@@ -134,6 +136,25 @@ function AppRoutes() {
         </Route>
         <Route path="/voice-notes">
           {isAuthenticated ? <StudyLayout><VoiceNotes /></StudyLayout> : <Landing />}
+        </Route>
+
+        {/* Collab Space — public but gated */}
+        <Route path="/collab">
+          {isAuthenticated
+            ? <StudyLayout><CollabSpace /></StudyLayout>
+            : <CollabSpace />}
+        </Route>
+
+        {/* Public profile */}
+        <Route path="/profile/:userId">
+          {isAuthenticated
+            ? <StudyLayout><Profile /></StudyLayout>
+            : <Profile />}
+        </Route>
+        <Route path="/profile">
+          {isAuthenticated
+            ? <StudyLayout><Profile /></StudyLayout>
+            : <Landing />}
         </Route>
 
         {/* Explore — public but gated */}

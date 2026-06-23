@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { AccessGate } from "@/components/AccessGate";
 
 const SUBJECTS = [
   "All", "Biology", "Chemistry", "Physics", "Mathematics",

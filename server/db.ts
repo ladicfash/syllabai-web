@@ -303,6 +303,7 @@ export async function getPublicDecks(limit = 40, subject?: string) {
     shareSlug: flashcardDecks.shareSlug,
     createdAt: flashcardDecks.createdAt,
     authorName: users.name,
+    authorId: users.id,
   })
     .from(flashcardDecks)
     .leftJoin(users, eq(flashcardDecks.userId, users.id))
@@ -323,6 +324,7 @@ export async function getPublicNotes(limit = 40, subject?: string) {
     color: notes.color,
     createdAt: notes.createdAt,
     authorName: users.name,
+    authorId: users.id,
     // Truncated preview — first 200 chars
     preview: notes.content,
   })
