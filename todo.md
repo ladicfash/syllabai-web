@@ -96,11 +96,20 @@
 - [x] Add Video Notes to sidebar navigation
 
 ## Phase 12: Sign-in Fix, Notes Folders & AI Save
-- [ ] Fix OAuth sign-in URL redirect error (callback URL mismatch or redirect loop)
-- [ ] Fix Mermaid mind map parse error (sanitize special chars in node labels)
-- [ ] Add note_folders table to DB schema (id, userId, name, isPinned, createdAt)
-- [ ] Add folderId column to notes table
-- [ ] Wire folder server routes: createFolder, listFolders, updateFolder, deleteFolder, moveNoteToFolder
-- [ ] Build folder UI in Notes page: create/rename/delete folders, pin folders, expand/collapse folders
-- [ ] Add "Save to Notes" button in AI Study Tools for all output types (flashcards, Cornell, mind map, timeline, flowchart, key points)
-- [ ] Allow saving voice note audio to both Voice Notes section and Notes folder
+- [x] Fix OAuth sign-in URL redirect error (callback URL mismatch or redirect loop)
+- [x] Fix Mermaid mind map parse error (sanitize special chars in node labels)
+- [x] Add note_folders table to DB schema (id, userId, name, isPinned, createdAt)
+- [x] Add folderId column to notes table
+- [x] Wire folder server routes: createFolder, listFolders, updateFolder, deleteFolder, moveNoteToFolder
+- [x] Build folder UI in Notes page: create/rename/delete folders, pin folders, expand/collapse folders
+- [x] Add "Save to Notes" button in AI Study Tools for all output types (Cornell, mind map, timeline, flowchart, key points)
+- [x] Allow saving voice note audio to both Voice Notes section and Notes folder (via Save to Notes button in VoiceNotes page)
+
+## Phase 13: True Dark Mode (Gold Light / Blue Dark)
+- [x] Update light mode: gold accent (#c9a961 / oklch(0.72 0.18 85)), white background
+- [x] Update dark mode: very dark near-black background (oklch(0.06 0.01 255)), near-white text (oklch(0.96 0.005 240)), blue accent
+- [x] Update all semantic color tokens for both modes
+- [x] Update sidebar item styles for gold (light) and blue (dark)
+- [x] Update gradient text for gold (light) and blue (dark)
+- [x] Update landing page grid and glow for both modes
+- [x] Update pill badges and feature cards for both modes
