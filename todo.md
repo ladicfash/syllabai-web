@@ -122,13 +122,13 @@
 - [x] Verify both light and dark modes visually across the main app pages
 
 ## Phase 15: Note Card UX, Accent Picker, Voice/Video Fixes, Notifications
-- [ ] Fix voice note transcription/flashcard generation errors
-- [ ] Fix video note transcription/flashcard generation errors
-- [ ] Add inline video playback for saved video notes
-- [ ] Build note card color wheel picker (ROYGBIV gradient, large palette)
-- [ ] Auto-contrast text color on note cards based on background
-- [ ] Improve note card UX/UI overall
-- [ ] Add accent color picker in Settings (persisted to user profile)
-- [ ] Apply user accent color globally via CSS variable
-- [ ] Fix email notifications
-- [ ] Fix phone number notifications
+- [x] Fix voice note transcription/flashcard generation errors (presigned S3 URL before Whisper)
+- [x] Fix video note transcription/flashcard generation errors (presigned S3 URL before Whisper)
+- [x] Add inline video playback for saved video notes
+- [x] Build note card color wheel picker (ROYGBIV gradient, large palette + custom color input)
+- [x] Auto-contrast text color on note cards based on background (WCAG luminance formula)
+- [x] Improve note card UX/UI overall (hover actions, folder badge, pin indicator)
+- [x] Add accent color picker in Settings (persisted to user profile via accentColor DB column)
+- [x] Apply user accent color globally via CSS variable (--color-primary override in App.tsx)
+- [x] Fix email notifications (Brevo SMTP via nodemailer, sendDeadlineReminder helper)
+- [x] Fix phone number notifications (replaced with browser push notifications via Web Push API + VAPID; SMS marked coming soon)

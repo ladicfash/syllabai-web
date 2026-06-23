@@ -41,6 +41,26 @@ function MermaidLoader() {
 
 const SESSION_KEY = "syllabai_intro_shown";
 
+// Applies the user's saved accent color as a CSS variable on the document root
+function AccentColorApplier() {
+  const { isAuthenticated } = useAuth();
+  const { data: settings } = trpc.settings.get.useQuery(undefined, {
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+  });
+  useEffect(() => {
+    const accent = (settings as any)?.accentColor;
+    if (accent) {
+      document.documentElement.style.setProperty("--user-accent", accent);
+      document.documentElement.setAttribute("data-user-accent", accent);
+    } else {
+      document.documentElement.style.removeProperty("--user-accent");
+      document.documentElement.removeAttribute("data-user-accent");
+    }
+  }, [(settings as any)?.accentColor]);
+  return null;
+}
+
 function AppRoutes() {
   const { isAuthenticated, loading, user } = useAuth();
   const [showIntro, setShowIntro] = useState(false);
@@ -192,6 +212,7 @@ function App() {
       <ThemeProvider defaultTheme="light" switchable>
         <TooltipProvider>
           <MermaidLoader />
+          <AccentColorApplier />
           <Toaster richColors position="top-right" />
           <AppRoutes />
         </TooltipProvider>
