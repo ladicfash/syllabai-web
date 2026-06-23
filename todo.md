@@ -113,3 +113,10 @@
 - [x] Update gradient text for gold (light) and blue (dark)
 - [x] Update landing page grid and glow for both modes
 - [x] Update pill badges and feature cards for both modes
+
+## Phase 14: Redo Dark Mode
+- [x] Make light mode the default theme again
+- [x] Replace remaining hardcoded accent and light-only colors with semantic theme tokens
+- [x] Ensure dashboard, notes, explore, profile, collab, dialogs, and sidebar use full-page true dark backgrounds in dark mode
+- [x] Tune note cards, modal surfaces, badges, and status chips for readable contrast in dark mode
+- [x] Verify both light and dark modes visually across the main app pages

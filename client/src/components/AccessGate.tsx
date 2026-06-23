@@ -50,7 +50,7 @@ export function AccessGate({ children, previewCount = 1, message, className }: A
           </div>
           <Button
             size="sm"
-            className="w-full bg-[#3b9edd] hover:bg-[#2d8bc7] text-white"
+            className="w-full bg-primary hover:bg-primary/90 text-white"
             onClick={() => { window.location.href = getLoginUrl(); }}
           >
             Get started free

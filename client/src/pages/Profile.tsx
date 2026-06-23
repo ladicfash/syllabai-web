@@ -34,8 +34,8 @@ export default function Profile() {
     <div className="p-6 max-w-5xl mx-auto">
       {/* Profile header */}
       <div className="flex items-start gap-5 mb-8 pb-8 border-b border-border">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#3b9edd]/30 to-violet-500/30 flex items-center justify-center flex-shrink-0">
-          <User className="w-8 h-8 text-[#3b9edd]" />
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-violet-500/30 flex items-center justify-center flex-shrink-0">
+          <User className="w-8 h-8 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-display font-bold tracking-tight truncate">{authorName}</h1>
@@ -72,9 +72,9 @@ export default function Profile() {
 
       {/* Access gate banner for logged-out users */}
       {!isAuthenticated && (
-        <div className="relative overflow-hidden rounded-2xl border border-[#3b9edd]/30 bg-gradient-to-br from-[#3b9edd]/8 to-transparent p-5 mb-6">
+        <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/8 to-transparent p-5 mb-6">
           <div className="flex items-center gap-4">
-            <Lock className="w-5 h-5 text-[#3b9edd] flex-shrink-0" />
+            <Lock className="w-5 h-5 text-primary flex-shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-semibold">Sign in to access full content</p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -83,7 +83,7 @@ export default function Profile() {
             </div>
             <Button
               size="sm"
-              className="flex-shrink-0 bg-[#3b9edd] hover:bg-[#2d8bc7] text-white"
+              className="flex-shrink-0 bg-primary hover:bg-primary/90 text-white"
               onClick={() => { window.location.href = getLoginUrl(); }}
             >
               Sign in free <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
@@ -104,7 +104,7 @@ export default function Profile() {
             className={cn(
               "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
               tab === t.key
-                ? "border-[#3b9edd] text-[#3b9edd]"
+                ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
@@ -132,10 +132,10 @@ export default function Profile() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {userDecks.map(deck => (
-                <div key={deck.id} className="group relative rounded-xl border border-border bg-card p-5 transition-all hover:border-[#3b9edd]/40 hover:shadow-lg hover:-translate-y-0.5">
+                <div key={deck.id} className="group relative rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5">
                   <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-lg bg-[#3b9edd]/15 flex items-center justify-center">
-                      <Layers className="w-4 h-4 text-[#3b9edd]" />
+                    <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+                      <Layers className="w-4 h-4 text-primary" />
                     </div>
                     <Badge variant="secondary" className="text-[10px]">{deck.cardCount ?? 0} cards</Badge>
                   </div>
@@ -149,14 +149,14 @@ export default function Profile() {
                   {!isAuthenticated ? (
                     <div className="absolute inset-0 rounded-xl flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-background/90 to-transparent cursor-pointer"
                       onClick={() => { window.location.href = getLoginUrl(); }}>
-                      <div className="flex items-center gap-2 text-xs font-medium text-[#3b9edd]">
+                      <div className="flex items-center gap-2 text-xs font-medium text-primary">
                         <Lock className="w-3.5 h-3.5" /> Sign in for full access
                       </div>
                     </div>
                   ) : (
                     <Link href={`/explore/deck/${deck.shareSlug}`}>
                       <div className="absolute inset-0 rounded-xl flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-background/80 to-transparent cursor-pointer">
-                        <div className="flex items-center gap-2 text-xs font-medium text-[#3b9edd]">
+                        <div className="flex items-center gap-2 text-xs font-medium text-primary">
                           Study this set <ArrowRight className="w-3.5 h-3.5" />
                         </div>
                       </div>
@@ -184,7 +184,7 @@ export default function Profile() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {userNotes.map(note => (
-                <div key={note.id} className="group relative rounded-xl border border-border bg-card p-5 transition-all hover:border-[#3b9edd]/40 hover:shadow-lg hover:-translate-y-0.5">
+                <div key={note.id} className="group relative rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="w-9 h-9 rounded-lg bg-amber-500/15 flex items-center justify-center">
                       <StickyNote className="w-4 h-4 text-amber-500" />
@@ -207,14 +207,14 @@ export default function Profile() {
                   {!isAuthenticated ? (
                     <div className="absolute inset-0 rounded-xl flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-background/90 to-transparent cursor-pointer"
                       onClick={() => { window.location.href = getLoginUrl(); }}>
-                      <div className="flex items-center gap-2 text-xs font-medium text-[#3b9edd]">
+                      <div className="flex items-center gap-2 text-xs font-medium text-primary">
                         <Lock className="w-3.5 h-3.5" /> Sign in to read full note
                       </div>
                     </div>
                   ) : (
                     <Link href={`/explore/note/${note.shareSlug}`}>
                       <div className="absolute inset-0 rounded-xl flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-background/80 to-transparent cursor-pointer">
-                        <div className="flex items-center gap-2 text-xs font-medium text-[#3b9edd]">
+                        <div className="flex items-center gap-2 text-xs font-medium text-primary">
                           Read note <ArrowRight className="w-3.5 h-3.5" />
                         </div>
                       </div>

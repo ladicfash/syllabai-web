@@ -108,11 +108,11 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
                         )}>
                           <item.icon className={cn(
                             "w-[17px] h-[17px] flex-shrink-0 transition-colors",
-                            active ? "text-[#3b9edd]" : "text-white/55"
+                            active ? "text-primary" : "text-white/55"
                           )} />
                           {!collapsed && <span className="truncate">{item.label}</span>}
                           {!collapsed && active && (
-                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#3b9edd] flex-shrink-0" />
+                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                           )}
                         </div>
                       </Link>

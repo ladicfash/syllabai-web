@@ -14,7 +14,7 @@ import { formatDistanceToNow, isToday, isThisWeek } from "date-fns";
 import { cn } from "@/lib/utils";
 
 const quickActions = [
-  { label: "Upload Document", icon: Upload, path: "/library", accent: "from-[#3b9edd]/20 to-[#3b9edd]/5", iconColor: "text-[#3b9edd]", border: "border-[#3b9edd]/20" },
+  { label: "Upload Document", icon: Upload, path: "/library", accent: "from-primary/20 to-primary/5", iconColor: "text-primary", border: "border-primary/20" },
   { label: "Study Tools", icon: Brain, path: "/study-tools", accent: "from-violet-500/20 to-violet-500/5", iconColor: "text-violet-500", border: "border-violet-500/20" },
   { label: "Start Timer", icon: Clock, path: "/timer", accent: "from-amber-500/20 to-amber-500/5", iconColor: "text-amber-500", border: "border-amber-500/20" },
   { label: "Voice Notes", icon: Mic, path: "/voice", accent: "from-rose-500/20 to-rose-500/5", iconColor: "text-rose-500", border: "border-rose-500/20" },
@@ -79,7 +79,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-start justify-between animate-slide-up">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#3b9edd] mb-1">Dashboard</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">Dashboard</p>
           <h1 className="text-2xl font-bold tracking-tight">
             {greeting()}, {firstName}.
           </h1>
@@ -96,11 +96,11 @@ export default function Dashboard() {
               <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" strokeWidth="4" className="text-muted/20" />
               <circle
                 cx="28" cy="28" r="22" fill="none"
-                stroke="#3b9edd" strokeWidth="4"
+                stroke="currentColor" strokeWidth="4"
                 strokeLinecap="round"
                 strokeDasharray={`${2 * Math.PI * 22}`}
                 strokeDashoffset={`${2 * Math.PI * 22 * (1 - dailyProgress / 100)}`}
-                className="transition-all duration-700"
+                className="text-primary transition-all duration-700"
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
@@ -113,7 +113,7 @@ export default function Dashboard() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up" style={{ animationDelay: "0.05s" }}>
-        <StatCard label="Documents" value={docs?.length ?? 0} icon={BookOpen} color="text-[#3b9edd]" bg="bg-[#3b9edd]/10" loading={docsLoading} sub="in your library" />
+        <StatCard label="Documents" value={docs?.length ?? 0} icon={BookOpen} color="text-primary" bg="bg-primary/10" loading={docsLoading} sub="in your library" />
         <StatCard label="Study Sets" value={decks?.length ?? 0} icon={Brain} color="text-violet-500" bg="bg-violet-500/10" loading={decksLoading} sub="flashcard decks" />
         <StatCard label="This Week" value={`${weekMinutes}m`} icon={Flame} color="text-amber-500" bg="bg-amber-500/10" loading={false} sub={`${todayMinutes}m today`} />
         <StatCard label="Cards Due" value={dueCards?.length ?? 0} icon={Zap} color="text-emerald-500" bg="bg-emerald-500/10" loading={false} sub="for spaced review" />
@@ -161,7 +161,7 @@ export default function Dashboard() {
         <div className="lg:col-span-3 study-card p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-sm flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-[#3b9edd]" />
+              <BookOpen className="w-4 h-4 text-primary" />
               Recent Documents
             </h2>
             <Link href="/library">
@@ -179,8 +179,8 @@ export default function Dashboard() {
               {docs.slice(0, 5).map((doc) => (
                 <Link key={doc.id} href={`/library?doc=${doc.id}`}>
                   <div className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group">
-                    <div className="w-8 h-8 rounded-lg bg-[#3b9edd]/10 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-3.5 h-3.5 text-[#3b9edd]" />
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-3.5 h-3.5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{doc.originalName}</p>
@@ -196,8 +196,8 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="text-center py-10">
-              <div className="w-12 h-12 rounded-2xl bg-[#3b9edd]/10 flex items-center justify-center mx-auto mb-3">
-                <BookOpen className="w-5 h-5 text-[#3b9edd]" />
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <BookOpen className="w-5 h-5 text-primary" />
               </div>
               <p className="text-sm text-muted-foreground mb-3">No documents yet</p>
               <Link href="/library">

@@ -129,7 +129,7 @@ export function SharePopup({ open, onClose }: SharePopupProps) {
       <DialogContent className="max-w-lg w-full">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-semibold">
-            <Users className="w-4 h-4 text-[#3b9edd]" />
+            <Users className="w-4 h-4 text-primary" />
             Share to Explore
           </DialogTitle>
         </DialogHeader>
@@ -149,7 +149,7 @@ export function SharePopup({ open, onClose }: SharePopupProps) {
                   className={cn(
                     "flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center transition-all",
                     visibility === opt.value
-                      ? "border-[#3b9edd] bg-[#3b9edd]/8 text-[#3b9edd]"
+                      ? "border-primary bg-primary/8 text-primary"
                       : "border-border hover:border-border/80 hover:bg-muted/30 text-muted-foreground"
                   )}
                 >
@@ -166,14 +166,14 @@ export function SharePopup({ open, onClose }: SharePopupProps) {
                   <StickyNote className="w-3.5 h-3.5 mr-1.5" />
                   Notes
                   {selectedNotes.length > 0 && (
-                    <Badge className="ml-1.5 h-4 px-1 text-[10px] bg-[#3b9edd] text-white">{selectedNotes.length}</Badge>
+                    <Badge className="ml-1.5 h-4 px-1 text-[10px] bg-primary text-white">{selectedNotes.length}</Badge>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="decks" className="flex-1 text-xs">
                   <Layers className="w-3.5 h-3.5 mr-1.5" />
                   Study Sets
                   {selectedDecks.length > 0 && (
-                    <Badge className="ml-1.5 h-4 px-1 text-[10px] bg-[#3b9edd] text-white">{selectedDecks.length}</Badge>
+                    <Badge className="ml-1.5 h-4 px-1 text-[10px] bg-primary text-white">{selectedDecks.length}</Badge>
                   )}
                 </TabsTrigger>
               </TabsList>
@@ -192,7 +192,7 @@ export function SharePopup({ open, onClose }: SharePopupProps) {
                           className={cn(
                             "flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all",
                             selectedNotes.includes(note.id)
-                              ? "border-[#3b9edd]/50 bg-[#3b9edd]/5"
+                              ? "border-primary/50 bg-primary/5"
                               : "border-border hover:border-border/80 hover:bg-muted/30"
                           )}
                           onClick={() => toggleNote(note.id)}
@@ -218,8 +218,8 @@ export function SharePopup({ open, onClose }: SharePopupProps) {
                                       className={cn(
                                         "px-2 py-0.5 rounded-full text-[10px] border transition-all",
                                         noteSubjects[note.id] === s
-                                          ? "bg-[#3b9edd] text-white border-[#3b9edd]"
-                                          : "border-border text-muted-foreground hover:border-[#3b9edd]/50"
+                                          ? "bg-primary text-white border-primary"
+                                          : "border-border text-muted-foreground hover:border-primary/50"
                                       )}
                                     >
                                       {s}
@@ -250,7 +250,7 @@ export function SharePopup({ open, onClose }: SharePopupProps) {
                           className={cn(
                             "flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all",
                             selectedDecks.includes(deck.id)
-                              ? "border-[#3b9edd]/50 bg-[#3b9edd]/5"
+                              ? "border-primary/50 bg-primary/5"
                               : "border-border hover:border-border/80 hover:bg-muted/30"
                           )}
                           onClick={() => toggleDeck(deck.id)}
@@ -286,8 +286,8 @@ export function SharePopup({ open, onClose }: SharePopupProps) {
                                         className={cn(
                                           "px-2 py-0.5 rounded-full text-[10px] border transition-all",
                                           deckSubjects[deck.id] === s
-                                            ? "bg-[#3b9edd] text-white border-[#3b9edd]"
-                                            : "border-border text-muted-foreground hover:border-[#3b9edd]/50"
+                                            ? "bg-primary text-white border-primary"
+                                            : "border-border text-muted-foreground hover:border-primary/50"
                                         )}
                                       >
                                         {s}
@@ -318,7 +318,7 @@ export function SharePopup({ open, onClose }: SharePopupProps) {
                   size="sm"
                   disabled={totalSelected === 0 || isPending}
                   onClick={handlePublish}
-                  className="bg-[#3b9edd] hover:bg-[#2d8bc7] text-white"
+                  className="bg-primary hover:bg-primary/90 text-white"
                 >
                   {visibility === "public" ? <Globe className="w-3.5 h-3.5 mr-1.5" /> :
                    visibility === "link" ? <Link2 className="w-3.5 h-3.5 mr-1.5" /> :
@@ -349,7 +349,7 @@ export function SharePopup({ open, onClose }: SharePopupProps) {
                   <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg border border-border bg-muted/30">
                     {link.type === "note"
                       ? <StickyNote className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-                      : <Layers className="w-3.5 h-3.5 text-[#3b9edd] flex-shrink-0" />
+                      : <Layers className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                     }
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium truncate">{link.title}</p>

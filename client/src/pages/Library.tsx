@@ -33,7 +33,7 @@ function getFileBadgeColor(mimeType: string) {
   if (mimeType.startsWith("image/")) return "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400";
   if (mimeType === "application/pdf") return "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400";
   if (mimeType.includes("word")) return "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400";
-  return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
+  return "bg-muted text-muted-foreground";
 }
 
 function formatBytes(bytes: number) {

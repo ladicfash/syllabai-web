@@ -32,26 +32,17 @@ export default function TermsModal({ open, onAccepted }: TermsModalProps) {
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex flex-col"
-      style={{ background: "oklch(0.09 0.03 258)" }}
-    >
+    <div className="fixed inset-0 z-[9999] flex flex-col bg-background">
       {/* Top bar */}
-      <div
-        className="flex-shrink-0 flex items-center gap-3 px-6 py-4 border-b"
-        style={{ borderColor: "rgba(255,255,255,0.08)" }}
-      >
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ background: "rgba(37,139,255,0.15)" }}
-        >
-          <ShieldCheck className="w-4 h-4" style={{ color: "#258bff" }} />
+      <div className="flex-shrink-0 flex items-center gap-3 px-6 py-4 border-b border-border">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary/15">
+          <ShieldCheck className="w-4 h-4 text-primary" />
         </div>
         <div>
-          <h1 className="font-display font-bold text-white text-base leading-tight">
+          <h1 className="font-display font-bold text-foreground text-base leading-tight">
             Terms of Service &amp; Privacy Policy
           </h1>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <p className="text-xs text-muted-foreground">
             Please read and agree before using SyllabAI — Version {TERMS_VERSION}
           </p>
         </div>
@@ -59,11 +50,8 @@ export default function TermsModal({ open, onAccepted }: TermsModalProps) {
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">
-        <div
-          className="max-w-2xl mx-auto px-6 py-8 space-y-8 text-sm leading-relaxed"
-          style={{ color: "rgba(255,255,255,0.65)" }}
-        >
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+        <div className="max-w-2xl mx-auto px-6 py-8 space-y-8 text-sm leading-relaxed text-foreground/70">
+          <p className="text-xs text-muted-foreground/60">
             Effective Date: June 2025 &nbsp;·&nbsp; Version {TERMS_VERSION}
           </p>
 
@@ -114,35 +102,22 @@ export default function TermsModal({ open, onAccepted }: TermsModalProps) {
             },
           ].map((section) => (
             <section key={section.title}>
-              <h3
-                className="font-semibold mb-2"
-                style={{ color: "rgba(255,255,255,0.9)", fontSize: "0.875rem" }}
-              >
+              <h3 className="font-semibold mb-2 text-foreground text-sm">
                 {section.title}
               </h3>
               <p>{section.body}</p>
             </section>
           ))}
 
-          {/* Spacer so content doesn't sit right above the footer */}
           <div className="h-4" />
         </div>
       </div>
 
       {/* Sticky footer with checkboxes + button */}
-      <div
-        className="flex-shrink-0 border-t"
-        style={{
-          borderColor: "rgba(255,255,255,0.08)",
-          background: "oklch(0.12 0.03 258)",
-        }}
-      >
+      <div className="flex-shrink-0 border-t border-border bg-card">
         <div className="max-w-2xl mx-auto px-6 py-5 space-y-4">
           {/* Scroll hint */}
-          <div
-            className="flex items-center gap-1.5 text-xs mb-1"
-            style={{ color: "rgba(255,255,255,0.3)" }}
-          >
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/50 mb-1">
             <ChevronDown className="w-3 h-3" />
             Scroll up to read all sections before agreeing
           </div>
@@ -157,7 +132,7 @@ export default function TermsModal({ open, onAccepted }: TermsModalProps) {
                 label: (
                   <>
                     I have read and agree to the{" "}
-                    <strong style={{ color: "rgba(255,255,255,0.9)" }}>Terms of Service</strong>,
+                    <strong className="text-foreground">Terms of Service</strong>,
                     including the Acceptable Use Policy and AI content disclaimer.
                   </>
                 ),
@@ -169,7 +144,7 @@ export default function TermsModal({ open, onAccepted }: TermsModalProps) {
                 label: (
                   <>
                     I have read and agree to the{" "}
-                    <strong style={{ color: "rgba(255,255,255,0.9)" }}>Privacy Policy</strong> and
+                    <strong className="text-foreground">Privacy Policy</strong> and
                     consent to the collection and processing of my data as described.
                   </>
                 ),
@@ -181,7 +156,7 @@ export default function TermsModal({ open, onAccepted }: TermsModalProps) {
                 label: (
                   <>
                     I confirm that I am at least{" "}
-                    <strong style={{ color: "rgba(255,255,255,0.9)" }}>13 years of age</strong>, or
+                    <strong className="text-foreground">13 years of age</strong>, or
                     that I have obtained parental or guardian consent.
                   </>
                 ),
@@ -197,13 +172,8 @@ export default function TermsModal({ open, onAccepted }: TermsModalProps) {
                   checked={item.checked}
                   onCheckedChange={(v) => item.onChange(!!v)}
                   className="mt-0.5 flex-shrink-0"
-                  style={
-                    item.checked
-                      ? { background: "#258bff", borderColor: "#258bff" }
-                      : { borderColor: "rgba(255,255,255,0.2)" }
-                  }
                 />
-                <span className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
+                <span className="text-sm text-muted-foreground">
                   {item.label}
                 </span>
               </label>
@@ -215,11 +185,6 @@ export default function TermsModal({ open, onAccepted }: TermsModalProps) {
             className="w-full gap-2 h-11 text-sm font-semibold mt-1"
             disabled={!canAccept || acceptTerms.isPending}
             onClick={() => acceptTerms.mutate({ version: TERMS_VERSION })}
-            style={
-              canAccept
-                ? { background: "#258bff", color: "#fff" }
-                : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.25)" }
-            }
           >
             {acceptTerms.isPending ? (
               <>

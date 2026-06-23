@@ -15,10 +15,6 @@ import {
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
-/**
- * Collab Space — browse and join public study sets and notes shared by the community.
- * Authenticated users can also manage their own shared content from here.
- */
 export default function CollabSpace() {
   const { isAuthenticated, user } = useAuth();
   const [search, setSearch] = useState("");
@@ -69,7 +65,6 @@ export default function CollabSpace() {
             </Button>
             <Button
               size="sm"
-              className="bg-[#3b9edd] hover:bg-[#2d8bc7] text-white"
               onClick={() => setShowShareGuide(true)}
             >
               <Plus className="w-3.5 h-3.5 mr-1.5" />
@@ -92,7 +87,7 @@ export default function CollabSpace() {
             </div>
             <Button
               size="sm"
-              className="flex-shrink-0 bg-[#3b9edd] hover:bg-[#2d8bc7] text-white"
+              className="flex-shrink-0"
               onClick={() => { window.location.href = getLoginUrl(); }}
             >
               Get started free <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
@@ -104,7 +99,7 @@ export default function CollabSpace() {
       {/* Stats bar */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         {[
-          { label: "Study Sets", value: decks?.length ?? 0, icon: Layers, color: "text-[#3b9edd]", bg: "bg-[#3b9edd]/10" },
+          { label: "Study Sets", value: decks?.length ?? 0, icon: Layers, color: "text-primary", bg: "bg-primary/10" },
           { label: "Notes", value: notes?.length ?? 0, icon: StickyNote, color: "text-amber-500", bg: "bg-amber-500/10" },
           { label: "Contributors", value: new Set([...(decks ?? []).map(d => d.authorName), ...(notes ?? []).map(n => n.authorName)].filter(Boolean)).size, icon: Users, color: "text-violet-500", bg: "bg-violet-500/10" },
         ].map(stat => (
@@ -131,7 +126,7 @@ export default function CollabSpace() {
         />
       </div>
 
-      {/* Tabs — only show Mine tab when logged in */}
+      {/* Tabs */}
       {isAuthenticated && (
         <div className="flex gap-1 mb-6 border-b border-border">
           {[
@@ -144,7 +139,7 @@ export default function CollabSpace() {
               className={cn(
                 "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
                 tab === t.key
-                  ? "border-[#3b9edd] text-[#3b9edd]"
+                  ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               )}
             >
@@ -182,43 +177,26 @@ export default function CollabSpace() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Globe className="w-4.5 h-4.5 text-[#3b9edd]" />
+              <Globe className="w-4.5 h-4.5 text-primary" />
               How to share content
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <div className="flex gap-3">
-              <div className="w-7 h-7 rounded-full bg-[#3b9edd]/15 flex items-center justify-center flex-shrink-0 text-xs font-bold text-[#3b9edd]">1</div>
-              <div>
-                <p className="text-sm font-medium">Go to Notes or Study Tools</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Open the page with the content you want to share.</p>
+            {[
+              { step: "1", title: "Go to Notes or Study Tools", desc: "Open the page with the content you want to share." },
+              { step: "2", title: "Click the Share button", desc: "Look for the globe icon in the page header. A popup will open." },
+              { step: "3", title: "Choose what to share", desc: "Select specific notes or decks, set visibility (Public / Link-only / Private), then confirm." },
+              { step: "4", title: "Your content appears here", desc: "Public content is immediately visible in the Collab Space and Explore page for anyone to discover." },
+            ].map(({ step, title, desc }) => (
+              <div key={step} className="flex gap-3">
+                <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 text-xs font-bold text-primary">{step}</div>
+                <div>
+                  <p className="text-sm font-medium">{title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="w-7 h-7 rounded-full bg-[#3b9edd]/15 flex items-center justify-center flex-shrink-0 text-xs font-bold text-[#3b9edd]">2</div>
-              <div>
-                <p className="text-sm font-medium">Click the Share button</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Look for the globe icon in the page header. A popup will open.</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="w-7 h-7 rounded-full bg-[#3b9edd]/15 flex items-center justify-center flex-shrink-0 text-xs font-bold text-[#3b9edd]">3</div>
-              <div>
-                <p className="text-sm font-medium">Choose what to share</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Select specific notes or decks, set visibility (Public / Link-only / Private), then confirm.</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="w-7 h-7 rounded-full bg-[#3b9edd]/15 flex items-center justify-center flex-shrink-0 text-xs font-bold text-[#3b9edd]">4</div>
-              <div>
-                <p className="text-sm font-medium">Your content appears here</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Public content is immediately visible in the Collab Space and Explore page for anyone to discover.</p>
-              </div>
-            </div>
-            <Button
-              className="w-full bg-[#3b9edd] hover:bg-[#2d8bc7] text-white mt-2"
-              onClick={() => setShowShareGuide(false)}
-            >
+            ))}
+            <Button className="w-full mt-2" onClick={() => setShowShareGuide(false)}>
               Got it
             </Button>
           </div>
@@ -234,16 +212,16 @@ function CollabCard({ item, isLoggedIn }: { item: any; isLoggedIn: boolean }) {
   return (
     <div className={cn(
       "group relative rounded-xl border border-border bg-card p-5 transition-all duration-200",
-      "hover:border-[#3b9edd]/40 hover:shadow-lg hover:shadow-[#3b9edd]/5 hover:-translate-y-0.5"
+      "hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5"
     )}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className={cn(
           "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
-          isNote ? "bg-amber-500/15" : "bg-[#3b9edd]/15"
+          isNote ? "bg-amber-500/15" : "bg-primary/15"
         )}>
           {isNote
             ? <StickyNote className="w-4 h-4 text-amber-500" />
-            : <Layers className="w-4 h-4 text-[#3b9edd]" />
+            : <Layers className="w-4 h-4 text-primary" />
           }
         </div>
         <div className="flex items-center gap-1.5">
@@ -278,14 +256,14 @@ function CollabCard({ item, isLoggedIn }: { item: any; isLoggedIn: boolean }) {
           className="absolute inset-0 rounded-xl flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-background/90 to-transparent cursor-pointer"
           onClick={() => { window.location.href = getLoginUrl(); }}
         >
-          <div className="flex items-center gap-2 text-xs font-medium text-[#3b9edd]">
+          <div className="flex items-center gap-2 text-xs font-medium text-primary">
             <Lock className="w-3.5 h-3.5" /> Sign in for full access
           </div>
         </div>
       ) : (
         <a href={isNote ? `/explore/note/${item.shareSlug}` : `/explore/deck/${item.shareSlug}`}>
           <div className="absolute inset-0 rounded-xl flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-background/80 to-transparent cursor-pointer">
-            <div className="flex items-center gap-2 text-xs font-medium text-[#3b9edd]">
+            <div className="flex items-center gap-2 text-xs font-medium text-primary">
               {isNote ? "Read note" : "Study this set"} <ArrowRight className="w-3.5 h-3.5" />
             </div>
           </div>

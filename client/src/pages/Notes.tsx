@@ -24,7 +24,7 @@ const NOTE_COLORS = [
 ];
 
 const FOLDER_COLORS = [
-  "#3b9edd", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899",
+  "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899",
 ];
 
 function NoteCard({ note, onUpdate, onDelete, folders, onMove, selected, onSelect }: any) {
@@ -60,23 +60,23 @@ function NoteCard({ note, onUpdate, onDelete, folders, onMove, selected, onSelec
       ) : (
         <>
           <div className="pr-6">
-            <p className="font-semibold text-sm mb-1.5 text-gray-800 dark:text-gray-100">{note.title}</p>
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap line-clamp-6">{note.content}</p>
+            <p className="font-semibold text-sm mb-1.5 text-foreground">{note.title}</p>
+            <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap line-clamp-6">{note.content}</p>
           </div>
           <div className="flex items-center justify-between mt-3 pt-2 border-t border-black/5 dark:border-white/10">
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(note.updatedAt), { addSuffix: true })}
             </span>
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button onClick={() => onUpdate(note.id, { isPinned: !note.isPinned })} className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10" title={note.isPinned ? "Unpin" : "Pin"}>
-                {note.isPinned ? <PinOff className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" /> : <Pin className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />}
+                {note.isPinned ? <PinOff className="w-3.5 h-3.5 text-foreground/60" /> : <Pin className="w-3.5 h-3.5 text-foreground/60" />}
               </button>
               <button onClick={() => setEditing(true)} className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10" title="Edit">
-                <Edit3 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
+                <Edit3 className="w-3.5 h-3.5 text-foreground/60" />
               </button>
               <div className="relative">
                 <button onClick={() => setShowMove(v => !v)} className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10" title="Move to folder">
-                  <FolderInput className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
+                  <FolderInput className="w-3.5 h-3.5 text-foreground/60" />
                 </button>
                 {showMove && (
                   <div className="absolute right-0 bottom-7 z-50 bg-popover border border-border rounded-lg shadow-lg p-1 min-w-[160px]">
