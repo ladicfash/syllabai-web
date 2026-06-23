@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   users, documents, flashcardDecks, flashcards, notes, tasks,
   timerSessions, aiOutputs, quizSessions, shareTokens, userSettings,
+  voiceNotes, videoNotes,
   type InsertUser, type Document, type InsertDocument,
 } from "../drizzle/schema";
 
@@ -362,6 +363,69 @@ export async function getUserSettings(userId: number) {
   if (!db) return null;
   const result = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
   return result[0] ?? null;
+}
+
+// ── Voice Notes ───────────────────────────────────────────────────────────
+export async function createVoiceNote(data: {
+  userId: number; title: string; s3Key: string; s3Url: string; duration: number; transcript?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(voiceNotes).values(data);
+  return result[0];
+}
+
+export async function getVoiceNotesByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(voiceNotes).where(eq(voiceNotes.userId, userId)).orderBy(desc(voiceNotes.createdAt));
+}
+
+export async function updateVoiceNoteTranscript(id: number, userId: number, transcript: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(voiceNotes).set({ transcript }).where(and(eq(voiceNotes.id, id), eq(voiceNotes.userId, userId)));
+}
+
+export async function deleteVoiceNote(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(voiceNotes).where(and(eq(voiceNotes.id, id), eq(voiceNotes.userId, userId)));
+}
+
+// ── Video Notes ───────────────────────────────────────────────────────────
+export async function createVideoNote(data: {
+  userId: number; title: string; s3Key: string; s3Url: string; duration: number; videoMimeType: string; transcript?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(videoNotes).values(data);
+  return result[0];
+}
+
+export async function getVideoNotesByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(videoNotes).where(eq(videoNotes.userId, userId)).orderBy(desc(videoNotes.createdAt));
+}
+
+export async function countVideoNotesByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select().from(videoNotes).where(eq(videoNotes.userId, userId));
+  return rows.length;
+}
+
+export async function updateVideoNoteTranscript(id: number, userId: number, transcript: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(videoNotes).set({ transcript }).where(and(eq(videoNotes.id, id), eq(videoNotes.userId, userId)));
+}
+
+export async function deleteVideoNote(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(videoNotes).where(and(eq(videoNotes.id, id), eq(videoNotes.userId, userId)));
 }
 
 export async function upsertUserSettings(userId: number, data: {

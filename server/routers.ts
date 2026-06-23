@@ -22,6 +22,8 @@ import {
   getPublicDecks, getPublicNotes,
   getDeckBySlug, getNoteBySlug, getPublicCardsByDeck,
   getUserSettings, upsertUserSettings,
+  createVoiceNote, getVoiceNotesByUser, updateVoiceNoteTranscript, deleteVoiceNote,
+  createVideoNote, getVideoNotesByUser, countVideoNotesByUser, updateVideoNoteTranscript, deleteVideoNote,
 } from "./db";
 import { nanoid } from "nanoid";
 import { docxToText, docxToHtml, textToDocx, imageToPdf, textToPdf } from "./conversion";
@@ -759,9 +761,95 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
       mimeType: z.string(),
     })).mutation(async ({ ctx, input }) => {
       const buffer = Buffer.from(input.audioData, "base64");
-      const fileKey = `${ctx.user.id}/audio/${nanoid()}.webm`;
+      const ext = input.mimeType.includes("ogg") ? "ogg" : input.mimeType.includes("mp4") ? "mp4" : "webm";
+      const fileKey = `${ctx.user.id}/audio/${nanoid()}.${ext}`;
       const { url } = await storagePut(fileKey, buffer, input.mimeType);
-      return { url };
+      return { url, fileKey };
+    }),
+
+    saveNote: protectedProcedure.input(z.object({
+      audioData: z.string(), // base64
+      mimeType: z.string(),
+      title: z.string().default("Voice Note"),
+      duration: z.number().default(0),
+      transcript: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const buffer = Buffer.from(input.audioData, "base64");
+      const ext = input.mimeType.includes("ogg") ? "ogg" : input.mimeType.includes("mp4") ? "mp4" : "webm";
+      const fileKey = `${ctx.user.id}/voice-notes/${nanoid()}.${ext}`;
+      const { url } = await storagePut(fileKey, buffer, input.mimeType);
+      await createVoiceNote({
+        userId: ctx.user.id,
+        title: input.title,
+        s3Key: fileKey,
+        s3Url: url,
+        duration: input.duration,
+        transcript: input.transcript,
+      });
+      return { success: true };
+    }),
+
+    listNotes: protectedProcedure.query(async ({ ctx }) => {
+      return getVoiceNotesByUser(ctx.user.id);
+    }),
+
+    deleteNote: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      await deleteVoiceNote(input.id, ctx.user.id);
+      return { success: true };
+    }),
+
+    updateTranscript: protectedProcedure.input(z.object({
+      id: z.number(),
+      transcript: z.string(),
+    })).mutation(async ({ ctx, input }) => {
+      await updateVoiceNoteTranscript(input.id, ctx.user.id, input.transcript);
+      return { success: true };
+    }),
+  }),
+
+  // ── Video Notes ───────────────────────────────────────────────────────────
+  videoNotes: router({
+    upload: protectedProcedure.input(z.object({
+      videoData: z.string(), // base64
+      mimeType: z.string(),
+      title: z.string().default("Video Note"),
+      duration: z.number().default(0),
+    })).mutation(async ({ ctx, input }) => {
+      const count = await countVideoNotesByUser(ctx.user.id);
+      if (count >= 20) throw new Error("Video storage limit reached (20 videos maximum)");
+      const ext = input.mimeType.includes("mp4") ? "mp4" : input.mimeType.includes("mov") ? "mov" : "webm";
+      const fileKey = `${ctx.user.id}/video-notes/${nanoid()}.${ext}`;
+      const buffer = Buffer.from(input.videoData, "base64");
+      const { url } = await storagePut(fileKey, buffer, input.mimeType);
+      await createVideoNote({
+        userId: ctx.user.id,
+        title: input.title,
+        s3Key: fileKey,
+        s3Url: url,
+        duration: input.duration,
+        videoMimeType: input.mimeType,
+      });
+      return { success: true, url };
+    }),
+
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getVideoNotesByUser(ctx.user.id);
+    }),
+
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      await deleteVideoNote(input.id, ctx.user.id);
+      return { success: true };
+    }),
+
+    transcribe: protectedProcedure.input(z.object({
+      id: z.number(),
+      audioUrl: z.string(),
+      language: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const result = await transcribeAudio({ audioUrl: input.audioUrl, language: input.language });
+      if ('error' in result) throw new Error(result.error);
+      await updateVideoNoteTranscript(input.id, ctx.user.id, result.text);
+      return { text: result.text };
     }),
   }),
 

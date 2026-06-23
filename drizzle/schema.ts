@@ -189,3 +189,31 @@ export const userSettings = mysqlTable("user_settings", {
 
 export type UserSettings = typeof userSettings.$inferSelect;
 export type InsertUserSettings = typeof userSettings.$inferInsert;
+
+export const voiceNotes = mysqlTable("voice_notes", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 256 }).default("Voice Note").notNull(),
+  s3Key: varchar("s3Key", { length: 1024 }).notNull(),
+  s3Url: text("s3Url").notNull(),
+  duration: int("duration").default(0).notNull(), // seconds
+  transcript: text("transcript"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const videoNotes = mysqlTable("video_notes", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 256 }).default("Video Note").notNull(),
+  s3Key: varchar("s3Key", { length: 1024 }).notNull(),
+  s3Url: text("s3Url").notNull(),
+  duration: int("duration").default(0).notNull(), // seconds
+  videoMimeType: varchar("videoMimeType", { length: 128 }).default("video/webm").notNull(),
+  transcript: text("transcript"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type VoiceNote = typeof voiceNotes.$inferSelect;
+export type InsertVoiceNote = typeof voiceNotes.$inferInsert;
+export type VideoNote = typeof videoNotes.$inferSelect;
+export type InsertVideoNote = typeof videoNotes.$inferInsert;

@@ -14,6 +14,7 @@ import SpacedRep from "./pages/SpacedRep";
 import Notes from "./pages/Notes";
 import Simulations from "./pages/Simulations";
 import VoiceNotes from "./pages/VoiceNotes";
+import VideoNotes from "./pages/VideoNotes";
 import Explore from "./pages/Explore";
 import Profile from "./pages/Profile";
 import CollabSpace from "./pages/CollabSpace";
@@ -138,6 +139,9 @@ function AppRoutes() {
         <Route path="/voice-notes">
           {isAuthenticated ? <StudyLayout><VoiceNotes /></StudyLayout> : <Landing />}
         </Route>
+        <Route path="/video-notes">
+          {isAuthenticated ? <StudyLayout><VideoNotes /></StudyLayout> : <Landing />}
+        </Route>
 
         {/* Collab Space — public but gated */}
         <Route path="/collab">
@@ -185,7 +189,7 @@ function AppRoutes() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light" switchable>
+      <ThemeProvider defaultTheme="dark" switchable>
         <TooltipProvider>
           <MermaidLoader />
           <Toaster richColors position="top-right" />

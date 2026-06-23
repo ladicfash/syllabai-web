@@ -1,14 +1,15 @@
 import { useState, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Mic, MicOff, Square, Play, Pause, Sparkles, Brain, Loader2, Trash2, FileAudio, Clock } from "lucide-react";
+import {
+  Mic, Square, Play, Pause, Brain, Loader2, Trash2,
+  FileAudio, Save, RefreshCw,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 
-type RecordingState = "idle" | "recording" | "processing";
+type RecordingState = "idle" | "recording" | "stopped" | "processing";
 
 export default function VoiceNotes() {
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
@@ -18,6 +19,9 @@ export default function VoiceNotes() {
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [convertingToFlash, setConvertingToFlash] = useState(false);
+  const [savingNote, setSavingNote] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [noteTitle, setNoteTitle] = useState("Voice Note");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -28,36 +32,46 @@ export default function VoiceNotes() {
   const utils = trpc.useUtils();
   const uploadAudioMut = trpc.voice.uploadAudio.useMutation();
   const transcribeMut = trpc.voice.transcribe.useMutation();
+  const saveNoteMut = trpc.voice.saveNote.useMutation({
+    onSuccess: () => {
+      utils.voice.listNotes.invalidate();
+      toast.success("Voice note saved!");
+      resetRecorder();
+    },
+    onError: (err) => toast.error("Failed to save: " + err.message),
+  });
+  const deleteNoteMut = trpc.voice.deleteNote.useMutation({
+    onSuccess: () => { utils.voice.listNotes.invalidate(); toast.success("Note deleted"); },
+    onError: (err) => toast.error("Delete failed: " + err.message),
+  });
   const convertToFlashMut = trpc.ai.generateFlashcards.useMutation({
     onSuccess: () => { utils.decks.list.invalidate(); toast.success("Flashcards created from voice note!"); },
   });
 
+  const { data: savedNotes, isLoading: notesLoading } = trpc.voice.listNotes.useQuery();
+
+  const resetRecorder = () => {
+    setAudioBlob(null);
+    setAudioUrl(null);
+    setTranscript("");
+    setDuration(0);
+    setNoteTitle("Voice Note");
+    setRecordingState("idle");
+  };
+
   const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg";
+      const recorder = new MediaRecorder(stream, { mimeType });
       chunksRef.current = [];
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      recorder.onstop = async () => {
+      recorder.onstop = () => {
         stream.getTracks().forEach(t => t.stop());
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const blob = new Blob(chunksRef.current, { type: mimeType });
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
-        setRecordingState("processing");
-        // Transcribe
-        try {
-          const uint8 = new Uint8Array(await blob.arrayBuffer());
-          let binary = "";
-          for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
-          const base64 = btoa(binary);
-          const { url } = await uploadAudioMut.mutateAsync({ audioData: base64, mimeType: "audio/webm" });
-          const result = await transcribeMut.mutateAsync({ audioUrl: url });
-          setTranscript(result.text);
-          toast.success("Transcription complete!");
-        } catch (err: any) {
-          toast.error("Transcription failed: " + (err.message ?? "Unknown error"));
-        }
-        setRecordingState("idle");
+        setRecordingState("stopped");
       };
       mediaRecorderRef.current = recorder;
       recorder.start(100);
@@ -71,7 +85,7 @@ export default function VoiceNotes() {
     } catch (err: any) {
       toast.error("Microphone access denied: " + (err.message ?? ""));
     }
-  }, [transcribeMut]);
+  }, []);
 
   const stopRecording = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -84,25 +98,70 @@ export default function VoiceNotes() {
     else { audioRef.current.play(); setIsPlaying(true); }
   };
 
+  const handleTranscribe = async () => {
+    if (!audioBlob) return;
+    setTranscribing(true);
+    setRecordingState("processing");
+    try {
+      const uint8 = new Uint8Array(await audioBlob.arrayBuffer());
+      let binary = "";
+      for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+      const base64 = btoa(binary);
+      const mimeType = audioBlob.type || "audio/webm";
+      const { url } = await uploadAudioMut.mutateAsync({ audioData: base64, mimeType });
+      const result = await transcribeMut.mutateAsync({ audioUrl: url });
+      setTranscript(result.text);
+      toast.success("Transcription complete!");
+    } catch (err: any) {
+      toast.error("Transcription failed: " + (err.message ?? "Unknown error"));
+    } finally {
+      setTranscribing(false);
+      setRecordingState("stopped");
+    }
+  };
+
+  const handleSaveAudioNote = async () => {
+    if (!audioBlob) return;
+    setSavingNote(true);
+    try {
+      const uint8 = new Uint8Array(await audioBlob.arrayBuffer());
+      let binary = "";
+      for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+      const base64 = btoa(binary);
+      const mimeType = audioBlob.type || "audio/webm";
+      await saveNoteMut.mutateAsync({
+        audioData: base64,
+        mimeType,
+        title: noteTitle,
+        duration: durationRef.current,
+        transcript: transcript || undefined,
+      });
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
   const convertToFlashcards = async () => {
     if (!transcript.trim()) return;
     setConvertingToFlash(true);
     try {
-      // Use documentId=0 as a sentinel for voice-note-based flashcards
       await convertToFlashMut.mutateAsync({ documentId: 0, text: transcript.slice(0, 7500) });
     } finally {
       setConvertingToFlash(false);
     }
   };
 
-  const formatDuration = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
+  const formatDuration = (s: number) =>
+    `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div className="animate-slide-up">
         <h1 className="text-2xl font-bold font-serif">Voice Notes</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Record, transcribe, and convert to flashcards with Whisper AI</p>
+        <p className="text-muted-foreground text-sm mt-0.5">
+          Record audio notes, transcribe with Whisper AI, or save directly
+        </p>
       </div>
 
       {/* Recorder */}
@@ -126,11 +185,17 @@ export default function VoiceNotes() {
         <div className="text-center">
           <p className="text-4xl font-mono font-bold tracking-widest">{formatDuration(duration)}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            {recordingState === "recording" ? "Recording..." : recordingState === "processing" ? "Transcribing..." : "Ready to record"}
+            {recordingState === "recording"
+              ? "Recording..."
+              : recordingState === "processing"
+              ? "Transcribing..."
+              : recordingState === "stopped"
+              ? "Recording complete — choose an action below"
+              : "Ready to record"}
           </p>
         </div>
 
-        {/* Record Button */}
+        {/* Record / Stop Button */}
         <div className="flex items-center gap-4">
           {recordingState === "idle" && (
             <Button
@@ -157,22 +222,66 @@ export default function VoiceNotes() {
           )}
         </div>
 
-        {/* Playback */}
-        {audioUrl && recordingState === "idle" && (
-          <div className="flex items-center gap-3 w-full max-w-xs">
-            <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} className="hidden" />
-            <Button variant="outline" size="sm" onClick={togglePlay} className="gap-1.5">
-              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              {isPlaying ? "Pause" : "Play Recording"}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => { setAudioBlob(null); setAudioUrl(null); setTranscript(""); setDuration(0); }} className="gap-1.5 text-muted-foreground">
-              <Trash2 className="w-3.5 h-3.5" /> Discard
-            </Button>
+        {/* Playback + Actions (shown after recording stops) */}
+        {audioUrl && (recordingState === "stopped" || recordingState === "processing") && (
+          <div className="w-full space-y-4">
+            {/* Audio playback */}
+            <div className="flex items-center gap-3">
+              <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} className="hidden" />
+              <Button variant="outline" size="sm" onClick={togglePlay} className="gap-1.5">
+                {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                {isPlaying ? "Pause" : "Play"}
+              </Button>
+              <span className="text-xs text-muted-foreground">{formatDuration(duration)}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetRecorder}
+                className="gap-1.5 text-muted-foreground ml-auto"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Discard
+              </Button>
+            </div>
+
+            {/* Title input */}
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-muted-foreground whitespace-nowrap">Note title</label>
+              <input
+                type="text"
+                value={noteTitle}
+                onChange={(e) => setNoteTitle(e.target.value)}
+                className="flex-1 bg-muted/40 border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                placeholder="Give this note a title..."
+              />
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-3 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTranscribe}
+                disabled={transcribing || recordingState === "processing"}
+                className="gap-1.5 flex-1"
+              >
+                {transcribing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                Transcribe with Whisper
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveAudioNote}
+                disabled={savingNote}
+                className="gap-1.5 flex-1"
+              >
+                {savingNote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Save as Audio Note
+              </Button>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Transcript */}
+      {/* Transcript (shown after transcription) */}
       {transcript && (
         <div className="study-card p-5 space-y-4 animate-slide-up">
           <div className="flex items-center justify-between">
@@ -196,6 +305,9 @@ export default function VoiceNotes() {
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{transcript}</p>
           </div>
           <p className="text-xs text-muted-foreground">{transcript.split(" ").length} words · Transcribed with Whisper AI</p>
+          <p className="text-xs text-muted-foreground">
+            Use "Save as Audio Note" above to save this recording along with its transcript.
+          </p>
         </div>
       )}
 
@@ -207,10 +319,68 @@ export default function VoiceNotes() {
             <li className="flex items-start gap-2"><span className="text-primary mt-0.5">•</span> Speak clearly and at a moderate pace</li>
             <li className="flex items-start gap-2"><span className="text-primary mt-0.5">•</span> Record in a quiet environment for best transcription accuracy</li>
             <li className="flex items-start gap-2"><span className="text-primary mt-0.5">•</span> After transcription, convert directly to flashcards for instant study materials</li>
-            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">•</span> Works great for summarizing lectures, book chapters, or study sessions</li>
+            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">•</span> Use "Save as Audio Note" to keep the recording without transcribing</li>
           </ul>
         </div>
       )}
+
+      {/* Saved Notes List */}
+      <div className="space-y-3 animate-fade-in">
+        <h2 className="text-lg font-semibold">Saved Voice Notes</h2>
+        {notesLoading ? (
+          <div className="space-y-2">
+            {[1, 2].map(i => (
+              <div key={i} className="study-card p-4 animate-pulse">
+                <div className="h-4 bg-muted rounded w-1/3 mb-2" />
+                <div className="h-3 bg-muted rounded w-1/4" />
+              </div>
+            ))}
+          </div>
+        ) : !savedNotes?.length ? (
+          <div className="study-card p-8 text-center text-muted-foreground text-sm">
+            No saved voice notes yet. Record something and save it above.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {savedNotes.map((note) => (
+              <div key={note.id} className="study-card p-4 flex items-start gap-3 group">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <FileAudio className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{note.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formatDuration(note.duration)} · {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
+                  </p>
+                  {note.transcript && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                      {note.transcript}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <a
+                    href={note.s3Url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                    title="Open audio"
+                  >
+                    <Play className="w-3.5 h-3.5 text-muted-foreground" />
+                  </a>
+                  <button
+                    onClick={() => deleteNoteMut.mutate({ id: note.id })}
+                    className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

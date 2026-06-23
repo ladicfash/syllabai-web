@@ -77,11 +77,20 @@
 - [x] Access gate component: blur/lock overlay on content for logged-out users (AccessGate.tsx)
 
 ## Phase 10: T&C Fix & Settings Page
-- [ ] Fix T&C modal: scrollable legal text, working checkboxes, agree button always reachable
-- [ ] Add user_settings table to DB schema (notificationEmail, notificationPhone, notifyFrequency, shareDeadlinesEnabled, shareDeadlinesRecipients)
-- [ ] Build Settings page: Profile section, Notifications section, Deadline Sharing section, Account section
-- [ ] Notification frequency options: every hour, 24 hours before, as deadlines approach, every few days
-- [ ] "Send deadlines to a friend or classmate" with email/phone input and save
-- [ ] Deactivate account option with confirmation dialog
-- [ ] Add Settings link to sidebar navigation
-- [ ] Wire all settings to DB via tRPC (save + load)
+- [x] Fix T&C modal: scrollable legal text, working checkboxes, agree button always reachable
+- [x] Add user_settings table to DB schema (notificationEmail, notificationPhone, notifyFrequency, shareDeadlinesEnabled, shareDeadlinesRecipients)
+- [x] Build Settings page: Profile section, Notifications section, Deadline Sharing section, Account section
+- [x] Notification frequency options: every hour, 24 hours before, as deadlines approach, every few days
+- [x] "Send deadlines to a friend or classmate" with email/phone input and save
+- [x] Deactivate account option with confirmation dialog
+- [x] Add Settings link to sidebar navigation
+- [x] Wire all settings to DB via tRPC (save + load)
+
+## Phase 11: Dark Mode, Animation & Video Notes
+- [x] Fix dark mode globally: all pages use semantic bg/text tokens, no hardcoded white/light colors
+- [x] Extend logo intro animation by 2 seconds (hold phase 600ms → 2600ms, total ~4150ms)
+- [x] Add save-only option to Voice Notes (save recording without transcribing)
+- [x] Build Video Notes page: upload video (up to 500 MB), camera recording, save, transcribe
+- [x] Add video_notes table to DB schema with 20-video cap per user
+- [x] Wire video notes server routes (upload, list, delete, transcribe)
+- [x] Add Video Notes to sidebar navigation

@@ -12,9 +12,9 @@ interface LogoIntroProps {
  *  0–400ms   : icon fades + scales in from 0.6
  *  400–900ms : icon bounces slightly, "syllab" types in letter by letter
  *  900–1100ms: "AI" snaps in with a blue flash
- *  1100–1600ms: whole lockup holds
- *  1600–2000ms: fade out + scale down
- *  2000ms    : onComplete fires
+ *  1100–3700ms: whole lockup holds (2.6s hold — extended by 2s)
+ *  3700–4150ms: fade out + scale down
+ *  4150ms    : onComplete fires
  */
 export default function LogoIntro({ onComplete }: LogoIntroProps) {
   const [phase, setPhase] = useState<"enter" | "text" | "ai" | "hold" | "exit">("enter");
@@ -45,13 +45,14 @@ export default function LogoIntro({ onComplete }: LogoIntroProps) {
 
   useEffect(() => {
     if (phase !== "hold") return;
-    const t1 = setTimeout(() => setPhase("exit"), 600);
+    const t1 = setTimeout(() => setPhase("exit"), 2600);
     return () => clearTimeout(t1);
   }, [phase]);
 
   useEffect(() => {
     if (phase !== "exit") return;
     const t1 = setTimeout(() => onComplete(), 450);
+    // Total animation duration: ~4150ms
     return () => clearTimeout(t1);
   }, [phase, onComplete]);
 
@@ -141,7 +142,7 @@ export default function LogoIntro({ onComplete }: LogoIntroProps) {
       <div
         className="absolute bottom-12 text-center"
         style={{
-          opacity: phase === "hold" ? 0.5 : 0,
+          opacity: phase === "hold" || phase === "exit" ? 0.5 : 0,
           transition: "opacity 0.4s ease",
           color: "oklch(0.6 0.02 240)",
           fontSize: "0.75rem",
