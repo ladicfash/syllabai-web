@@ -1,10 +1,10 @@
 import { eq, desc, and, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
-  users, documents, flashcardDecks, flashcards, notes, tasks,
+  users, documents, sourceItems, flashcardDecks, flashcards, notes, tasks,
   timerSessions, aiOutputs, quizSessions, shareTokens, userSettings,
   voiceNotes, videoNotes, noteFolders,
-  type InsertUser, type Document, type InsertDocument,
+  type InsertUser, type Document, type InsertDocument, type InsertSourceItem,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -92,6 +92,20 @@ export async function updateDocumentText(id: number, extractedText: string, word
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(documents).set({ extractedText, wordCount }).where(eq(documents.id, id));
+}
+
+// ── Imported Academic / Legal Sources ──────────────────────────────────────
+export async function createSourceItem(item: InsertSourceItem) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(sourceItems).values(item);
+  return result[0];
+}
+
+export async function getSourceItemsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sourceItems).where(eq(sourceItems.userId, userId)).orderBy(desc(sourceItems.createdAt));
 }
 
 // ── Flashcard Decks ────────────────────────────────────────────────────────

@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Library from "./pages/Library";
+import SourceHub from "./pages/SourceHub";
 import StudyTools from "./pages/StudyTools";
 import Timer from "./pages/Timer";
 import Planner from "./pages/Planner";
@@ -133,6 +134,9 @@ function AppRoutes() {
         </Route>
         <Route path="/library">
           {isAuthenticated ? <StudyLayout><Library /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/source-hub">
+          {isAuthenticated ? <StudyLayout><SourceHub /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/study-tools">
           {isAuthenticated ? <StudyLayout><StudyTools /></StudyLayout> : <Landing />}

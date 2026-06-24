@@ -39,6 +39,22 @@ export const documents = mysqlTable("documents", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const sourceItems = mysqlTable("source_items", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  source: varchar("source", { length: 64 }).notNull(),
+  externalId: varchar("externalId", { length: 255 }).notNull(),
+  title: text("title").notNull(),
+  abstract: text("abstract"),
+  url: text("url"),
+  authorsJson: json("authorsJson"),
+  license: varchar("license", { length: 255 }),
+  contentType: varchar("contentType", { length: 64 }),
+  importedDocumentId: int("importedDocumentId"),
+  metadataJson: json("metadataJson"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const flashcardDecks = mysqlTable("flashcard_decks", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
@@ -154,6 +170,8 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Document = typeof documents.$inferSelect;
 export type InsertDocument = typeof documents.$inferInsert;
+export type SourceItem = typeof sourceItems.$inferSelect;
+export type InsertSourceItem = typeof sourceItems.$inferInsert;
 export type Flashcard = typeof flashcards.$inferSelect;
 export type FlashcardDeck = typeof flashcardDecks.$inferSelect;
 export type Note = typeof notes.$inferSelect;
@@ -212,6 +230,7 @@ export const videoNotes = mysqlTable("video_notes", {
   duration: int("duration").default(0).notNull(), // seconds
   videoMimeType: varchar("videoMimeType", { length: 128 }).default("video/webm").notNull(),
   transcript: text("transcript"),
+  chapters: json("chapters").default([]).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

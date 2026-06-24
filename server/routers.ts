@@ -10,6 +10,7 @@ import { getDb } from "./db";
 import {
   upsertUser, getUserByOpenId,
   createDocument, getDocumentsByUser, getDocumentById, deleteDocument, updateDocumentText,
+  createSourceItem, getSourceItemsByUser,
   createDeck, getDecksByUser, getDeckById,
   createFlashcards, getFlashcardsByDeck, updateFlashcardSRS, getDueFlashcards,
   saveQuizSession, getQuizHistory,
@@ -31,6 +32,7 @@ import { docxToText, docxToHtml, textToDocx, imageToPdf, textToPdf } from "./con
 import { PDFParse } from "pdf-parse";
 import { sendDeadlineReminder } from "./email";
 import { sendDeadlinePushNotifications } from "./webpush";
+import { academicSourceIds, getSourceItem, makePracticePrompt, searchSources, sourceSafetyPolicy } from "./sources";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 async function callAI(systemPrompt: string, userContent: string, jsonSchema?: object): Promise<string> {
@@ -284,6 +286,89 @@ export const appRouter = router({
         mimeType: outputMime,
         size: outputBuffer.length,
       };
+    }),
+  }),
+
+  // ── Source Hub: public/open academic + legal databases ───────────────────
+  sources: router({
+    policy: protectedProcedure.query(() => sourceSafetyPolicy),
+
+    imported: protectedProcedure.query(({ ctx }) => getSourceItemsByUser(ctx.user.id)),
+
+    search: protectedProcedure.input(z.object({
+      query: z.string().min(2).max(300),
+      source: z.enum(academicSourceIds).optional(),
+      field: z.enum(["medicine", "law", "general", "all"]).default("all"),
+      limit: z.number().min(1).max(25).default(12),
+    })).query(async ({ input }) => searchSources(input)),
+
+    preview: protectedProcedure.input(z.object({
+      source: z.enum(academicSourceIds),
+      externalId: z.string().min(1).max(255),
+    })).query(async ({ input }) => getSourceItem(input.source, input.externalId)),
+
+    import: protectedProcedure.input(z.object({
+      source: z.enum(academicSourceIds),
+      externalId: z.string().min(1).max(255),
+    })).mutation(async ({ ctx, input }) => {
+      const item = await getSourceItem(input.source, input.externalId);
+      const safeTitle = item.title.replace(/[^a-z0-9 _.-]/gi, "").slice(0, 120) || `${item.source}-${item.externalId}`;
+      const importedText = item.importedText.slice(0, 60000);
+      const wordCount = importedText.split(/\s+/).filter(Boolean).length;
+
+      const inserted = await createDocument({
+        userId: ctx.user.id,
+        filename: `${safeTitle}.txt`,
+        originalName: `${item.source}:${item.externalId}`,
+        mimeType: "text/plain",
+        fileKey: `source://${item.source}/${item.externalId}`,
+        fileUrl: item.url ?? `source://${item.source}/${item.externalId}`,
+        fileSize: Buffer.byteLength(importedText, "utf8"),
+        extractedText: importedText,
+        wordCount,
+      });
+      const documentId = (inserted as any)?.insertId as number | undefined;
+
+      await createSourceItem({
+        userId: ctx.user.id,
+        source: item.source,
+        externalId: item.externalId,
+        title: item.title,
+        abstract: item.abstract,
+        url: item.url,
+        authorsJson: item.authors ?? [],
+        license: item.license,
+        contentType: item.contentType,
+        importedDocumentId: documentId,
+        metadataJson: { ...item.metadata, citation: item.citation, tags: item.tags, isOpenAccess: item.isOpenAccess },
+      });
+
+      return { success: true, documentId, item };
+    }),
+
+    generateStudyAid: protectedProcedure.input(z.object({
+      source: z.enum(academicSourceIds),
+      externalId: z.string().min(1).max(255),
+      kind: z.enum(["medical", "law", "research"]),
+      saveAsNote: z.boolean().default(false),
+    })).mutation(async ({ ctx, input }) => {
+      const item = await getSourceItem(input.source, input.externalId);
+      const prompt = makePracticePrompt(input.kind, item.importedText.slice(0, 8000));
+      const content = await callAI(
+        "You create original academic study aids from lawful public/open source material. Never copy proprietary question banks or imply official affiliation with UWorld, NBME, AMBOSS, NCBE, BARBRI, Themis, or similar vendors.",
+        prompt
+      );
+      let noteId: number | undefined;
+      if (input.saveAsNote) {
+        const inserted = await createNote({
+          userId: ctx.user.id,
+          title: `${input.kind === "medical" ? "USMLE-style" : input.kind === "law" ? "Law-style" : "Research"} study aid: ${item.title.slice(0, 80)}`,
+          content: `${content}\n\n---\nSource: ${item.url ?? item.title}\nCitation: ${item.citation.apa}`,
+          color: "#dbeafe",
+        });
+        noteId = (inserted as any)?.insertId as number | undefined;
+      }
+      return { content, noteId, citation: item.citation };
     }),
   }),
 
