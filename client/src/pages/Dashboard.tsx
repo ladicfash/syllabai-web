@@ -49,6 +49,8 @@ export default function Dashboard() {
   const { data: tasks, isLoading: tasksLoading } = trpc.tasks.list.useQuery();
   const { data: timerHistory } = trpc.timer.history.useQuery();
   const { data: dueCards } = trpc.decks.dueCards.useQuery();
+  const { data: activity } = trpc.activity.summary.useQuery();
+  const { data: recentOutputs = [] } = trpc.ai.listStudyOutputs.useQuery();
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -165,6 +167,33 @@ export default function Dashboard() {
           <p className="text-xs text-muted-foreground">{todayMinutes} / {dailyGoalMinutes} min</p>
         </div>
         <Progress value={dailyProgress} className="h-2" />
+      </div>
+
+      {/* Habit loop */}
+      <div className="grid gap-4 md:grid-cols-3 animate-slide-up" style={{ animationDelay: "0.08s" }}>
+        <div className="rounded-3xl border bg-card p-5 shadow-sm">
+          <p className="text-sm font-semibold flex items-center gap-2"><Flame className="w-4 h-4 text-amber-500" /> Review streak</p>
+          <p className="mt-2 text-3xl font-bold">{activity?.streak ?? 0} days</p>
+          <p className="text-xs text-muted-foreground">Best: {activity?.bestStreak ?? 0} days · {activity?.reviewedToday ?? 0} cards reviewed today</p>
+        </div>
+        <div className="md:col-span-2 rounded-3xl border bg-card p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" /> Recent Study Studio outputs</p>
+            <Link href="/study-tools"><Button variant="ghost" size="sm">Open Studio</Button></Link>
+          </div>
+          {recentOutputs.length === 0 ? <p className="text-sm text-muted-foreground">Generate your first exam review, quiz, or study guide to see it here.</p> : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {recentOutputs.slice(0, 2).map((out: any) => (
+                <Link key={out.id} href="/study-tools">
+                  <div className="rounded-2xl border bg-muted/30 p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                    <p className="text-sm font-medium truncate">{out.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{out.templateType?.replace(/_/g, " ")} · {new Date(out.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Quick Actions */}

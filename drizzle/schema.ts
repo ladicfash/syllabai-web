@@ -55,6 +55,28 @@ export const sourceItems = mysqlTable("source_items", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const studyOutputs = mysqlTable("study_outputs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 256 }).notNull(),
+  templateType: varchar("templateType", { length: 64 }).notNull(),
+  documentIdsJson: json("documentIdsJson"),
+  sourceNamesJson: json("sourceNamesJson"),
+  content: text("content").notNull(),
+  depth: varchar("depth", { length: 32 }),
+  examContext: varchar("examContext", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const studyActivity = mysqlTable("study_activity", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  activityType: varchar("activityType", { length: 64 }).notNull(),
+  count: int("count").default(1).notNull(),
+  activityDate: varchar("activityDate", { length: 10 }).notNull(), // YYYY-MM-DD
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const flashcardDecks = mysqlTable("flashcard_decks", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
@@ -127,6 +149,17 @@ export const tasks = mysqlTable("tasks", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const taskSubtasks = mysqlTable("task_subtasks", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 512 }).notNull(),
+  isDone: boolean("isDone").default(false).notNull(),
+  orderIndex: int("orderIndex").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const timerSessions = mysqlTable("timer_sessions", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
@@ -172,10 +205,16 @@ export type Document = typeof documents.$inferSelect;
 export type InsertDocument = typeof documents.$inferInsert;
 export type SourceItem = typeof sourceItems.$inferSelect;
 export type InsertSourceItem = typeof sourceItems.$inferInsert;
+export type StudyOutput = typeof studyOutputs.$inferSelect;
+export type InsertStudyOutput = typeof studyOutputs.$inferInsert;
+export type StudyActivity = typeof studyActivity.$inferSelect;
+export type InsertStudyActivity = typeof studyActivity.$inferInsert;
 export type Flashcard = typeof flashcards.$inferSelect;
 export type FlashcardDeck = typeof flashcardDecks.$inferSelect;
 export type Note = typeof notes.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
+export type TaskSubtask = typeof taskSubtasks.$inferSelect;
+export type InsertTaskSubtask = typeof taskSubtasks.$inferInsert;
 export type TimerSession = typeof timerSessions.$inferSelect;
 export type AiOutput = typeof aiOutputs.$inferSelect;
 export type FlashcardDeckWithCount = FlashcardDeck & { cardCount: number };

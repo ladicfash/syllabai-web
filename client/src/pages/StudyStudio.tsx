@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Streamdown } from "streamdown";
+import { MarkdownView } from "@/components/MarkdownView";
 import { cn } from "@/lib/utils";
 import {
   BookOpen,
@@ -132,8 +132,10 @@ export default function StudyStudio() {
   const [examType, setExamType] = useState("");
   const [instructions, setInstructions] = useState("");
   const [output, setOutput] = useState("");
+  const [outputId, setOutputId] = useState<number | undefined>();
   const [copied, setCopied] = useState(false);
 
+  const { data: recentOutputs = [] } = trpc.ai.listStudyOutputs.useQuery();
   const selectedDocs = useMemo(() => docs.filter((doc) => selectedDocIds.includes(doc.id)), [docs, selectedDocIds]);
   const selectedWords = selectedDocs.reduce((sum, doc) => sum + (doc.wordCount ?? 0), 0);
   const template = TEMPLATES.find((item) => item.id === selectedTemplate)!;
@@ -158,8 +160,35 @@ export default function StudyStudio() {
     onError: (err) => toast.error(err.message),
   });
 
+  const exportOutput = trpc.ai.exportStudyOutput.useMutation({
+    onSuccess: (data: any) => {
+      if (data.url) window.open(data.url, "_blank");
+      else if (data.content) {
+        const blob = new Blob([data.content], { type: data.mimeType || "text/markdown" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = data.filename || "study-output.md";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      toast.success("Export ready");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const createQuiz = trpc.ai.createQuizFromOutput.useMutation({
+    onSuccess: (data) => {
+      setOutput(data.content);
+      setOutputId(data.id);
+      utils.ai.listStudyOutputs.invalidate();
+      toast.success("Quiz created from output");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
   const generate = trpc.ai.generateStudyTemplate.useMutation({
-    onSuccess: (data) => setOutput(data.content),
+    onSuccess: (data) => { setOutput(data.content); setOutputId(data.id); utils.ai.listStudyOutputs.invalidate(); },
     onError: (err) => toast.error(err.message),
   });
 
@@ -173,7 +202,8 @@ export default function StudyStudio() {
       return;
     }
     setOutput("");
-    generate.mutate({
+    setOutputId(undefined);
+    generate.mutate({ 
       documentIds: selectedDocIds,
       template: selectedTemplate,
       depth,
@@ -201,6 +231,23 @@ export default function StudyStudio() {
   const makeFlashcardsFromOutput = () => {
     if (!output.trim()) return;
     createFlashcards.mutate({ text: output.slice(0, 12000), difficulty: "intermediate", style: "application", count: 16 });
+  };
+
+  const exportCurrent = (format: "pdf" | "docx" | "md") => {
+    if (!outputId) {
+      if (format === "md") return downloadMarkdown();
+      toast.error("Save/generate this output first before exporting PDF or DOCX");
+      return;
+    }
+    exportOutput.mutate({ id: outputId, format });
+  };
+
+  const openRecentOutput = (item: any) => {
+    setOutput(item.content);
+    setOutputId(item.id);
+    setSelectedTemplate(item.templateType as TemplateId);
+    if (item.depth) setDepth(item.depth as Depth);
+    setExamType(item.examContext ?? "");
   };
 
   return (
@@ -265,6 +312,25 @@ export default function StudyStudio() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border bg-card p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h2 className="font-semibold flex items-center gap-2"><ClipboardList className="w-4 h-4 text-primary" /> Recent outputs</h2>
+                  <p className="text-xs text-muted-foreground">Reopen generated assets</p>
+                </div>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {recentOutputs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground rounded-xl border border-dashed p-3">Generated Study Studio outputs will appear here.</p>
+                ) : recentOutputs.slice(0, 8).map((item: any) => (
+                  <button key={item.id} onClick={() => openRecentOutput(item)} className="w-full rounded-xl border p-3 text-left hover:bg-muted/50 transition-colors">
+                    <p className="text-sm font-medium truncate">{item.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{item.templateType?.replace(/_/g, " ")} · {new Date(item.createdAt).toLocaleDateString()}</p>
+                  </button>
+                ))}
               </div>
             </div>
           </aside>
@@ -350,10 +416,17 @@ export default function StudyStudio() {
               copied={copied}
               onCopy={output ? copyOutput : undefined}
               onSave={output ? () => createNote.mutate({ title: template.title, content: output }) : undefined}
-              onDownload={output ? downloadMarkdown : undefined}
+              onDownload={output ? () => exportCurrent("md") : undefined}
               onFlashcards={output ? makeFlashcardsFromOutput : undefined}
               flashcardsPending={createFlashcards.isPending}
             />
+            {output && (
+              <div className="border-b bg-card px-4 py-2 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" disabled={exportOutput.isPending} onClick={() => exportCurrent("pdf")}>Export PDF</Button>
+                <Button size="sm" variant="outline" disabled={exportOutput.isPending} onClick={() => exportCurrent("docx")}>Export DOCX</Button>
+                <Button size="sm" variant="outline" disabled={createQuiz.isPending || !outputId} onClick={() => outputId && createQuiz.mutate({ outputId, questionCount: 12 })}>Create Quiz</Button>
+              </div>
+            )}
             <div className="p-4 max-h-[720px] overflow-y-auto">
               {generate.isPending ? (
                 <div className="space-y-3">
@@ -361,7 +434,7 @@ export default function StudyStudio() {
                   {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-5 w-full" />)}
                 </div>
               ) : output ? (
-                <div className="streamdown-content text-sm"><Streamdown>{output}</Streamdown></div>
+                <div className="streamdown-content text-sm"><MarkdownView>{output}</MarkdownView></div>
               ) : (
                 <EmptyState
                   icon={SearchCheck}

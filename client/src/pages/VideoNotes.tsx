@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { Streamdown } from "streamdown";
+import { MarkdownView } from "@/components/MarkdownView";
 
 const MAX_VIDEOS = 20;
 const MAX_FILE_SIZE_MB = 200;
@@ -455,7 +455,7 @@ export default function VideoNotes() {
                 {aiOutputByNote[note.id] && (
                   <div className="border-t border-border p-4 bg-muted/20">
                     <h4 className="font-semibold text-sm mb-2">{aiOutputByNote[note.id].title}</h4>
-                    <div className="streamdown-content text-sm"><Streamdown>{aiOutputByNote[note.id].content}</Streamdown></div>
+                    <div className="streamdown-content text-sm"><MarkdownView>{aiOutputByNote[note.id].content}</MarkdownView></div>
                   </div>
                 )}
               </div>

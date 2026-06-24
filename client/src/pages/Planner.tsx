@@ -60,6 +60,12 @@ export default function Planner() {
   const createTask = trpc.tasks.create.useMutation({ onSuccess: () => { utils.tasks.list.invalidate(); setShowAdd(false); resetForm(); toast.success("Task added"); } });
   const updateTask = trpc.tasks.update.useMutation({ onSuccess: () => utils.tasks.list.invalidate() });
   const deleteTask = trpc.tasks.delete.useMutation({ onSuccess: () => { utils.tasks.list.invalidate(); toast.success("Task deleted"); } });
+  const addSubtasks = trpc.tasks.addSubtasks.useMutation({ onSuccess: () => { utils.tasks.list.invalidate(); toast.success("Subtasks added"); } });
+  const updateSubtask = trpc.tasks.updateSubtask.useMutation({ onSuccess: () => utils.tasks.list.invalidate() });
+  const breakdownTask = trpc.tasks.breakdown.useMutation({
+    onSuccess: (data, vars) => addSubtasks.mutate({ taskId: vars.taskId, subtasks: data.subtasks }),
+    onError: (err) => toast.error(err.message),
+  });
   const detectDeadlines = trpc.ai.detectDeadlines.useMutation();
 
   const resetForm = () => { setNewTitle(""); setNewDue(""); setNewPriority("medium"); setNewType("other"); setNewDesc(""); };
@@ -173,6 +179,22 @@ export default function Planner() {
                       </Badge>
                     </div>
                     {task.description && <p className="text-xs text-muted-foreground mt-0.5 truncate">{task.description}</p>}
+                    {(task as any).subtasks?.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${(task as any).progressPercent ?? 0}%` }} /></div>
+                          <span className="text-[11px] text-muted-foreground">{(task as any).progressPercent ?? 0}%</span>
+                        </div>
+                        <div className="grid gap-1 sm:grid-cols-2">
+                          {(task as any).subtasks.slice(0, 6).map((sub: any) => (
+                            <label key={sub.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <input type="checkbox" checked={sub.isDone} onChange={(e) => updateSubtask.mutate({ id: sub.id, isDone: e.target.checked })} />
+                              <span className={cn(sub.isDone && "line-through")}>{sub.title}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center gap-3 mt-1">
                       <Icon className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground capitalize">{task.type}</span>
@@ -183,9 +205,19 @@ export default function Planner() {
                       )}
                     </div>
                   </div>
-                  <button onClick={() => deleteTask.mutate({ id: task.id })} className="text-muted-foreground hover:text-destructive transition-colors p-1 flex-shrink-0">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => breakdownTask.mutate({ taskId: task.id, title: task.title, description: task.description ?? undefined, dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : undefined })}
+                      disabled={breakdownTask.isPending}
+                      className="text-muted-foreground hover:text-primary transition-colors p-1"
+                      title="Break into subtasks"
+                    >
+                      {breakdownTask.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                    </button>
+                    <button onClick={() => deleteTask.mutate({ id: task.id })} className="text-muted-foreground hover:text-destructive transition-colors p-1" title="Delete task">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               );
             })

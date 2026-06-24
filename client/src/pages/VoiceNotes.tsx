@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { Streamdown } from "streamdown";
+import { MarkdownView } from "@/components/MarkdownView";
 
 type RecordingState = "idle" | "recording" | "stopped" | "processing";
 
@@ -330,7 +330,7 @@ export default function VoiceNotes() {
           {aiOutput && (
             <div className="rounded-xl border bg-card p-4 animate-fade-in">
               <h4 className="font-semibold text-sm mb-2">{aiOutput.title}</h4>
-              <div className="streamdown-content text-sm"><Streamdown>{aiOutput.content}</Streamdown></div>
+              <div className="streamdown-content text-sm"><MarkdownView>{aiOutput.content}</MarkdownView></div>
             </div>
           )}
           <p className="text-xs text-muted-foreground">{transcript.split(" ").length} words · Transcribed with Whisper AI</p>

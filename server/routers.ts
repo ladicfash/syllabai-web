@@ -11,11 +11,12 @@ import {
   upsertUser, getUserByOpenId,
   createDocument, getDocumentsByUser, getDocumentById, deleteDocument, updateDocumentText,
   createSourceItem, getSourceItemsByUser,
+  createStudyOutput, getStudyOutputsByUser, getStudyOutputById, recordStudyActivity, getStudyActivityByUser,
   createDeck, getDecksByUser, getDeckById,
   createFlashcards, getFlashcardsByDeck, getFlashcardById, updateFlashcardContent, updateFlashcardSRS, getDueFlashcards,
   saveQuizSession, getQuizHistory,
   createNote, getNotesByUser, updateNote, deleteNote, getNotesByIds,
-  createTask, getTasksByUser, updateTask, deleteTask,
+  createTask, getTasksByUser, updateTask, deleteTask, getSubtasksByUser, createSubtasks, updateSubtask, deleteSubtask,
   saveTimerSession, getTimerHistory,
   saveAiOutput, getAiOutput,
   createShareToken, getShareToken,
@@ -673,10 +674,62 @@ flowchart TD
         deep: "Go deep. Add advanced synthesis, nuanced distinctions, misconceptions, and exam/reasoning angles.",
       } as const;
       const content = await callAI(
-        "You are syllabAI's advanced academic study-material designer. Produce polished, structured, high-signal study materials grounded in the selected document text. Use markdown with tables where helpful. Be specific to the source. Avoid generic filler.",
+        "You are syllabAI's advanced academic study-material designer. Produce polished, structured, high-signal study materials grounded in the selected document text. Use markdown with tables where helpful. Be specific to the source. Avoid generic filler. Include a 'Sources used' section and short source evidence snippets for major claims when possible.",
         `TEMPLATE: ${input.template}\nDEPTH: ${input.depth} — ${depthRules[input.depth]}\nEXAM/COURSE CONTEXT: ${input.examType || "General academic study"}\nUSER INSTRUCTIONS: ${input.instructions || "None"}\nDOCUMENTS: ${docs.map((d: any) => d.originalName).join(", ")}\n\n${templatePrompts[input.template]}\n\nSOURCE TEXT:\n${text}`
       );
-      return { content, sources: docs.map((d: any) => ({ id: d.id, name: d.originalName })) };
+      const title = `${input.template.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}${docs.length ? ` — ${docs[0].originalName}` : ""}`.slice(0, 250);
+      const inserted = await createStudyOutput({
+        userId: ctx.user.id,
+        title,
+        templateType: input.template,
+        documentIdsJson: input.documentIds,
+        sourceNamesJson: docs.map((d: any) => d.originalName),
+        content,
+        depth: input.depth,
+        examContext: input.examType,
+      });
+      await recordStudyActivity(ctx.user.id, "study_output", 1);
+      return { id: (inserted as any)?.insertId as number | undefined, title, content, sources: docs.map((d: any) => ({ id: d.id, name: d.originalName })) };
+    }),
+
+    listStudyOutputs: protectedProcedure.query(({ ctx }) => getStudyOutputsByUser(ctx.user.id, 30)),
+
+    exportStudyOutput: protectedProcedure.input(z.object({
+      id: z.number(),
+      format: z.enum(["pdf", "docx", "md"]),
+    })).mutation(async ({ ctx, input }) => {
+      const output = await getStudyOutputById(input.id, ctx.user.id);
+      if (!output) throw new Error("Study output not found");
+      const safeTitle = output.title.replace(/[^a-z0-9 _.-]/gi, "").slice(0, 120) || "study-output";
+      if (input.format === "md") return { filename: `${safeTitle}.md`, mimeType: "text/markdown", content: output.content };
+      const buffer = input.format === "pdf" ? await textToPdf(output.content, output.title) : await textToDocx(output.content, output.title);
+      const mimeType = input.format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      const fileKey = `${ctx.user.id}/exports/${nanoid()}-${safeTitle}.${input.format}`;
+      const { url } = await storagePut(fileKey, buffer, mimeType);
+      return { url, filename: `${safeTitle}.${input.format}`, mimeType, size: buffer.length };
+    }),
+
+    createQuizFromOutput: protectedProcedure.input(z.object({
+      outputId: z.number(),
+      questionCount: z.number().min(5).max(25).default(12),
+    })).mutation(async ({ ctx, input }) => {
+      const output = await getStudyOutputById(input.outputId, ctx.user.id);
+      if (!output) throw new Error("Study output not found");
+      const content = await callAI(
+        "Create an original practice quiz from this study output. Include mixed multiple-choice and short-answer questions, an answer key, concise explanations, and common traps. Do not copy proprietary questions. Format in markdown.",
+        `Question count: ${input.questionCount}\n\n${output.content.slice(0, 12000)}`
+      );
+      const inserted = await createStudyOutput({
+        userId: ctx.user.id,
+        title: `Practice Quiz — ${output.title}`.slice(0, 250),
+        templateType: "practice_quiz",
+        documentIdsJson: output.documentIdsJson as any,
+        sourceNamesJson: output.sourceNamesJson as any,
+        content,
+        depth: output.depth,
+        examContext: output.examContext,
+      });
+      return { id: (inserted as any)?.insertId as number | undefined, content };
     }),
 
     chatWithDocuments: protectedProcedure.input(z.object({
@@ -930,6 +983,7 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
       scorePercent: z.number(),
     })).mutation(async ({ ctx, input }) => {
       await saveQuizSession({ userId: ctx.user.id, ...input });
+      await recordStudyActivity(ctx.user.id, "flashcard_review", input.totalCards);
       return { success: true };
     }),
 
@@ -938,8 +992,40 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
     ),
   }),
 
+  // ── Study Activity / Streaks ──────────────────────────────────────────────
+  activity: router({
+    summary: protectedProcedure.query(async ({ ctx }) => {
+      const rows = await getStudyActivityByUser(ctx.user.id, 90);
+      const today = new Date().toISOString().slice(0, 10);
+      const byDate = new Map<string, number>();
+      for (const row of rows) byDate.set(row.activityDate, (byDate.get(row.activityDate) ?? 0) + row.count);
+      let streak = 0;
+      const cursor = new Date();
+      while (true) {
+        const key = cursor.toISOString().slice(0, 10);
+        if (!byDate.has(key)) break;
+        streak++;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      let bestStreak = 0;
+      let current = 0;
+      const dates = Array.from(byDate.keys()).sort();
+      let prev: Date | null = null;
+      for (const key of dates) {
+        const d = new Date(`${key}T00:00:00.000Z`);
+        if (prev && (d.getTime() - prev.getTime()) / 86400000 === 1) current++;
+        else current = 1;
+        bestStreak = Math.max(bestStreak, current);
+        prev = d;
+      }
+      const reviewedToday = rows.filter((r) => r.activityDate === today && r.activityType === "flashcard_review").reduce((sum, r) => sum + r.count, 0);
+      const studiedToday = rows.filter((r) => r.activityDate === today && r.activityType === "timer_session").reduce((sum, r) => sum + r.count, 0);
+      return { streak, bestStreak, reviewedToday, studiedToday, activeDays: byDate.size };
+    }),
+  }),
+
   // ── Notes ─────────────────────────────────────────────────────────────────
-  notes: router({
+  notes: router({ 
     list: protectedProcedure.query(({ ctx }) => getNotesByUser(ctx.user.id)),
 
         create: protectedProcedure.input(z.object({
@@ -1024,7 +1110,14 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
     }),
   }),
   tasks: router({
-    list: protectedProcedure.query(({ ctx }) => getTasksByUser(ctx.user.id)),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const [rows, subtasks] = await Promise.all([getTasksByUser(ctx.user.id), getSubtasksByUser(ctx.user.id)]);
+      return rows.map((task: any) => {
+        const items = subtasks.filter((s: any) => s.taskId === task.id);
+        const done = items.filter((s: any) => s.isDone).length;
+        return { ...task, subtasks: items, progressPercent: items.length ? Math.round((done / items.length) * 100) : task.status === "done" ? 100 : 0 };
+      });
+    }),
 
     create: protectedProcedure.input(z.object({
       title: z.string(),
@@ -1064,6 +1157,48 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
       await deleteTask(input.id, ctx.user.id);
       return { success: true };
     }),
+
+    addSubtasks: protectedProcedure.input(z.object({
+      taskId: z.number(),
+      subtasks: z.array(z.string().min(1).max(512)).min(1).max(20),
+    })).mutation(async ({ ctx, input }) => {
+      await createSubtasks(input.subtasks.map((title, index) => ({ taskId: input.taskId, userId: ctx.user.id, title, orderIndex: index })));
+      return { success: true };
+    }),
+
+    updateSubtask: protectedProcedure.input(z.object({
+      id: z.number(),
+      title: z.string().max(512).optional(),
+      isDone: z.boolean().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      await updateSubtask(id, ctx.user.id, data);
+      return { success: true };
+    }),
+
+    deleteSubtask: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      await deleteSubtask(input.id, ctx.user.id);
+      return { success: true };
+    }),
+
+    breakdown: protectedProcedure.input(z.object({
+      taskId: z.number(),
+      title: z.string(),
+      description: z.string().optional(),
+      dueDate: z.string().optional(),
+    })).mutation(async ({ input }) => {
+      const raw = await callAI(
+        "Break this student task into 4-8 concrete subtasks. Return JSON only.",
+        `Task: ${input.title}\nDescription: ${input.description || ""}\nDue: ${input.dueDate || "unknown"}`,
+        {
+          type: "object",
+          properties: { subtasks: { type: "array", items: { type: "string" } } },
+          required: ["subtasks"],
+          additionalProperties: false,
+        }
+      );
+      return JSON.parse(raw) as { subtasks: string[] };
+    }),
     bulkCreate: protectedProcedure.input(z.object({
       tasks: z.array(z.object({
         title: z.string(),
@@ -1095,6 +1230,7 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
       durationMinutes: z.number(),
     })).mutation(async ({ ctx, input }) => {
       await saveTimerSession(ctx.user.id, input.sessionType, input.durationMinutes);
+      if (input.sessionType === "work") await recordStudyActivity(ctx.user.id, "timer_session", input.durationMinutes);
       return { success: true };
     }),
 

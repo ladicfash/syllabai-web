@@ -14,7 +14,7 @@ import {
   BookmarkPlus, FolderOpen, MessageCircle, ClipboardList
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Streamdown } from "streamdown";
+import { MarkdownView } from "@/components/MarkdownView";
 import { cn } from "@/lib/utils";
 import { AIChatBox, type Message } from "@/components/AIChatBox";
 
@@ -529,7 +529,7 @@ export default function StudyTools() {
           ) : cornellContent ? (
             <div className="study-card p-6 animate-fade-in">
               <div className="streamdown-content">
-                <Streamdown>{cornellContent}</Streamdown>
+                <MarkdownView>{cornellContent}</MarkdownView>
               </div>
             </div>
           ) : (
@@ -672,7 +672,7 @@ export default function StudyTools() {
           ) : keyPointsContent ? (
             <div className="study-card p-6 animate-fade-in">
               <div className="streamdown-content">
-                <Streamdown>{keyPointsContent}</Streamdown>
+                <MarkdownView>{keyPointsContent}</MarkdownView>
               </div>
             </div>
           ) : (
@@ -705,7 +705,7 @@ export default function StudyTools() {
           {studyPlanMut.isPending ? (
             <div className="space-y-3">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-6 w-full" />)}</div>
           ) : studyPlanContent ? (
-            <div className="study-card p-6 animate-fade-in"><div className="streamdown-content"><Streamdown>{studyPlanContent}</Streamdown></div></div>
+            <div className="study-card p-6 animate-fade-in"><div className="streamdown-content"><MarkdownView>{studyPlanContent}</MarkdownView></div></div>
           ) : (
             <div className="text-center py-16 study-card">
               <ClipboardList className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />

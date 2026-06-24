@@ -11,7 +11,7 @@ import {
   TerminalSquare, ScrollText, Wand2, CheckCircle2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Streamdown } from "streamdown";
+import { MarkdownView } from "@/components/MarkdownView";
 
 type Domain = "medical" | "finance" | "coding" | "history" | "custom";
 type Difficulty = "beginner" | "intermediate" | "advanced";
@@ -339,7 +339,7 @@ export default function Simulations() {
                   </div>
                   <div className={cn("max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm", msg.role === "assistant" ? "bg-muted rounded-tl-sm" : "bg-primary text-primary-foreground rounded-tr-sm")}>
                     {msg.role === "assistant" ? (
-                      <div className="streamdown-content"><Streamdown>{msg.content}</Streamdown></div>
+                      <div className="streamdown-content"><MarkdownView>{msg.content}</MarkdownView></div>
                     ) : <p className="whitespace-pre-wrap">{msg.content}</p>}
                   </div>
                 </div>

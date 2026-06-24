@@ -1,10 +1,10 @@
 import { eq, desc, and, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
-  users, documents, sourceItems, flashcardDecks, flashcards, notes, tasks,
+  users, documents, sourceItems, studyOutputs, studyActivity, flashcardDecks, flashcards, notes, tasks, taskSubtasks,
   timerSessions, aiOutputs, quizSessions, shareTokens, userSettings,
   voiceNotes, videoNotes, noteFolders,
-  type InsertUser, type Document, type InsertDocument, type InsertSourceItem,
+  type InsertUser, type Document, type InsertDocument, type InsertSourceItem, type InsertStudyOutput,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -106,6 +106,43 @@ export async function getSourceItemsByUser(userId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(sourceItems).where(eq(sourceItems.userId, userId)).orderBy(desc(sourceItems.createdAt));
+}
+
+// ── Study Studio Outputs + Activity ────────────────────────────────────────
+export async function createStudyOutput(output: InsertStudyOutput) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(studyOutputs).values(output);
+  return result[0];
+}
+
+export async function getStudyOutputsByUser(userId: number, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(studyOutputs).where(eq(studyOutputs.userId, userId)).orderBy(desc(studyOutputs.createdAt)).limit(limit);
+}
+
+export async function getStudyOutputById(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(studyOutputs).where(and(eq(studyOutputs.id, id), eq(studyOutputs.userId, userId))).limit(1);
+  return result[0];
+}
+
+export async function recordStudyActivity(userId: number, activityType: string, count = 1, date = new Date()) {
+  const db = await getDb();
+  if (!db) return;
+  const activityDate = date.toISOString().slice(0, 10);
+  await db.insert(studyActivity).values({ userId, activityType, count, activityDate });
+}
+
+export async function getStudyActivityByUser(userId: number, days = 60) {
+  const db = await getDb();
+  if (!db) return [];
+  const start = new Date();
+  start.setDate(start.getDate() - days);
+  const startKey = start.toISOString().slice(0, 10);
+  return db.select().from(studyActivity).where(and(eq(studyActivity.userId, userId), gte(studyActivity.activityDate, startKey))).orderBy(desc(studyActivity.activityDate));
 }
 
 // ── Flashcard Decks ────────────────────────────────────────────────────────
@@ -249,7 +286,32 @@ export async function updateTask(id: number, userId: number, data: Partial<{
 export async function deleteTask(id: number, userId: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
+  await db.delete(taskSubtasks).where(and(eq(taskSubtasks.taskId, id), eq(taskSubtasks.userId, userId)));
   await db.delete(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+}
+
+export async function getSubtasksByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(taskSubtasks).where(eq(taskSubtasks.userId, userId)).orderBy(taskSubtasks.orderIndex, taskSubtasks.createdAt);
+}
+
+export async function createSubtasks(items: { taskId: number; userId: number; title: string; orderIndex: number }[]) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  if (items.length) await db.insert(taskSubtasks).values(items);
+}
+
+export async function updateSubtask(id: number, userId: number, data: Partial<{ title: string; isDone: boolean; orderIndex: number }>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(taskSubtasks).set(data).where(and(eq(taskSubtasks.id, id), eq(taskSubtasks.userId, userId)));
+}
+
+export async function deleteSubtask(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(taskSubtasks).where(and(eq(taskSubtasks.id, id), eq(taskSubtasks.userId, userId)));
 }
 
 // ── Timer Sessions ─────────────────────────────────────────────────────────
