@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   Video, Square, Loader2, Trash2,
   Upload, Camera, RefreshCw, FileVideo, AlertTriangle, Brain, ChevronDown, ChevronUp, FileText, Sparkles,
+  Scissors, Split, Plus, Save, Play, SkipForward, ArrowUp, ArrowDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -15,6 +16,297 @@ const MAX_VIDEOS = 20;
 const MAX_FILE_SIZE_MB = 200;
 
 type CaptureMode = "idle" | "camera" | "uploading" | "preview";
+type VideoClip = { id: string; start: number; end: number; label: string };
+
+type VideoEditorSource = {
+  url: string;
+  title: string;
+  duration?: number;
+};
+
+function clampTime(value: number, duration: number) {
+  return Math.max(0, Math.min(duration || 0, Number.isFinite(value) ? value : 0));
+}
+
+function formatPreciseTime(s: number) {
+  const mins = Math.floor(s / 60).toString().padStart(2, "0");
+  const secs = Math.floor(s % 60).toString().padStart(2, "0");
+  const tenths = Math.floor((s % 1) * 10);
+  return `${mins}:${secs}.${tenths}`;
+}
+
+function LiteVideoEditor({ source, onClose, onExport }: { source: VideoEditorSource; onClose: () => void; onExport: (blob: Blob, duration: number, title: string) => void }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [duration, setDuration] = useState(source.duration || 0);
+  const [clips, setClips] = useState<VideoClip[]>([]);
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+  const [markIn, setMarkIn] = useState(0);
+  const [markOut, setMarkOut] = useState(0);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+
+  const selectedClip = clips.find((clip) => clip.id === selectedClipId) ?? clips[0];
+  const totalDuration = clips.reduce((sum, clip) => sum + Math.max(0, clip.end - clip.start), 0);
+
+  const initialize = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const d = video.duration || source.duration || 0;
+    setDuration(d);
+    setMarkIn(0);
+    setMarkOut(d);
+    if (clips.length === 0 && d > 0) {
+      const first = { id: crypto.randomUUID(), start: 0, end: d, label: "Clip 1" };
+      setClips([first]);
+      setSelectedClipId(first.id);
+    }
+  };
+
+  const seek = (time: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = clampTime(time, duration);
+  };
+
+  const addClip = () => {
+    const start = Math.min(markIn, markOut);
+    const end = Math.max(markIn, markOut);
+    if (end - start < 0.3) return toast.error("Clip must be at least 0.3 seconds long");
+    const next = { id: crypto.randomUUID(), start, end, label: `Clip ${clips.length + 1}` };
+    setClips((prev) => [...prev, next]);
+    setSelectedClipId(next.id);
+  };
+
+  const trimSelected = () => {
+    if (!selectedClip) return;
+    const start = Math.min(markIn, markOut);
+    const end = Math.max(markIn, markOut);
+    if (end - start < 0.3) return toast.error("Trim range must be at least 0.3 seconds long");
+    setClips((prev) => prev.map((clip) => clip.id === selectedClip.id ? { ...clip, start, end } : clip));
+  };
+
+  const splitSelected = () => {
+    const video = videoRef.current;
+    if (!selectedClip || !video) return;
+    const t = clampTime(video.currentTime, duration);
+    if (t <= selectedClip.start + 0.25 || t >= selectedClip.end - 0.25) return toast.error("Move playhead inside the clip to split");
+    const left = { ...selectedClip, end: t, label: `${selectedClip.label} A` };
+    const right = { id: crypto.randomUUID(), start: t, end: selectedClip.end, label: `${selectedClip.label} B` };
+    setClips((prev) => prev.flatMap((clip) => clip.id === selectedClip.id ? [left, right] : [clip]));
+    setSelectedClipId(right.id);
+  };
+
+  const moveClip = (id: string, direction: -1 | 1) => {
+    setClips((prev) => {
+      const idx = prev.findIndex((clip) => clip.id === id);
+      const target = idx + direction;
+      if (idx < 0 || target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[target]] = [next[target], next[idx]];
+      return next;
+    });
+  };
+
+  const removeClip = (id: string) => {
+    setClips((prev) => prev.filter((clip) => clip.id !== id));
+    if (selectedClipId === id) setSelectedClipId(null);
+  };
+
+  const previewTimeline = async () => {
+    const video = videoRef.current;
+    if (!video || clips.length === 0) return;
+    setIsPreviewing(true);
+    try {
+      for (const clip of clips) {
+        setSelectedClipId(clip.id);
+        await new Promise<void>((resolve) => {
+          const onSeeked = () => { video.removeEventListener("seeked", onSeeked); resolve(); };
+          video.addEventListener("seeked", onSeeked);
+          video.currentTime = clip.start;
+        });
+        await video.play().catch(() => undefined);
+        await new Promise<void>((resolve) => {
+          const timer = window.setInterval(() => {
+            if (video.currentTime >= clip.end || video.paused) {
+              window.clearInterval(timer);
+              video.pause();
+              resolve();
+            }
+          }, 50);
+        });
+      }
+    } finally {
+      setIsPreviewing(false);
+    }
+  };
+
+  const exportTimeline = async () => {
+    if (!clips.length) return toast.error("Add at least one clip before exporting");
+    const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
+    setExporting(true);
+    setExportProgress(0);
+    try {
+      const video = document.createElement("video");
+      video.src = source.url;
+      video.crossOrigin = "anonymous";
+      video.muted = false;
+      video.playsInline = true;
+      await new Promise<void>((resolve, reject) => {
+        video.onloadedmetadata = () => resolve();
+        video.onerror = () => reject(new Error("Could not load source video for export"));
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas export is not supported in this browser");
+
+      const canvasStream = canvas.captureStream(30);
+      const tracks = [...canvasStream.getVideoTracks()];
+      const captured = (video as any).captureStream?.();
+      if (captured?.getAudioTracks) tracks.push(...captured.getAudioTracks());
+      const stream = new MediaStream(tracks);
+      const chunks: BlobPart[] = [];
+      const recorder = new MediaRecorder(stream, { mimeType: mime });
+      recorder.ondataavailable = (event) => { if (event.data.size > 0) chunks.push(event.data); };
+      recorder.start(250);
+
+      let rendered = 0;
+      const total = Math.max(0.1, totalDuration);
+      for (const clip of clips) {
+        await new Promise<void>((resolve) => {
+          const onSeeked = () => { video.removeEventListener("seeked", onSeeked); resolve(); };
+          video.addEventListener("seeked", onSeeked);
+          video.currentTime = clip.start;
+        });
+        await video.play().catch(() => undefined);
+        await new Promise<void>((resolve) => {
+          const draw = () => {
+            try { ctx.drawImage(video, 0, 0, canvas.width, canvas.height); } catch {}
+            const clipProgress = Math.min(Math.max(video.currentTime - clip.start, 0), clip.end - clip.start);
+            setExportProgress(Math.min(100, Math.round(((rendered + clipProgress) / total) * 100)));
+            if (video.currentTime >= clip.end || video.ended) {
+              video.pause();
+              rendered += clip.end - clip.start;
+              resolve();
+            } else requestAnimationFrame(draw);
+          };
+          requestAnimationFrame(draw);
+        });
+      }
+      recorder.stop();
+      const blob = await new Promise<Blob>((resolve) => {
+        recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
+      });
+      onExport(blob, totalDuration, `${source.title.replace(/\.[^.]+$/, "")}_edited`);
+      toast.success("Edited video rendered. Review it, then save as a new video note.");
+    } catch (err: any) {
+      toast.error(err.message || "Export failed. Try a local/uploaded video if this source blocks browser editing.");
+    } finally {
+      setExporting(false);
+      setExportProgress(0);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm overflow-y-auto p-3 md:p-6">
+      <div className="mx-auto max-w-6xl rounded-3xl border bg-card shadow-2xl overflow-hidden">
+        <div className="flex flex-col gap-3 border-b p-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary mb-2">
+              <Scissors className="w-3.5 h-3.5" /> Lite Video Editor
+            </div>
+            <h2 className="text-xl font-bold">{source.title}</h2>
+            <p className="text-xs text-muted-foreground">Non-destructive timeline: trim, split, reorder, delete clips, then render a new note.</p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={onClose}>Close</Button>
+            <Button onClick={exportTimeline} disabled={exporting || clips.length === 0} className="gap-2">
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {exporting ? `Rendering ${exportProgress}%` : "Render Edit"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-4">
+            <div className="relative overflow-hidden rounded-2xl bg-black aspect-video">
+              <video ref={videoRef} src={source.url} crossOrigin="anonymous" controls playsInline onLoadedMetadata={initialize} className="h-full w-full object-contain" />
+            </div>
+            <div className="rounded-2xl border bg-muted/20 p-4 space-y-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="space-y-1 text-sm font-medium">Mark In <span className="text-xs text-muted-foreground">{formatPreciseTime(markIn)}</span>
+                  <input aria-label="Mark in time" type="range" min={0} max={duration || 0} step={0.1} value={markIn} onChange={(e) => { const v = Number(e.target.value); setMarkIn(v); seek(v); }} className="w-full" />
+                </label>
+                <label className="space-y-1 text-sm font-medium">Mark Out <span className="text-xs text-muted-foreground">{formatPreciseTime(markOut)}</span>
+                  <input aria-label="Mark out time" type="range" min={0} max={duration || 0} step={0.1} value={markOut} onChange={(e) => { const v = Number(e.target.value); setMarkOut(v); seek(v); }} className="w-full" />
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => { const t = videoRef.current?.currentTime ?? 0; setMarkIn(t); }} className="gap-1.5"><Scissors className="w-3.5 h-3.5" /> Set In</Button>
+                <Button variant="outline" size="sm" onClick={() => { const t = videoRef.current?.currentTime ?? 0; setMarkOut(t); }} className="gap-1.5"><Scissors className="w-3.5 h-3.5" /> Set Out</Button>
+                <Button variant="outline" size="sm" onClick={trimSelected} className="gap-1.5"><Scissors className="w-3.5 h-3.5" /> Trim Selected</Button>
+                <Button variant="outline" size="sm" onClick={addClip} className="gap-1.5"><Plus className="w-3.5 h-3.5" /> Add Clip</Button>
+                <Button variant="outline" size="sm" onClick={splitSelected} className="gap-1.5"><Split className="w-3.5 h-3.5" /> Split</Button>
+                <Button size="sm" onClick={previewTimeline} disabled={isPreviewing || !clips.length} className="gap-1.5"><Play className="w-3.5 h-3.5" /> Preview Timeline</Button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-semibold">Timeline</p>
+                <p className="text-xs text-muted-foreground">{clips.length} clips · {formatPreciseTime(totalDuration)}</p>
+              </div>
+              <div className="flex min-h-16 gap-2 overflow-x-auto rounded-xl bg-muted/30 p-3">
+                {clips.map((clip, index) => {
+                  const active = clip.id === selectedClip?.id;
+                  const width = Math.max(88, ((clip.end - clip.start) / Math.max(totalDuration, 1)) * 520);
+                  return (
+                    <button key={clip.id} onClick={() => { setSelectedClipId(clip.id); seek(clip.start); }} style={{ width }} className={cn("shrink-0 rounded-xl border p-3 text-left transition-all", active ? "border-primary bg-primary/10 ring-2 ring-primary/15" : "bg-card hover:bg-muted")}>
+                      <p className="text-xs font-semibold">{index + 1}. {clip.label}</p>
+                      <p className="mt-1 text-[11px] text-muted-foreground">{formatPreciseTime(clip.start)} → {formatPreciseTime(clip.end)}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <aside className="space-y-3">
+            <div className="rounded-2xl border bg-card p-4">
+              <p className="font-semibold mb-2">Edit decision list</p>
+              <p className="text-xs text-muted-foreground mb-3">The editor uses an EDL-style algorithm: edits are saved as clip ranges, then rendered in order.</p>
+              <div className="space-y-2 max-h-[440px] overflow-y-auto pr-1">
+                {clips.map((clip, index) => (
+                  <div key={clip.id} className={cn("rounded-xl border p-3", clip.id === selectedClip?.id && "border-primary bg-primary/5")}>
+                    <div className="flex items-start justify-between gap-2">
+                      <button onClick={() => { setSelectedClipId(clip.id); seek(clip.start); }} className="text-left">
+                        <p className="text-sm font-medium">{clip.label}</p>
+                        <p className="text-xs text-muted-foreground">{formatPreciseTime(clip.start)}–{formatPreciseTime(clip.end)} · {formatPreciseTime(clip.end - clip.start)}</p>
+                      </button>
+                      <div className="flex gap-1">
+                        <button aria-label="Move clip up" onClick={() => moveClip(clip.id, -1)} disabled={index === 0} className="rounded p-1 hover:bg-muted disabled:opacity-30"><ArrowUp className="w-3.5 h-3.5" /></button>
+                        <button aria-label="Move clip down" onClick={() => moveClip(clip.id, 1)} disabled={index === clips.length - 1} className="rounded p-1 hover:bg-muted disabled:opacity-30"><ArrowDown className="w-3.5 h-3.5" /></button>
+                        <button aria-label="Delete clip" onClick={() => removeClip(clip.id)} className="rounded p-1 hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {clips.length === 0 && <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">No clips yet. Add a clip from the current in/out range.</div>}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-4 text-xs text-muted-foreground">
+              <p className="font-semibold text-foreground mb-1">Browser editing note</p>
+              <p>Local/uploaded videos export best. Remote videos may block canvas rendering depending on CORS. Audio is included when the browser supports video capture streams.</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function VideoNotes() {
   const [captureMode, setCaptureMode] = useState<CaptureMode>("idle");
@@ -29,6 +321,7 @@ export default function VideoNotes() {
   const [expandedVideoId, setExpandedVideoId] = useState<number | null>(null);
   const [noteTitle, setNoteTitle] = useState("Video Note");
   const [aiOutputByNote, setAiOutputByNote] = useState<Record<number, { title: string; content: string }>>({});
+  const [editorSource, setEditorSource] = useState<VideoEditorSource | null>(null);
 
   const videoPreviewRef = useRef<HTMLVideoElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -203,11 +496,26 @@ export default function VideoNotes() {
     summarizeMut.mutate({ text: note.transcript.slice(0, 12000), mode, noteId: note.id } as any);
   };
 
+  const handleEditorExport = (blob: Blob, editedDuration: number, editedTitle: string) => {
+    setVideoBlob(blob);
+    setVideoUrl(URL.createObjectURL(blob));
+    setVideoMimeType(blob.type || "video/webm");
+    setNoteTitle(editedTitle);
+    setDuration(Math.round(editedDuration));
+    durationRef.current = Math.round(editedDuration);
+    setCaptureMode("preview");
+    setEditorSource(null);
+  };
+
   const formatDuration = (s: number) =>
     `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
   return (
     <div className="mobile-page p-6 max-w-4xl mx-auto space-y-6">
+      {editorSource && (
+        <LiteVideoEditor source={editorSource} onClose={() => setEditorSource(null)} onExport={handleEditorExport} />
+      )}
+
       {/* Header */}
       <div className="animate-slide-up">
         <h1 className="text-2xl font-bold font-serif">Video Notes</h1>
@@ -325,7 +633,7 @@ export default function VideoNotes() {
               placeholder="Give this video a title..."
             />
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <Button
               onClick={handleUpload}
               disabled={uploading || videoCount >= MAX_VIDEOS}
@@ -333,6 +641,9 @@ export default function VideoNotes() {
             >
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               {uploading ? "Uploading..." : "Save Video Note"}
+            </Button>
+            <Button variant="outline" onClick={() => videoUrl && setEditorSource({ url: videoUrl, title: noteTitle, duration })} className="gap-2">
+              <Scissors className="w-4 h-4" /> Edit
             </Button>
             <Button variant="outline" onClick={resetCapture} className="gap-2">
               <Trash2 className="w-4 h-4" /> Discard
@@ -393,6 +704,14 @@ export default function VideoNotes() {
                       {expandedVideoId === note.id
                         ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
                         : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+                    </button>
+                    {/* Edit */}
+                    <button
+                      onClick={() => setEditorSource({ url: note.s3Url, title: note.title, duration: note.duration })}
+                      className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
+                      title="Open lite video editor"
+                    >
+                      <Scissors className="w-3.5 h-3.5 text-muted-foreground" />
                     </button>
                     {/* Transcribe */}
                     {!note.transcript && (
