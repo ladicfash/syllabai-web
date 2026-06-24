@@ -11,11 +11,12 @@ import {
   Brain, FileText, GitBranch, Clock3, Workflow, Sparkles,
   Volume2, VolumeX, Loader2, RefreshCw, Copy, CheckCheck,
   ChevronLeft, ChevronRight, RotateCcw, BookOpen, Zap,
-  BookmarkPlus, FolderOpen
+  BookmarkPlus, FolderOpen, MessageCircle, ClipboardList
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Streamdown } from "streamdown";
 import { cn } from "@/lib/utils";
+import { AIChatBox, type Message } from "@/components/AIChatBox";
 
 declare global {
   interface Window { mermaid: any; }
@@ -60,12 +61,22 @@ function MermaidDiagram({ code, className }: { code: string; className?: string 
 }
 
 // ── Flashcard Flip ────────────────────────────────────────────────────────
-function FlashcardView({ cards, deckId }: { cards: any[]; deckId: number }) {
+function FlashcardView({ cards, deckId, difficulty = "intermediate" }: { cards: any[]; deckId: number; difficulty?: "beginner" | "intermediate" | "advanced" }) {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [known, setKnown] = useState<Set<number>>(new Set());
   const [needsWork, setNeedsWork] = useState<Set<number>>(new Set());
+  const [regeneratingId, setRegeneratingId] = useState<number | null>(null);
+  const utils = trpc.useUtils();
   const saveResult = trpc.decks.saveQuizResult.useMutation();
+  const regenerateCard = trpc.decks.regenerateCard.useMutation({
+    onSuccess: async () => {
+      await utils.decks.cards.invalidate({ deckId });
+      toast.success("Card regenerated");
+    },
+    onError: (err) => toast.error(err.message),
+    onSettled: () => setRegeneratingId(null),
+  });
 
   const card = cards[index];
   const progress = ((known.size + needsWork.size) / cards.length) * 100;
@@ -96,6 +107,11 @@ function FlashcardView({ cards, deckId }: { cards: any[]; deckId: number }) {
       scorePercent: score,
     });
     toast.success(`Session complete! Score: ${score}%`);
+  };
+
+  const handleRegenerate = (feedback: string) => {
+    setRegeneratingId(card.id);
+    regenerateCard.mutate({ cardId: card.id, feedback, difficulty });
   };
 
   if (!card) return null;
@@ -129,6 +145,13 @@ function FlashcardView({ cards, deckId }: { cards: any[]; deckId: number }) {
           <div className="flip-card-back study-card flex flex-col items-center justify-center p-8 text-center bg-primary/5 border-primary/20">
             <Badge className="mb-4 text-xs">Answer</Badge>
             <p className="text-base leading-relaxed">{card.answer}</p>
+            <div className="mt-5 flex flex-wrap justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" disabled={regeneratingId === card.id} onClick={() => handleRegenerate("Make this card clearer and more precise.")}>
+                {regeneratingId === card.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Regenerate
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs" disabled={regeneratingId === card.id} onClick={() => handleRegenerate("This card is too easy. Make it more challenging.")}>Too easy</Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs" disabled={regeneratingId === card.id} onClick={() => handleRegenerate("This card is too vague. Make it more specific.")}>Too vague</Button>
+            </div>
           </div>
         </div>
       </div>
@@ -201,10 +224,16 @@ export default function StudyTools() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const preselectedDocId = params.get("doc") ? parseInt(params.get("doc")!) : undefined;
+  const preselectedTab = params.get("tab") || "flashcards";
 
   const [selectedDocId, setSelectedDocId] = useState<number | undefined>(preselectedDocId);
-  const [activeTab, setActiveTab] = useState("flashcards");
+  const [selectedDocIds, setSelectedDocIds] = useState<number[]>(preselectedDocId ? [preselectedDocId] : []);
+  const [difficulty, setDifficulty] = useState<"beginner" | "intermediate" | "advanced">("intermediate");
+  const [cardStyle, setCardStyle] = useState<"recall" | "application" | "exam">("application");
+  const [cardCount, setCardCount] = useState(12);
+  const [activeTab, setActiveTab] = useState(preselectedTab);
   const [copied, setCopied] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Message[]>([]);
 
   const { data: docs } = trpc.documents.list.useQuery();
   const { data: decks, refetch: refetchDecks } = trpc.decks.list.useQuery();
@@ -222,12 +251,15 @@ export default function StudyTools() {
   const timelineMut = trpc.ai.generateTimeline.useMutation();
   const flowchartMut = trpc.ai.generateFlowchart.useMutation();
   const keyPointsMut = trpc.ai.generateKeyPoints.useMutation();
+  const studyPlanMut = trpc.ai.generateStudyPlan.useMutation();
+  const chatMut = trpc.ai.chatWithDocuments.useMutation();
 
   const [cornellContent, setCornellContent] = useState("");
   const [mindMapCode, setMindMapCode] = useState("");
   const [timelineCode, setTimelineCode] = useState("");
   const [flowchartCode, setFlowchartCode] = useState("");
   const [keyPointsContent, setKeyPointsContent] = useState("");
+  const [studyPlanContent, setStudyPlanContent] = useState("");
 
   // Save to Notes
   const { data: folders = [] } = trpc.folders.list.useQuery();
@@ -250,9 +282,21 @@ export default function StudyTools() {
   };
 
   const getDocText = () => selectedDoc?.extractedText ?? "";
+  const activeDocumentIds = selectedDocIds.length > 0 ? selectedDocIds : selectedDocId ? [selectedDocId] : [];
+  const hasSelectedText = activeDocumentIds.some((id) => docs?.find((d) => d.id === id)?.extractedText);
+
+  const toggleDocument = (id: number) => {
+    setSelectedDocIds((prev) => prev.includes(id) ? prev.filter((docId) => docId !== id) : [...prev, id]);
+    setSelectedDocId(id);
+  };
 
   const runAI = async (tab: string) => {
-    if (!selectedDocId || !getDocText()) {
+    if ((tab === "flashcards" || tab === "studyplan") && activeDocumentIds.length > 0) {
+      if (!hasSelectedText) {
+        toast.error("Please select at least one document with extracted text");
+        return;
+      }
+    } else if (!selectedDocId || !getDocText()) {
       toast.error("Please select a document with extracted text first");
       return;
     }
@@ -260,28 +304,32 @@ export default function StudyTools() {
     try {
       switch (tab) {
         case "flashcards":
-          await flashcardsMut.mutateAsync({ documentId: selectedDocId, text });
+          await flashcardsMut.mutateAsync({ documentIds: activeDocumentIds, difficulty, style: cardStyle, count: cardCount });
           toast.success("Flashcards generated!");
           break;
         case "cornell":
-          const cn = await cornellMut.mutateAsync({ documentId: selectedDocId, text });
+          const cn = await cornellMut.mutateAsync({ documentId: selectedDocId!, text });
           setCornellContent(cn.content);
           break;
         case "mindmap":
-          const mm = await mindMapMut.mutateAsync({ documentId: selectedDocId, text });
+          const mm = await mindMapMut.mutateAsync({ documentId: selectedDocId!, text });
           setMindMapCode(mm.content);
           break;
         case "timeline":
-          const tl = await timelineMut.mutateAsync({ documentId: selectedDocId, text });
+          const tl = await timelineMut.mutateAsync({ documentId: selectedDocId!, text });
           setTimelineCode(tl.content);
           break;
         case "flowchart":
-          const fc = await flowchartMut.mutateAsync({ documentId: selectedDocId, text });
+          const fc = await flowchartMut.mutateAsync({ documentId: selectedDocId!, text });
           setFlowchartCode(fc.content);
           break;
         case "keypoints":
-          const kp = await keyPointsMut.mutateAsync({ documentId: selectedDocId, text });
+          const kp = await keyPointsMut.mutateAsync({ documentId: selectedDocId!, text });
           setKeyPointsContent(kp.content);
+          break;
+        case "studyplan":
+          const sp = await studyPlanMut.mutateAsync({ documentIds: activeDocumentIds });
+          setStudyPlanContent(sp.content);
           break;
       }
     } catch (err: any) {
@@ -295,6 +343,21 @@ export default function StudyTools() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleChatSend = async (content: string) => {
+    if (activeDocumentIds.length === 0 || !hasSelectedText) {
+      toast.error("Select at least one document with extracted text first");
+      return;
+    }
+    const nextMessages: Message[] = [...chatMessages, { role: "user", content }];
+    setChatMessages(nextMessages);
+    try {
+      const res = await chatMut.mutateAsync({ documentIds: activeDocumentIds.slice(0, 6), messages: nextMessages.filter((m) => m.role !== "system") as any });
+      setChatMessages([...nextMessages, { role: "assistant", content: res.response }]);
+    } catch (err: any) {
+      toast.error(err.message ?? "Chat failed");
+    }
+  };
+
   const isLoading = (tab: string) => ({
     flashcards: flashcardsMut.isPending,
     cornell: cornellMut.isPending,
@@ -302,6 +365,8 @@ export default function StudyTools() {
     timeline: timelineMut.isPending,
     flowchart: flowchartMut.isPending,
     keypoints: keyPointsMut.isPending,
+    studyplan: studyPlanMut.isPending,
+    chat: chatMut.isPending,
   }[tab] ?? false);
 
   const tabs = [
@@ -311,6 +376,8 @@ export default function StudyTools() {
     { id: "timeline", label: "Timeline", icon: Clock3 },
     { id: "flowchart", label: "Flowchart", icon: Workflow },
     { id: "keypoints", label: "Key Points", icon: Sparkles },
+    { id: "studyplan", label: "Study Plan", icon: ClipboardList },
+    { id: "chat", label: "Doc Chat", icon: MessageCircle },
   ];
 
   return (
@@ -330,7 +397,11 @@ export default function StudyTools() {
           </div>
           <Select
             value={selectedDocId?.toString() ?? ""}
-            onValueChange={(v) => setSelectedDocId(parseInt(v))}
+            onValueChange={(v) => {
+              const id = parseInt(v);
+              setSelectedDocId(id);
+              setSelectedDocIds((prev) => prev.includes(id) ? prev : [id]);
+            }}
           >
             <SelectTrigger className="w-72">
               <SelectValue placeholder="Select a document..." />
@@ -349,11 +420,28 @@ export default function StudyTools() {
             </Badge>
           )}
         </div>
+        <div className="mt-4 border-t pt-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+            <div>
+              <p className="text-sm font-medium">Cross-document mode</p>
+              <p className="text-xs text-muted-foreground">Select multiple docs for combined flashcards, study plans, and document chat.</p>
+            </div>
+            <Badge variant="outline">{activeDocumentIds.length} selected</Badge>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-y-auto pr-1">
+            {docs?.map((doc) => (
+              <label key={doc.id} className={cn("flex items-center gap-2 rounded-lg border p-2 text-sm cursor-pointer transition-colors", selectedDocIds.includes(doc.id) ? "border-primary bg-primary/5" : "hover:bg-muted/50")}>
+                <input type="checkbox" checked={selectedDocIds.includes(doc.id)} onChange={() => toggleDocument(doc.id)} />
+                <span className="truncate" title={doc.originalName}>{doc.originalName}</span>
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-6 h-auto gap-1 bg-muted p-1">
+        <TabsList className="grid grid-cols-4 sm:grid-cols-8 h-auto gap-1 bg-muted p-1">
           {tabs.map((tab) => (
             <TabsTrigger key={tab.id} value={tab.id} className="gap-1.5 text-xs py-2">
               <tab.icon className="w-3.5 h-3.5" />
@@ -364,18 +452,42 @@ export default function StudyTools() {
 
         {/* ── Flashcards Tab ── */}
         <TabsContent value="flashcards" className="mt-6 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <h2 className="font-semibold">AI Flashcard Generator</h2>
-              <p className="text-sm text-muted-foreground">Generates 10-15 study-optimized Q&A pairs</p>
+              <p className="text-sm text-muted-foreground">Difficulty-aware cards from one or multiple documents</p>
             </div>
-            <Button onClick={() => runAI("flashcards")} disabled={!selectedDocId || isLoading("flashcards")} className="gap-2">
-              {isLoading("flashcards") ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              Generate
-            </Button>
+            <div className="flex flex-wrap gap-2 items-center justify-end">
+              <Select value={difficulty} onValueChange={(v: any) => setDifficulty(v)}>
+                <SelectTrigger className="w-36 h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="beginner">Beginner</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={cardStyle} onValueChange={(v: any) => setCardStyle(v)}>
+                <SelectTrigger className="w-36 h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recall">Recall</SelectItem>
+                  <SelectItem value="application">Application</SelectItem>
+                  <SelectItem value="exam">Exam-style</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={String(cardCount)} onValueChange={(v) => setCardCount(parseInt(v))}>
+                <SelectTrigger className="w-24 h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[8, 12, 16, 20, 30].map((n) => <SelectItem key={n} value={String(n)}>{n} cards</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button onClick={() => runAI("flashcards")} disabled={activeDocumentIds.length === 0 || isLoading("flashcards")} className="gap-2">
+                {isLoading("flashcards") ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                Generate
+              </Button>
+            </div>
           </div>
           {deckCards && deckCards.length > 0 ? (
-            <FlashcardView cards={deckCards} deckId={latestDeck!.id} />
+            <FlashcardView cards={deckCards} deckId={latestDeck!.id} difficulty={difficulty} />
           ) : (
             <div className="text-center py-16 study-card">
               <Brain className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
@@ -569,6 +681,58 @@ export default function StudyTools() {
               <p className="text-muted-foreground">Extract the most important points from your document</p>
             </div>
           )}
+        </TabsContent>
+
+        {/* ── Study Plan Tab ── */}
+        <TabsContent value="studyplan" className="mt-6 space-y-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="font-semibold">Unified Study Plan</h2>
+              <p className="text-sm text-muted-foreground">Combines selected documents into one prioritized plan</p>
+            </div>
+            <div className="flex gap-2">
+              {studyPlanContent && (
+                <Button variant="outline" size="sm" onClick={() => openSaveDialog("Unified Study Plan", studyPlanContent)} className="gap-1.5">
+                  <BookmarkPlus className="w-3.5 h-3.5" /> Save to Notes
+                </Button>
+              )}
+              <Button onClick={() => runAI("studyplan")} disabled={activeDocumentIds.length === 0 || isLoading("studyplan")} className="gap-2">
+                {isLoading("studyplan") ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                Generate Plan
+              </Button>
+            </div>
+          </div>
+          {studyPlanMut.isPending ? (
+            <div className="space-y-3">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-6 w-full" />)}</div>
+          ) : studyPlanContent ? (
+            <div className="study-card p-6 animate-fade-in"><div className="streamdown-content"><Streamdown>{studyPlanContent}</Streamdown></div></div>
+          ) : (
+            <div className="text-center py-16 study-card">
+              <ClipboardList className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground">Select one or more documents and generate a unified study plan</p>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* ── Document Chat Tab ── */}
+        <TabsContent value="chat" className="mt-6 space-y-4">
+          <div>
+            <h2 className="font-semibold">Chat with your documents</h2>
+            <p className="text-sm text-muted-foreground">Ask questions grounded only in the selected document text.</p>
+          </div>
+          <AIChatBox
+            messages={chatMessages}
+            onSendMessage={handleChatSend}
+            isLoading={chatMut.isPending}
+            height={560}
+            emptyStateMessage={activeDocumentIds.length > 1 ? `Ask across ${activeDocumentIds.length} selected documents` : "Ask anything about the selected document"}
+            suggestedPrompts={[
+              "Summarize the selected material",
+              "What are the most testable concepts?",
+              "Explain the hardest section in simple terms",
+              "Make 5 practice questions from this",
+            ]}
+          />
         </TabsContent>
       </Tabs>
 

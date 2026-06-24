@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import {
   Upload, FileText, Image, File, X, Eye, Trash2, Brain, Search,
   Download, ChevronRight, AlertCircle, CheckCircle2, Loader2,
-  FolderOpen, Plus, RefreshCw, ArrowRightLeft
+  FolderOpen, Plus, RefreshCw, ArrowRightLeft, MessageCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow, format } from "date-fns";
@@ -282,6 +282,16 @@ export default function Library() {
                     onClick={() => navigate(`/study-tools?doc=${doc.id}`)}
                   >
                     <Brain className="w-3.5 h-3.5" /> Study
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 w-8 p-0"
+                    title="Chat with document"
+                    disabled={!doc.extractedText}
+                    onClick={() => navigate(`/study-tools?doc=${doc.id}&tab=chat`)}
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
                   </Button>
                   {doc.mimeType.startsWith("image/") && (
                     <Button

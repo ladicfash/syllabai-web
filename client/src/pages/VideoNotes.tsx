@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   Video, Square, Loader2, Trash2,
-  Upload, Camera, RefreshCw, FileVideo, AlertTriangle, Brain, ChevronDown, ChevronUp,
+  Upload, Camera, RefreshCw, FileVideo, AlertTriangle, Brain, ChevronDown, ChevronUp, FileText, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { Streamdown } from "streamdown";
 
 const MAX_VIDEOS = 20;
 const MAX_FILE_SIZE_MB = 200;
@@ -26,6 +27,7 @@ export default function VideoNotes() {
   const [convertingFlash, setConvertingFlash] = useState<number | null>(null);
   const [expandedVideoId, setExpandedVideoId] = useState<number | null>(null);
   const [noteTitle, setNoteTitle] = useState("Video Note");
+  const [aiOutputByNote, setAiOutputByNote] = useState<Record<number, { title: string; content: string }>>({});
 
   const videoPreviewRef = useRef<HTMLVideoElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -63,6 +65,13 @@ export default function VideoNotes() {
   const convertToFlashMut = trpc.ai.generateFlashcards.useMutation({
     onSuccess: () => { utils.decks.list.invalidate(); toast.success("Flashcards created!"); },
     onError: (err) => toast.error("Flashcard creation failed: " + err.message),
+  });
+  const summarizeMut = trpc.ai.summarizeText.useMutation({
+    onSuccess: (data, vars: any) => {
+      const labels = { summary: "Summary", cornell: "Cornell Notes", key_points: "Key Points" } as const;
+      setAiOutputByNote((prev) => ({ ...prev, [vars.noteId]: { title: labels[vars.mode as keyof typeof labels], content: data.content } }));
+    },
+    onError: (err) => toast.error("AI generation failed: " + err.message),
   });
 
   const { data: videoNotes, isLoading: notesLoading } = trpc.videoNotes.list.useQuery();
@@ -182,10 +191,15 @@ export default function VideoNotes() {
     if (!note.transcript) return;
     setConvertingFlash(note.id);
     try {
-      await convertToFlashMut.mutateAsync({ documentId: 0, text: note.transcript.slice(0, 7500) });
+      await convertToFlashMut.mutateAsync({ documentId: 0, text: note.transcript.slice(0, 7500), difficulty: "intermediate", style: "application" });
     } finally {
       setConvertingFlash(null);
     }
+  };
+
+  const handleTranscriptAI = (note: { id: number; transcript: string | null }, mode: "summary" | "cornell" | "key_points") => {
+    if (!note.transcript) return;
+    summarizeMut.mutate({ text: note.transcript.slice(0, 12000), mode, noteId: note.id } as any);
   };
 
   const formatDuration = (s: number) =>
@@ -390,18 +404,26 @@ export default function VideoNotes() {
                           : <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />}
                       </button>
                     )}
-                    {/* Convert to flashcards */}
+                    {/* Transcript AI actions */}
                     {note.transcript && (
-                      <button
-                        onClick={() => handleConvertToFlash(note)}
-                        disabled={convertingFlash === note.id}
-                        className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
-                        title="Convert transcript to flashcards"
-                      >
-                        {convertingFlash === note.id
-                          ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
-                          : <Brain className="w-3.5 h-3.5 text-muted-foreground" />}
-                      </button>
+                      <>
+                        <button onClick={() => handleTranscriptAI(note, "summary")} disabled={summarizeMut.isPending} className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors" title="Summarize transcript">
+                          {summarizeMut.isPending ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />}
+                        </button>
+                        <button onClick={() => handleTranscriptAI(note, "cornell")} disabled={summarizeMut.isPending} className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors" title="Create Cornell notes">
+                          <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
+                        <button
+                          onClick={() => handleConvertToFlash(note)}
+                          disabled={convertingFlash === note.id}
+                          className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
+                          title="Convert transcript to flashcards"
+                        >
+                          {convertingFlash === note.id
+                            ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+                            : <Brain className="w-3.5 h-3.5 text-muted-foreground" />}
+                        </button>
+                      </>
                     )}
                     {/* Delete */}
                     <button
@@ -428,6 +450,12 @@ export default function VideoNotes() {
                       className="w-full max-h-80 object-contain"
                       onError={() => toast.error("Could not load video. The file may have expired or been removed.")}
                     />
+                  </div>
+                )}
+                {aiOutputByNote[note.id] && (
+                  <div className="border-t border-border p-4 bg-muted/20">
+                    <h4 className="font-semibold text-sm mb-2">{aiOutputByNote[note.id].title}</h4>
+                    <div className="streamdown-content text-sm"><Streamdown>{aiOutputByNote[note.id].content}</Streamdown></div>
                   </div>
                 )}
               </div>

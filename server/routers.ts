@@ -12,7 +12,7 @@ import {
   createDocument, getDocumentsByUser, getDocumentById, deleteDocument, updateDocumentText,
   createSourceItem, getSourceItemsByUser,
   createDeck, getDecksByUser, getDeckById,
-  createFlashcards, getFlashcardsByDeck, updateFlashcardSRS, getDueFlashcards,
+  createFlashcards, getFlashcardsByDeck, getFlashcardById, updateFlashcardContent, updateFlashcardSRS, getDueFlashcards,
   saveQuizSession, getQuizHistory,
   createNote, getNotesByUser, updateNote, deleteNote, getNotesByIds,
   createTask, getTasksByUser, updateTask, deleteTask,
@@ -48,6 +48,44 @@ async function callAI(systemPrompt: string, userContent: string, jsonSchema?: ob
   const res = await invokeLLM(opts);
   const content = res.choices[0].message.content;
 return (typeof content === 'string' ? content.trim() : JSON.stringify(content)) ?? "";
+}
+
+type FlashcardDifficulty = "beginner" | "intermediate" | "advanced";
+type FlashcardStyle = "recall" | "application" | "exam";
+
+function flashcardInstruction(difficulty: FlashcardDifficulty = "intermediate", style: FlashcardStyle = "application", count = 12) {
+  const difficultyGuide: Record<FlashcardDifficulty, string> = {
+    beginner: "Beginner: use clear definitions, direct recall, simple language, and foundational concepts.",
+    intermediate: "Intermediate: mix recall with explanation, connections between ideas, and common examples.",
+    advanced: "Advanced: emphasize application, edge cases, comparisons, mechanisms, clinical/legal/research reasoning where relevant, and higher-order analysis.",
+  };
+  const styleGuide: Record<FlashcardStyle, string> = {
+    recall: "Mostly concise recall Q/A cards.",
+    application: "Mostly application and understanding cards that test why/how, not just facts.",
+    exam: "Mostly exam-style prompts with concise answer explanations. Use original wording only.",
+  };
+  return `Generate exactly ${count} high-quality flashcards. ${difficultyGuide[difficulty]} ${styleGuide[style]} Return JSON only.`;
+}
+
+async function getCombinedDocumentText(userId: number, documentIds: number[], maxChars = 12000) {
+  const uniqueIds = Array.from(new Set(documentIds)).slice(0, 8);
+  const docs = (await Promise.all(uniqueIds.map((id) => getDocumentById(id, userId)))).filter(Boolean) as any[];
+  if (docs.length === 0) throw new Error("No readable documents selected");
+  const chunks: string[] = [];
+  let used = 0;
+  for (const doc of docs) {
+    const raw = doc.extractedText ?? "";
+    if (!raw.trim()) continue;
+    const header = `\n\n[Document: ${doc.originalName}]\n`;
+    const remaining = maxChars - used - header.length;
+    if (remaining <= 0) break;
+    const slice = raw.slice(0, remaining);
+    chunks.push(header + slice);
+    used += header.length + slice.length;
+  }
+  const text = chunks.join("\n").trim();
+  if (!text) throw new Error("Selected documents do not have extracted text");
+  return { text, docs };
 }
 
 function parseFlashcards(text: string): { question: string; answer: string }[] {
@@ -419,12 +457,26 @@ export const appRouter = router({
   // ── AI Tools ─────────────────────────────────────────────────────────────
   ai: router({
     generateFlashcards: protectedProcedure.input(z.object({
-      documentId: z.number(),
-      text: z.string().max(8000),
+      documentId: z.number().optional(),
+      documentIds: z.array(z.number()).max(8).optional(),
+      text: z.string().max(12000).optional(),
+      difficulty: z.enum(["beginner", "intermediate", "advanced"]).default("intermediate"),
+      style: z.enum(["recall", "application", "exam"]).default("application"),
+      count: z.number().min(5).max(30).default(12),
     })).mutation(async ({ ctx, input }) => {
+      let text = input.text;
+      let docId = input.documentId && input.documentId > 0 ? input.documentId : undefined;
+      let deckTitle = "Generated Flashcards";
+      if (!text && input.documentIds?.length) {
+        const combined = await getCombinedDocumentText(ctx.user.id, input.documentIds, 12000);
+        text = combined.text;
+        docId = combined.docs.length === 1 ? combined.docs[0].id : undefined;
+        deckTitle = combined.docs.length > 1 ? `Combined Flashcards (${combined.docs.length} docs)` : `Flashcards — ${combined.docs[0].originalName}`;
+      }
+      if (!text?.trim()) throw new Error("No source text provided for flashcard generation");
       const raw = await callAI(
-        "You are an expert study assistant. Generate 10-15 high-quality flashcards from the provided text. Return a JSON array of objects with 'question' and 'answer' fields. Questions should test understanding, not just recall. Answers should be concise but complete.",
-        input.text,
+        `You are an expert study assistant. ${flashcardInstruction(input.difficulty, input.style, input.count)} Cards should test understanding and be accurate to the source. Answers should be concise but complete.`,
+        text.slice(0, 12000),
         {
           type: "object",
           properties: {
@@ -446,10 +498,8 @@ export const appRouter = router({
         }
       );
       const parsed = JSON.parse(raw);
-      const cards = parsed.cards as { question: string; answer: string }[];
-      // Create deck and save cards (documentId=0 means voice/video source, use null)
-      const docId = input.documentId > 0 ? input.documentId : undefined;
-      await createDeck(ctx.user.id, "Generated Flashcards", docId);
+      const cards = (parsed.cards as { question: string; answer: string }[]).slice(0, input.count);
+      await createDeck(ctx.user.id, deckTitle, docId);
       const decks = await getDecksByUser(ctx.user.id);
       const deck = decks[0];
       await createFlashcards(cards.map((c) => ({ deckId: deck.id, userId: ctx.user.id, ...c })));
@@ -466,7 +516,7 @@ export const appRouter = router({
         "You are an expert study assistant. Create detailed Cornell-style notes from the provided text. Format as markdown with these sections: ## Cue Column (key terms/questions as a bullet list), ## Notes Column (organized information, definitions, examples), ## Summary (2-3 sentence synthesis). Make it comprehensive and study-ready.",
         input.text
       );
-      await saveAiOutput(ctx.user.id, input.documentId, "cornell_notes", content);
+      if (input.documentId > 0) await saveAiOutput(ctx.user.id, input.documentId, "cornell_notes", content);
       return { content };
     }),
 
@@ -582,19 +632,61 @@ flowchart TD
         "You are an expert study assistant. Extract the 7-10 most important key points from the provided text. Format as a numbered markdown list. Each point should be a complete, standalone insight that captures essential knowledge. Start each point with a bold concept name.",
         input.text
       );
-      await saveAiOutput(ctx.user.id, input.documentId, "key_points", content);
+      if (input.documentId > 0) await saveAiOutput(ctx.user.id, input.documentId, "key_points", content);
       return { content };
     }),
 
-    generateStudyPlan: protectedProcedure.input(z.object({
-      documentId: z.number(),
-      text: z.string().max(8000),
+    summarizeText: protectedProcedure.input(z.object({
+      text: z.string().min(20).max(12000),
+      mode: z.enum(["summary", "cornell", "key_points"]).default("summary"),
+    })).mutation(async ({ input }) => {
+      const prompts = {
+        summary: "Create a clear study summary from this transcript/content. Include a short overview, major concepts, and what to review next. Format in markdown.",
+        cornell: "Create Cornell-style notes from this transcript/content with Cue Column, Notes Column, and Summary sections. Format in markdown.",
+        key_points: "Extract the most important key points from this transcript/content as a numbered markdown list with bold concept names.",
+      } as const;
+      const content = await callAI("You are an expert study assistant for voice/video lecture transcripts.", `${prompts[input.mode]}\n\n${input.text.slice(0, 12000)}`);
+      return { content };
+    }),
+
+    chatWithDocuments: protectedProcedure.input(z.object({
+      documentIds: z.array(z.number()).min(1).max(6),
+      messages: z.array(z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().max(3000),
+      })).min(1).max(12),
     })).mutation(async ({ ctx, input }) => {
+      const { text, docs } = await getCombinedDocumentText(ctx.user.id, input.documentIds, 18000);
+      const messages = [
+        {
+          role: "system",
+          content: `You are syllabAI's document Q&A assistant. Answer using ONLY the provided document text. If the answer is not supported by the documents, say you cannot find it in the selected documents. Cite the document name and include short supporting quotes when helpful. Be concise, accurate, and study-focused.\n\nSelected documents: ${docs.map((d: any) => d.originalName).join(", ")}\n\n${text}`,
+        },
+        ...input.messages,
+      ];
+      const res = await invokeLLM({ messages: messages as any });
+      const content = res.choices[0].message.content;
+      return { response: (typeof content === "string" ? content.trim() : JSON.stringify(content)) ?? "" };
+    }),
+
+    generateStudyPlan: protectedProcedure.input(z.object({
+      documentId: z.number().optional(),
+      documentIds: z.array(z.number()).max(8).optional(),
+      text: z.string().max(12000).optional(),
+    })).mutation(async ({ ctx, input }) => {
+      let text = input.text;
+      let docId = input.documentId && input.documentId > 0 ? input.documentId : undefined;
+      if (!text && input.documentIds?.length) {
+        const combined = await getCombinedDocumentText(ctx.user.id, input.documentIds, 12000);
+        text = combined.text;
+        docId = combined.docs.length === 1 ? combined.docs[0].id : undefined;
+      }
+      if (!text?.trim()) throw new Error("No source text provided for study plan generation");
       const content = await callAI(
-        "You are an expert academic advisor. Analyze the provided text (likely a syllabus or course document) and create a detailed study plan. Include: detected deadlines and assignments, a week-by-week study schedule, recommended resources, and practice questions. Format as structured markdown.",
-        input.text
+        "You are an expert academic advisor. Analyze the provided text and create a detailed unified study plan. Include detected deadlines/assignments if present, a week-by-week or day-by-day schedule, recommended study actions, priority topics, and practice questions. If multiple documents are provided, synthesize them into one coherent plan. Format as structured markdown.",
+        text.slice(0, 12000)
       );
-      await saveAiOutput(ctx.user.id, input.documentId, "study_plan", content);
+      if (docId) await saveAiOutput(ctx.user.id, docId, "study_plan", content);
       return { content };
     }),
 
@@ -741,6 +833,31 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
     cards: protectedProcedure.input(z.object({ deckId: z.number() })).query(({ ctx, input }) =>
       getFlashcardsByDeck(input.deckId, ctx.user.id)
     ),
+
+    regenerateCard: protectedProcedure.input(z.object({
+      cardId: z.number(),
+      feedback: z.string().max(1000).optional(),
+      difficulty: z.enum(["beginner", "intermediate", "advanced"]).default("intermediate"),
+    })).mutation(async ({ ctx, input }) => {
+      const card = await getFlashcardById(input.cardId, ctx.user.id);
+      if (!card) throw new Error("Flashcard not found");
+      const raw = await callAI(
+        `You rewrite flawed flashcards. Create exactly one improved flashcard at ${input.difficulty} difficulty. Keep it accurate, concise, and study-focused. Return JSON only.`,
+        `Original question: ${card.question}\nOriginal answer: ${card.answer}\nUser feedback: ${input.feedback || "Improve clarity and educational value."}`,
+        {
+          type: "object",
+          properties: {
+            question: { type: "string" },
+            answer: { type: "string" },
+          },
+          required: ["question", "answer"],
+          additionalProperties: false,
+        }
+      );
+      const parsed = JSON.parse(raw) as { question: string; answer: string };
+      await updateFlashcardContent(card.id, ctx.user.id, parsed.question, parsed.answer);
+      return parsed;
+    }),
 
     dueCards: protectedProcedure.query(({ ctx }) => getDueFlashcards(ctx.user.id)),
 

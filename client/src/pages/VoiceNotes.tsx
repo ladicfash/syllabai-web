@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   Mic, Square, Play, Pause, Brain, Loader2, Trash2,
-  FileAudio, Save, RefreshCw,
+  FileAudio, Save, RefreshCw, FileText, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { Streamdown } from "streamdown";
 
 type RecordingState = "idle" | "recording" | "stopped" | "processing";
 
@@ -22,6 +23,7 @@ export default function VoiceNotes() {
   const [savingNote, setSavingNote] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [noteTitle, setNoteTitle] = useState("Voice Note");
+  const [aiOutput, setAiOutput] = useState<{ title: string; content: string } | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -46,6 +48,13 @@ export default function VoiceNotes() {
   });
   const convertToFlashMut = trpc.ai.generateFlashcards.useMutation({
     onSuccess: () => { utils.decks.list.invalidate(); toast.success("Flashcards created from voice note!"); },
+  });
+  const summarizeMut = trpc.ai.summarizeText.useMutation({
+    onSuccess: (data, vars) => {
+      const labels = { summary: "Summary", cornell: "Cornell Notes", key_points: "Key Points" } as const;
+      setAiOutput({ title: labels[vars.mode as keyof typeof labels], content: data.content });
+    },
+    onError: (err) => toast.error("AI generation failed: " + err.message),
   });
 
   const { data: savedNotes, isLoading: notesLoading } = trpc.voice.listNotes.useQuery();
@@ -145,10 +154,15 @@ export default function VoiceNotes() {
     if (!transcript.trim()) return;
     setConvertingToFlash(true);
     try {
-      await convertToFlashMut.mutateAsync({ documentId: 0, text: transcript.slice(0, 7500) });
+      await convertToFlashMut.mutateAsync({ documentId: 0, text: transcript.slice(0, 7500), difficulty: "intermediate", style: "application" });
     } finally {
       setConvertingToFlash(false);
     }
+  };
+
+  const runTranscriptAI = (mode: "summary" | "cornell" | "key_points") => {
+    if (!transcript.trim()) return;
+    summarizeMut.mutate({ text: transcript.slice(0, 12000), mode });
   };
 
   const formatDuration = (s: number) =>
@@ -288,7 +302,16 @@ export default function VoiceNotes() {
             <h3 className="font-semibold flex items-center gap-2">
               <FileAudio className="w-4 h-4 text-primary" /> Transcript
             </h3>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
+              <Button size="sm" variant="outline" onClick={() => runTranscriptAI("summary")} disabled={summarizeMut.isPending} className="gap-1.5">
+                {summarizeMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Summary
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => runTranscriptAI("cornell")} disabled={summarizeMut.isPending} className="gap-1.5">
+                <FileText className="w-3.5 h-3.5" /> Cornell
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => runTranscriptAI("key_points")} disabled={summarizeMut.isPending} className="gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" /> Key Points
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
@@ -297,13 +320,19 @@ export default function VoiceNotes() {
                 className="gap-1.5"
               >
                 {convertingToFlash ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
-                Convert to Flashcards
+                Flashcards
               </Button>
             </div>
           </div>
           <div className="bg-muted/40 rounded-xl p-4">
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{transcript}</p>
           </div>
+          {aiOutput && (
+            <div className="rounded-xl border bg-card p-4 animate-fade-in">
+              <h4 className="font-semibold text-sm mb-2">{aiOutput.title}</h4>
+              <div className="streamdown-content text-sm"><Streamdown>{aiOutput.content}</Streamdown></div>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">{transcript.split(" ").length} words · Transcribed with Whisper AI</p>
           <p className="text-xs text-muted-foreground">
             Use "Save as Audio Note" above to save this recording along with its transcript.

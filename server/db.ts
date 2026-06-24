@@ -143,6 +143,19 @@ export async function getFlashcardsByDeck(deckId: number, userId: number) {
   return db.select().from(flashcards).where(and(eq(flashcards.deckId, deckId), eq(flashcards.userId, userId)));
 }
 
+export async function getFlashcardById(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(flashcards).where(and(eq(flashcards.id, id), eq(flashcards.userId, userId))).limit(1);
+  return result[0];
+}
+
+export async function updateFlashcardContent(id: number, userId: number, question: string, answer: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(flashcards).set({ question, answer }).where(and(eq(flashcards.id, id), eq(flashcards.userId, userId)));
+}
+
 export async function updateFlashcardSRS(id: number, interval: number, repetitions: number, easeFactor: number, dueDate: Date) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
