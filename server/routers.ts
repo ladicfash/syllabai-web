@@ -1551,6 +1551,70 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
       return { success: true };
     }),
   }),
+  admin: router({
+    applyMigrations: protectedProcedure.mutation(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new Error('Admin only');
+      const db = await getDb();
+      if (!db) throw new Error('Database unavailable');
+      const sql = `
+        CREATE TABLE IF NOT EXISTS \`source_items\` (
+          \`id\` int AUTO_INCREMENT NOT NULL,
+          \`userId\` int NOT NULL,
+          \`source\` varchar(64) NOT NULL,
+          \`externalId\` varchar(255) NOT NULL,
+          \`title\` text NOT NULL,
+          \`abstract\` text,
+          \`url\` text,
+          \`authorsJson\` json,
+          \`license\` varchar(255),
+          \`contentType\` varchar(64),
+          \`importedDocumentId\` int,
+          \`metadataJson\` json,
+          \`createdAt\` timestamp NOT NULL DEFAULT (now()),
+          CONSTRAINT \`source_items_id\` PRIMARY KEY(\`id\`)
+        );
+        CREATE TABLE IF NOT EXISTS \`study_activity\` (
+          \`id\` int AUTO_INCREMENT NOT NULL,
+          \`userId\` int NOT NULL,
+          \`activityType\` varchar(64) NOT NULL,
+          \`count\` int NOT NULL DEFAULT 1,
+          \`activityDate\` varchar(10) NOT NULL,
+          \`createdAt\` timestamp NOT NULL DEFAULT (now()),
+          CONSTRAINT \`study_activity_id\` PRIMARY KEY(\`id\`)
+        );
+        CREATE TABLE IF NOT EXISTS \`study_outputs\` (
+          \`id\` int AUTO_INCREMENT NOT NULL,
+          \`userId\` int NOT NULL,
+          \`title\` varchar(256) NOT NULL,
+          \`templateType\` varchar(64) NOT NULL,
+          \`documentIdsJson\` json,
+          \`sourceNamesJson\` json,
+          \`content\` text NOT NULL,
+          \`depth\` varchar(32),
+          \`examContext\` varchar(128),
+          \`createdAt\` timestamp NOT NULL DEFAULT (now()),
+          CONSTRAINT \`study_outputs_id\` PRIMARY KEY(\`id\`)
+        );
+        CREATE TABLE IF NOT EXISTS \`task_subtasks\` (
+          \`id\` int AUTO_INCREMENT NOT NULL,
+          \`taskId\` int NOT NULL,
+          \`userId\` int NOT NULL,
+          \`title\` varchar(512) NOT NULL,
+          \`isDone\` boolean NOT NULL DEFAULT false,
+          \`orderIndex\` int NOT NULL DEFAULT 0,
+          \`createdAt\` timestamp NOT NULL DEFAULT (now()),
+          \`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+          CONSTRAINT \`task_subtasks_id\` PRIMARY KEY(\`id\`)
+        );
+      `;
+      try {
+        const result = await db.execute(sql);
+        return { success: true, message: 'Migrations applied' };
+      } catch (err: any) {
+        console.error('Migration error:', err);
+        return { success: false, error: err.message };
+      }
+    }),
+  }),
 });
-
 export type AppRouter = typeof appRouter;

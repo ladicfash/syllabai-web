@@ -105,7 +105,12 @@ export async function createSourceItem(item: InsertSourceItem) {
 export async function getSourceItemsByUser(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(sourceItems).where(eq(sourceItems.userId, userId)).orderBy(desc(sourceItems.createdAt));
+  try {
+    return await db.select().from(sourceItems).where(eq(sourceItems.userId, userId)).orderBy(desc(sourceItems.createdAt));
+  } catch (err) {
+    console.warn('[DB] source_items table not ready:', err);
+    return [];
+  }
 }
 
 // ── Study Studio Outputs + Activity ────────────────────────────────────────
@@ -119,7 +124,12 @@ export async function createStudyOutput(output: InsertStudyOutput) {
 export async function getStudyOutputsByUser(userId: number, limit = 20) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(studyOutputs).where(eq(studyOutputs.userId, userId)).orderBy(desc(studyOutputs.createdAt)).limit(limit);
+  try {
+    return await db.select().from(studyOutputs).where(eq(studyOutputs.userId, userId)).orderBy(desc(studyOutputs.createdAt)).limit(limit);
+  } catch (err) {
+    console.warn('[DB] study_outputs table not ready:', err);
+    return [];
+  }
 }
 
 export async function getStudyOutputById(id: number, userId: number) {
@@ -139,10 +149,15 @@ export async function recordStudyActivity(userId: number, activityType: string, 
 export async function getStudyActivityByUser(userId: number, days = 60) {
   const db = await getDb();
   if (!db) return [];
-  const start = new Date();
-  start.setDate(start.getDate() - days);
-  const startKey = start.toISOString().slice(0, 10);
-  return db.select().from(studyActivity).where(and(eq(studyActivity.userId, userId), gte(studyActivity.activityDate, startKey))).orderBy(desc(studyActivity.activityDate));
+  try {
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    const startKey = start.toISOString().slice(0, 10);
+    return await db.select().from(studyActivity).where(and(eq(studyActivity.userId, userId), gte(studyActivity.activityDate, startKey))).orderBy(desc(studyActivity.activityDate));
+  } catch (err) {
+    console.warn('[DB] study_activity table not ready:', err);
+    return [];
+  }
 }
 
 // ── Flashcard Decks ────────────────────────────────────────────────────────
@@ -293,7 +308,12 @@ export async function deleteTask(id: number, userId: number) {
 export async function getSubtasksByUser(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(taskSubtasks).where(eq(taskSubtasks.userId, userId)).orderBy(taskSubtasks.orderIndex, taskSubtasks.createdAt);
+  try {
+    return await db.select().from(taskSubtasks).where(eq(taskSubtasks.userId, userId)).orderBy(taskSubtasks.orderIndex, taskSubtasks.createdAt);
+  } catch (err) {
+    console.warn('[DB] task_subtasks table not ready:', err);
+    return [];
+  }
 }
 
 export async function createSubtasks(items: { taskId: number; userId: number; title: string; orderIndex: number }[]) {
