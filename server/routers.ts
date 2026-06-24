@@ -32,7 +32,7 @@ import { docxToText, docxToHtml, textToDocx, imageToPdf, textToPdf } from "./con
 import { PDFParse } from "pdf-parse";
 import { sendDeadlineReminder } from "./email";
 import { sendDeadlinePushNotifications } from "./webpush";
-import { academicSourceIds, getSourceItem, makePracticePrompt, searchSources, sourceSafetyPolicy } from "./sources";
+import { academicSourceIds, getDoiOpenAccessItem, getSourceItem, listSourceCapabilities, makePracticePrompt, searchSources, sourceSafetyPolicy } from "./sources";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 async function callAI(systemPrompt: string, userContent: string, jsonSchema?: object): Promise<string> {
@@ -293,6 +293,8 @@ export const appRouter = router({
   sources: router({
     policy: protectedProcedure.query(() => sourceSafetyPolicy),
 
+    capabilities: protectedProcedure.query(() => listSourceCapabilities()),
+
     imported: protectedProcedure.query(({ ctx }) => getSourceItemsByUser(ctx.user.id)),
 
     search: protectedProcedure.input(z.object({
@@ -306,6 +308,48 @@ export const appRouter = router({
       source: z.enum(academicSourceIds),
       externalId: z.string().min(1).max(255),
     })).query(async ({ input }) => getSourceItem(input.source, input.externalId)),
+
+    doiOpenAccess: protectedProcedure.input(z.object({
+      doi: z.string().min(5).max(255),
+    })).query(async ({ input }) => getDoiOpenAccessItem(input.doi)),
+
+    importDoi: protectedProcedure.input(z.object({
+      doi: z.string().min(5).max(255),
+    })).mutation(async ({ ctx, input }) => {
+      const item = await getDoiOpenAccessItem(input.doi);
+      const safeTitle = item.title.replace(/[^a-z0-9 _.-]/gi, "").slice(0, 120) || `doi-${input.doi}`;
+      const importedText = item.importedText.slice(0, 60000);
+      const wordCount = importedText.split(/\s+/).filter(Boolean).length;
+
+      const inserted = await createDocument({
+        userId: ctx.user.id,
+        filename: `${safeTitle}.txt`,
+        originalName: `doi:${input.doi}`,
+        mimeType: "text/plain",
+        fileKey: `source://doi/${input.doi}`,
+        fileUrl: item.fullTextUrl ?? item.url ?? `https://doi.org/${input.doi}`,
+        fileSize: Buffer.byteLength(importedText, "utf8"),
+        extractedText: importedText,
+        wordCount,
+      });
+      const documentId = (inserted as any)?.insertId as number | undefined;
+
+      await createSourceItem({
+        userId: ctx.user.id,
+        source: "doi",
+        externalId: input.doi,
+        title: item.title,
+        abstract: item.abstract,
+        url: item.url,
+        authorsJson: item.authors ?? [],
+        license: item.license,
+        contentType: item.contentType,
+        importedDocumentId: documentId,
+        metadataJson: { ...item.metadata, citation: item.citation, tags: item.tags, isOpenAccess: item.isOpenAccess, fullTextUrl: item.fullTextUrl, licenseConfidence: item.licenseConfidence },
+      });
+
+      return { success: true, documentId, item };
+    }),
 
     import: protectedProcedure.input(z.object({
       source: z.enum(academicSourceIds),
@@ -340,7 +384,7 @@ export const appRouter = router({
         license: item.license,
         contentType: item.contentType,
         importedDocumentId: documentId,
-        metadataJson: { ...item.metadata, citation: item.citation, tags: item.tags, isOpenAccess: item.isOpenAccess },
+        metadataJson: { ...item.metadata, citation: item.citation, tags: item.tags, isOpenAccess: item.isOpenAccess, fullTextUrl: item.fullTextUrl, licenseConfidence: item.licenseConfidence },
       });
 
       return { success: true, documentId, item };

@@ -21,7 +21,7 @@ import {
 import { useMemo, useState, type ElementType } from "react";
 
 type Field = "all" | "medicine" | "law" | "general";
-type Source = "openalex" | "pubmed" | "europepmc" | "arxiv" | "clinicaltrials" | "courtlistener";
+type Source = "openalex" | "pubmed" | "europepmc" | "arxiv" | "clinicaltrials" | "courtlistener" | "semanticscholar" | "govinfo" | "congress";
 type StudyAidKind = "medical" | "law" | "research";
 
 type SearchResult = {
@@ -33,7 +33,9 @@ type SearchResult = {
   url?: string;
   publishedDate?: string;
   license?: string;
+  licenseConfidence?: "high" | "medium" | "low" | "unknown";
   isOpenAccess?: boolean;
+  fullTextUrl?: string;
   contentType: string;
   tags?: string[];
 };
@@ -44,8 +46,11 @@ const sourceOptions: { value: "" | Source; label: string; field?: Field }[] = [
   { value: "pubmed", label: "PubMed", field: "medicine" },
   { value: "europepmc", label: "Europe PMC", field: "medicine" },
   { value: "clinicaltrials", label: "ClinicalTrials.gov", field: "medicine" },
+  { value: "semanticscholar", label: "Semantic Scholar", field: "general" },
   { value: "arxiv", label: "arXiv", field: "general" },
   { value: "courtlistener", label: "CourtListener", field: "law" },
+  { value: "govinfo", label: "GovInfo", field: "law" },
+  { value: "congress", label: "Congress.gov", field: "law" },
 ];
 
 const fieldOptions: { value: Field; label: string; icon: ElementType }[] = [
@@ -61,8 +66,23 @@ function sourceLabel(source: string) {
 
 function sourceTone(source: string) {
   if (["pubmed", "europepmc", "clinicaltrials"].includes(source)) return "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
-  if (source === "courtlistener") return "bg-purple-500/10 text-purple-700 border-purple-500/20";
+  if (["courtlistener", "govinfo", "congress"].includes(source)) return "bg-purple-500/10 text-purple-700 border-purple-500/20";
+  if (source === "semanticscholar") return "bg-cyan-500/10 text-cyan-700 border-cyan-500/20";
   return "bg-blue-500/10 text-blue-700 border-blue-500/20";
+}
+
+function licenseTone(confidence?: string) {
+  if (confidence === "high") return "bg-emerald-600 text-white";
+  if (confidence === "medium") return "bg-blue-600 text-white";
+  if (confidence === "low") return "bg-amber-500 text-white";
+  return "bg-muted text-muted-foreground";
+}
+
+function licenseLabel(confidence?: string) {
+  if (confidence === "high") return "License: high confidence";
+  if (confidence === "medium") return "License: medium confidence";
+  if (confidence === "low") return "License: low confidence";
+  return "License: unknown";
 }
 
 export default function SourceHub() {
@@ -73,16 +93,27 @@ export default function SourceHub() {
   const [submitted, setSubmitted] = useState<{ query: string; field: Field; source?: Source; limit: number } | null>(null);
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const [studyAid, setStudyAid] = useState("");
+  const [doi, setDoi] = useState("");
 
   const searchQuery = trpc.sources.search.useQuery(submitted ?? { query: "", field: "all", limit: 12 }, {
     enabled: !!submitted,
   });
   const policyQuery = trpc.sources.policy.useQuery();
+  const capabilitiesQuery = trpc.sources.capabilities.useQuery();
   const importedQuery = trpc.sources.imported.useQuery();
 
   const importMutation = trpc.sources.import.useMutation({
     onSuccess: async () => {
       toast.success("Imported to your Library");
+      await Promise.all([utils.documents.list.invalidate(), utils.sources.imported.invalidate()]);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const importDoiMutation = trpc.sources.importDoi.useMutation({
+    onSuccess: async () => {
+      toast.success("Open-access DOI source imported to your Library");
+      setDoi("");
       await Promise.all([utils.documents.list.invalidate(), utils.sources.imported.invalidate()]);
     },
     onError: (err) => toast.error(err.message),
@@ -115,6 +146,16 @@ export default function SourceHub() {
     setStudyAid("");
     setSelected(null);
     setSubmitted({ query: query.trim(), field, source: source || undefined, limit: 12 });
+  };
+
+  const handleDoiImport = (event: React.FormEvent) => {
+    event.preventDefault();
+    const trimmed = doi.trim().replace(/^https?:\/\/doi\.org\//i, "");
+    if (!trimmed.startsWith("10.")) {
+      toast.error("Enter a valid DOI, e.g. 10.1038/nature12373");
+      return;
+    }
+    importDoiMutation.mutate({ doi: trimmed });
   };
 
   const copy = async (text: string) => {
@@ -204,6 +245,34 @@ export default function SourceHub() {
           </div>
         </form>
 
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <form onSubmit={handleDoiImport} className="rounded-2xl border bg-card p-4 shadow-sm space-y-3">
+            <div className="flex items-center gap-2">
+              <FilePlus2 className="w-4 h-4 text-primary" />
+              <p className="font-semibold">Import open-access paper by DOI</p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input value={doi} onChange={(e) => setDoi(e.target.value)} placeholder="10.xxxx/xxxxx or https://doi.org/10.xxxx/xxxxx" />
+              <Button type="submit" disabled={importDoiMutation.isPending}>
+                {importDoiMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FilePlus2 className="w-4 h-4 mr-2" />}
+                Fetch OA
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Uses Unpaywall-style DOI resolution to find lawful open-access locations. Paywalled/unclear full text is not copied.</p>
+          </form>
+
+          <div className="rounded-2xl border bg-card p-4 shadow-sm">
+            <p className="font-semibold mb-2">Source status</p>
+            <div className="flex flex-wrap gap-2">
+              {capabilitiesQuery.data?.map((cap) => (
+                <Badge key={cap.id} variant={cap.configured ? "secondary" : "outline"} className={cn(!cap.configured && "border-amber-500/40 text-amber-700")}>
+                  {cap.label}{cap.requiresApiKey && !cap.configured ? " · needs free key" : ""}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {errors.length > 0 && (
           <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-muted-foreground">
             Some sources failed: {errors.map((e) => `${e.source}: ${e.message}`).join(" · ")}
@@ -237,6 +306,8 @@ export default function SourceHub() {
                   <Badge variant="outline" className={sourceTone(item.source)}>{sourceLabel(item.source)}</Badge>
                   <Badge variant="secondary">{item.contentType}</Badge>
                   {item.isOpenAccess && <Badge className="bg-emerald-600">Open access</Badge>}
+                  {item.fullTextUrl && <Badge className="bg-teal-600">Full-text link</Badge>}
+                  <Badge className={licenseTone(item.licenseConfidence)}>{licenseLabel(item.licenseConfidence)}</Badge>
                   {item.publishedDate && <span className="text-xs text-muted-foreground">{item.publishedDate}</span>}
                 </div>
                 <h2 className="font-semibold leading-snug">{item.title}</h2>
@@ -259,10 +330,20 @@ export default function SourceHub() {
             ) : (
               <div className="space-y-4">
                 <div>
-                  <Badge variant="outline" className={sourceTone(selected.source)}>{sourceLabel(selected.source)}</Badge>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className={sourceTone(selected.source)}>{sourceLabel(selected.source)}</Badge>
+                    <Badge className={licenseTone(selected.licenseConfidence)}>{licenseLabel(selected.licenseConfidence)}</Badge>
+                    {selected.fullTextUrl && <Badge className="bg-teal-600">OA full-text link</Badge>}
+                  </div>
                   <h3 className="font-bold text-lg mt-3 leading-tight">{selected.title}</h3>
                   {selected.url && <a className="text-sm text-primary hover:underline break-all" href={selected.url} target="_blank" rel="noreferrer">Open original source</a>}
                 </div>
+
+                {selected.licenseConfidence !== "high" && (
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-muted-foreground">
+                    License confidence is {selected.licenseConfidence ?? "unknown"}. Import stores metadata/abstract/citation and avoids copying paywalled or unclear-license full text.
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-2">
                   <Button

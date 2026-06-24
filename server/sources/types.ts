@@ -5,9 +5,16 @@ export const academicSourceIds = [
   "arxiv",
   "clinicaltrials",
   "courtlistener",
+  "semanticscholar",
+  "govinfo",
+  "congress",
 ] as const;
 
-export type AcademicSource = (typeof academicSourceIds)[number];
+export const internalSourceIds = ["unpaywall"] as const;
+
+export type PublicAcademicSource = (typeof academicSourceIds)[number];
+export type InternalAcademicSource = (typeof internalSourceIds)[number];
+export type AcademicSource = PublicAcademicSource | InternalAcademicSource;
 
 export type SourceField = "medicine" | "law" | "general" | "all";
 
@@ -15,20 +22,25 @@ export type ContentType = "article" | "case" | "trial" | "book" | "dataset" | "p
 
 export type SourceSearchInput = {
   query: string;
-  source?: AcademicSource;
+  source?: PublicAcademicSource;
   field?: SourceField;
   limit?: number;
 };
 
+export type LicenseConfidence = "high" | "medium" | "low" | "unknown";
+
 export type SourceSearchResult = {
-  source: AcademicSource;
+  source: PublicAcademicSource;
   externalId: string;
   title: string;
   authors?: string[];
   abstract?: string;
+  fullText?: string;
   url?: string;
+  fullTextUrl?: string;
   publishedDate?: string;
   license?: string;
+  licenseConfidence?: LicenseConfidence;
   isOpenAccess?: boolean;
   contentType: ContentType;
   tags?: string[];
@@ -46,7 +58,7 @@ export type ImportedSourceItem = SourceSearchResult & {
 };
 
 export type SourceConnector = {
-  id: AcademicSource;
+  id: PublicAcademicSource;
   label: string;
   fields: SourceField[];
   requiresApiKey?: boolean;

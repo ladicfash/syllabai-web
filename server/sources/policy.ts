@@ -1,4 +1,4 @@
-import type { AcademicSource, SourceSearchResult } from "./types";
+import type { AcademicSource, LicenseConfidence, SourceSearchResult } from "./types";
 
 export const sourceSafetyPolicy = {
   title: "Legal and academic source policy",
@@ -36,6 +36,24 @@ export function assertImportAllowed(source: AcademicSource, item: SourceSearchRe
       `This looks like proprietary content (${blocked}). syllabAI will not import or store copied commercial question-bank materials. Use public/open sources or upload only content you have the legal right to use.`
     );
   }
+}
+
+export function estimateLicenseConfidence(item: SourceSearchResult): LicenseConfidence {
+  const source = item.source;
+  const license = (item.license ?? "").toLowerCase();
+  const url = (item.url ?? "").toLowerCase();
+  const fullTextUrl = (item.fullTextUrl ?? "").toLowerCase();
+
+  if (["clinicaltrials", "govinfo", "congress"].includes(source)) return "high";
+  if (license.includes("cc-") || license.includes("creative commons") || license.includes("public domain") || license.includes("government")) return "high";
+  if (item.isOpenAccess && (fullTextUrl || url.includes("pmc") || url.includes("arxiv"))) return "medium";
+  if (item.isOpenAccess) return "medium";
+  if (license || item.abstract) return "low";
+  return "unknown";
+}
+
+export function withLicenseConfidence<T extends SourceSearchResult>(item: T): T {
+  return { ...item, licenseConfidence: item.licenseConfidence ?? estimateLicenseConfidence(item) };
 }
 
 export function makePracticePrompt(kind: "medical" | "law" | "research", content: string) {
