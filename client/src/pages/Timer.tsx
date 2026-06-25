@@ -17,15 +17,15 @@ const SESSION_LABELS: Record<SessionType, string> = {
 };
 
 const SESSION_COLORS: Record<SessionType, string> = {
-  work: "text-violet-500",
+  work: "text-primary",
   short_break: "text-emerald-500",
   long_break: "text-blue-500",
 };
 
 const SESSION_BG: Record<SessionType, string> = {
-  work: "from-violet-500/20 to-primary/10",
-  short_break: "from-emerald-500/20 to-teal-500/10",
-  long_break: "from-blue-500/20 to-sky-500/10",
+  work: "from-primary/15 to-primary/5",
+  short_break: "from-emerald-500/15 to-teal-500/5",
+  long_break: "from-blue-500/15 to-sky-500/5",
 };
 
 function playBeep(frequency = 880, duration = 0.3, volume = 0.4) {
@@ -137,7 +137,7 @@ export default function Timer() {
           <h3 className="font-semibold text-sm">Timer Settings</h3>
           <div className="grid sm:grid-cols-3 gap-6">
             {[
-              { label: "Focus Duration", value: workMins, setter: setWorkMins, min: 5, max: 90, color: "text-violet-500" },
+              { label: "Focus Duration", value: workMins, setter: setWorkMins, min: 5, max: 90, color: "text-primary" },
               { label: "Short Break", value: shortBreakMins, setter: setShortBreakMins, min: 1, max: 30, color: "text-emerald-500" },
               { label: "Long Break", value: longBreakMins, setter: setLongBreakMins, min: 5, max: 60, color: "text-blue-500" },
             ].map((s) => (
@@ -212,7 +212,7 @@ export default function Timer() {
           <Button
             size="icon"
             onClick={() => setRunning(!running)}
-            className={cn("w-16 h-16 rounded-full shadow-lg text-lg transition-all duration-200", running ? "bg-amber-500 hover:bg-amber-600 animate-pulse-glow" : "bg-primary hover:bg-primary/90")}
+            className={cn("w-16 h-16 rounded-full shadow-lg text-lg transition-all duration-200", running ? "bg-amber-500 hover:bg-amber-600 animate-pulse-ring-amber" : "bg-primary hover:bg-primary/90")}
           >
             {running ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
           </Button>
@@ -224,7 +224,7 @@ export default function Timer() {
       <div className="grid grid-cols-3 gap-4 animate-slide-up">
         {[
           { label: "Today's Focus", value: `${todayMinutes}m`, icon: Flame, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-950/30" },
-          { label: "Sessions Done", value: sessionsCompleted, icon: Brain, color: "text-violet-500", bg: "bg-violet-50 dark:bg-violet-950/30" },
+          { label: "Sessions Done", value: sessionsCompleted, icon: Brain, color: "text-primary", bg: "bg-primary/10 dark:bg-primary/20" },
           { label: "Total Sessions", value: history?.filter(s => s.sessionType === "work").length ?? 0, icon: Clock, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/30" },
         ].map((stat) => (
           <div key={stat.label} className="study-card p-4 text-center">
@@ -249,7 +249,7 @@ export default function Timer() {
               <div key={session.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
                 <div className="flex items-center gap-3">
                   {session.sessionType === "work" ? (
-                    <Brain className="w-4 h-4 text-violet-500" />
+                    <Brain className="w-4 h-4 text-primary" />
                   ) : (
                     <Coffee className="w-4 h-4 text-emerald-500" />
                   )}

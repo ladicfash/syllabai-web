@@ -34,7 +34,7 @@ export default function Profile() {
     <div className="mobile-page p-6 max-w-5xl mx-auto">
       {/* Profile header */}
       <div className="flex items-start gap-5 mb-8 pb-8 border-b border-border">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-violet-500/30 flex items-center justify-center flex-shrink-0">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0">
           <User className="w-8 h-8 text-primary" />
         </div>
         <div className="flex-1 min-w-0">

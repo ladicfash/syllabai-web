@@ -69,7 +69,7 @@ function sourceLabel(source: string) {
 
 function sourceTone(source: string) {
   if (["pubmed", "europepmc", "clinicaltrials"].includes(source)) return "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
-  if (["courtlistener", "govinfo", "congress"].includes(source)) return "bg-purple-500/10 text-purple-700 border-purple-500/20";
+  if (["courtlistener", "govinfo", "congress"].includes(source)) return "bg-primary/10 text-primary border-primary/20";
   if (source === "semanticscholar") return "bg-cyan-500/10 text-cyan-700 border-cyan-500/20";
   if (["crossref", "datacite", "openlibrary"].includes(source)) return "bg-sky-500/10 text-sky-700 border-sky-500/20";
   return "bg-blue-500/10 text-blue-700 border-blue-500/20";

@@ -118,7 +118,7 @@ export default function Dashboard() {
       {/* Today's command center */}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] animate-slide-up" style={{ animationDelay: "0.04s" }}>
         <div className="relative overflow-hidden rounded-3xl border bg-card p-5 shadow-sm">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-violet-500/5 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5 pointer-events-none" />
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-primary">Today’s Study Command Center</p>
@@ -155,7 +155,7 @@ export default function Dashboard() {
       {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up" style={{ animationDelay: "0.05s" }}>
         <StatCard label="Documents" value={docs?.length ?? 0} icon={BookOpen} color="text-primary" bg="bg-primary/10" loading={docsLoading} sub="in your library" />
-        <StatCard label="Study Sets" value={decks?.length ?? 0} icon={Brain} color="text-violet-500" bg="bg-violet-500/10" loading={decksLoading} sub="flashcard decks" />
+        <StatCard label="Study Sets" value={decks?.length ?? 0} icon={Brain} color="text-primary" bg="bg-primary/10" loading={decksLoading} sub="flashcard decks" />
         <StatCard label="This Week" value={`${weekMinutes}m`} icon={Flame} color="text-amber-500" bg="bg-amber-500/10" loading={false} sub={`${todayMinutes}m today`} />
         <StatCard label="Cards Due" value={dueCards?.length ?? 0} icon={Zap} color="text-emerald-500" bg="bg-emerald-500/10" loading={false} sub="for spaced review" />
       </div>

@@ -24,6 +24,7 @@ import Settings from "./pages/Settings";
 import StudyLayout from "./components/StudyLayout";
 import LogoIntro from "./components/LogoIntro";
 import TermsModal from "./components/TermsModal";
+import { CommandPalette } from "./components/CommandPalette";
 import { useAuth } from "./_core/hooks/useAuth";
 import { trpc } from "./lib/trpc";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -31,12 +32,23 @@ import { useEffect, useRef, useState, useCallback } from "react";
 // Load Mermaid.js from CDN
 function MermaidLoader() {
   useEffect(() => {
-    if (typeof window !== "undefined" && !(window as any).mermaid) {
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
-      script.async = true;
-      document.head.appendChild(script);
-    }
+    if (typeof window === "undefined") return;
+    const w = window as any;
+    if (w.mermaid) return;
+    const SCRIPT_ID = "syllabai-mermaid";
+    if (document.getElementById(SCRIPT_ID)) return;
+
+    const script = document.createElement("script");
+    script.id = SCRIPT_ID;
+    script.src = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.onerror = () => {
+      // Surface load failure for diagnostics; Mermaid is optional and the page
+      // must keep working even if the CDN is unreachable.
+      console.warn("[syllabAI] Failed to load Mermaid from CDN; diagrams will be unavailable.");
+    };
+    document.head.appendChild(script);
   }, []);
   return null;
 }
@@ -127,6 +139,7 @@ function AppRoutes() {
       {showIntro && <LogoIntro onComplete={handleIntroComplete} />}
       <TermsModal open={showTerms} onAccepted={handleTermsAccepted} />
 
+      <CommandPalette />
       <Switch>
         {/* Public landing */}
         <Route path="/" component={Landing} />

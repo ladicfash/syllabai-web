@@ -225,7 +225,7 @@ export default function VoiceNotes() {
             <Button
               size="icon"
               onClick={stopRecording}
-              className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-lg shadow-red-600/30 animate-pulse-glow"
+              className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-lg shadow-red-600/30 animate-pulse-ring-red"
             >
               <Square className="w-6 h-6" />
             </Button>

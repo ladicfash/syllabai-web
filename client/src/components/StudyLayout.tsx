@@ -8,7 +8,7 @@ import {
   LayoutDashboard, BookOpen, Brain, Clock, Calendar,
   Mic, ChevronLeft, ChevronRight, Sun, Moon,
   LogOut, Menu, X, StickyNote, Zap, FlaskConical,
-  Compass, Timer, ListTodo, Users, Settings, Video, Database, Wand2
+  Compass, Timer, ListTodo, Users, Settings, Video, Database, Wand2, Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
@@ -136,8 +136,34 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
         ))}
       </nav>
 
-      {/* Bottom: theme + user */}
+      {/* Bottom: search + theme + user */}
       <div className="flex-shrink-0 border-t border-white/8 p-2 space-y-0.5">
+        {/* Command palette trigger */}
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true, bubbles: true }))}
+              className={cn(
+                "flex items-center gap-3 w-full px-3 py-[7px] rounded-lg text-[13px] font-medium",
+                "text-white/45 hover:text-white hover:bg-white/8 transition-all",
+                collapsed && "justify-center px-2"
+              )}
+              aria-label="Open command palette"
+            >
+              <Search className="w-[17px] h-[17px] flex-shrink-0" />
+              {!collapsed && (
+                <>
+                  <span>Quick search</span>
+                  <kbd className="ml-auto text-[10px] font-mono bg-white/8 text-white/55 px-1.5 py-0.5 rounded">⌘K</kbd>
+                </>
+              )}
+            </button>
+          </TooltipTrigger>
+          {collapsed && (
+            <TooltipContent side="right" className="text-xs">Quick search (⌘K)</TooltipContent>
+          )}
+        </Tooltip>
+
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
             <button

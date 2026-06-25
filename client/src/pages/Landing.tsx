@@ -153,17 +153,17 @@ export default function Landing() {
 
         {/* Animated gradient orbs */}
         <div
-          className="absolute top-1/3 -left-48 w-96 h-96 rounded-full opacity-[0.15] blur-3xl pointer-events-none"
+          className="absolute top-1/3 -left-48 w-96 h-96 rounded-full opacity-[0.07] blur-3xl pointer-events-none"
           style={{
-            background: "oklch(0.52 0.19 232)",
+            background: "oklch(0.62 0.19 232)",
             transform: `translateY(${scrollY * 0.12}px)`,
             animation: "float 6s ease-in-out infinite",
           }}
         />
         <div
-          className="absolute bottom-1/3 -right-48 w-96 h-96 rounded-full opacity-[0.12] blur-3xl pointer-events-none"
+          className="absolute bottom-1/3 -right-48 w-96 h-96 rounded-full opacity-[0.06] blur-3xl pointer-events-none"
           style={{
-            background: "oklch(0.55 0.2 285)",
+            background: "oklch(0.62 0.19 232)",
             transform: `translateY(${scrollY * -0.08}px)`,
             animation: "float 8s ease-in-out infinite reverse",
           }}

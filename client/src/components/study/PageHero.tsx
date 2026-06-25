@@ -20,7 +20,7 @@ export function PageHero({
 }) {
   return (
     <div className={cn("relative overflow-hidden rounded-3xl border bg-card p-6 md:p-8 shadow-sm", className)}>
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/12 via-transparent to-violet-500/5 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/12 via-transparent to-primary/5 pointer-events-none" />
       <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           {eyebrow && (

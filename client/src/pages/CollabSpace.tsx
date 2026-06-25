@@ -48,8 +48,8 @@ export default function CollabSpace() {
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-8 h-8 rounded-lg bg-violet-500/15 flex items-center justify-center">
-              <Users className="w-4 h-4 text-violet-500" />
+            <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+              <Users className="w-4 h-4 text-primary" />
             </div>
             <h1 className="text-2xl font-display font-bold tracking-tight">Collab Space</h1>
           </div>
@@ -76,9 +76,9 @@ export default function CollabSpace() {
 
       {/* Access gate for logged-out users */}
       {!isAuthenticated && (
-        <div className="relative overflow-hidden rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/8 to-transparent p-5 mb-6">
+        <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/8 to-transparent p-5 mb-6">
           <div className="flex items-center gap-4">
-            <Lock className="w-5 h-5 text-violet-500 flex-shrink-0" />
+            <Lock className="w-5 h-5 text-primary flex-shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-semibold">Sign in to collaborate</p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -101,7 +101,7 @@ export default function CollabSpace() {
         {[
           { label: "Study Sets", value: decks?.length ?? 0, icon: Layers, color: "text-primary", bg: "bg-primary/10" },
           { label: "Notes", value: notes?.length ?? 0, icon: StickyNote, color: "text-amber-500", bg: "bg-amber-500/10" },
-          { label: "Contributors", value: new Set([...(decks ?? []).map(d => d.authorName), ...(notes ?? []).map(n => n.authorName)].filter(Boolean)).size, icon: Users, color: "text-violet-500", bg: "bg-violet-500/10" },
+          { label: "Contributors", value: new Set([...(decks ?? []).map(d => d.authorName), ...(notes ?? []).map(n => n.authorName)].filter(Boolean)).size, icon: Users, color: "text-primary", bg: "bg-primary/10" },
         ].map(stat => (
           <div key={stat.label} className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
             <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0", stat.bg)}>

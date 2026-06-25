@@ -67,7 +67,7 @@ export default function SpacedRep() {
       {/* Header */}
       <div className="animate-slide-up">
         <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
-          <Zap className="w-6 h-6 text-violet-500" />
+          <Zap className="w-6 h-6 text-primary" />
           Spaced Repetition
         </h1>
         <p className="text-muted-foreground text-sm mt-0.5">SM-2 algorithm — review cards at the optimal moment</p>
@@ -76,7 +76,7 @@ export default function SpacedRep() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 animate-fade-in">
         {[
-          { label: "Due Today", value: cards.length, icon: Calendar, color: "text-violet-500", bg: "bg-violet-50 dark:bg-violet-950/30" },
+          { label: "Due Today", value: cards.length, icon: Calendar, color: "text-primary", bg: "bg-primary/10 dark:bg-primary/20" },
           { label: "Reviewed", value: reviewed, icon: CheckCheck, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Remaining", value: Math.max(0, remaining), icon: Brain, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-950/30" },
         ].map((s) => (
@@ -117,7 +117,7 @@ export default function SpacedRep() {
             <span>Ease: {card.easeFactor.toFixed(1)} · Interval: {card.interval}d</span>
           </div>
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-violet-500 to-primary rounded-full transition-all duration-500" style={{ width: `${(currentIndex / cards.length) * 100}%` }} />
+            <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${(currentIndex / cards.length) * 100}%` }} />
           </div>
 
           {/* Card */}
