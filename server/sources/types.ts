@@ -8,6 +8,9 @@ export const academicSourceIds = [
   "semanticscholar",
   "govinfo",
   "congress",
+  "crossref",
+  "datacite",
+  "openlibrary",
 ] as const;
 
 export const internalSourceIds = ["unpaywall"] as const;

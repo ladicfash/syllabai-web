@@ -22,6 +22,9 @@ const sourceIntervalsMs: Record<AcademicSource, number> = {
   unpaywall: 350,
   govinfo: 500,
   congress: 500,
+  crossref: 250,
+  datacite: 250,
+  openlibrary: 250,
 };
 
 function stableStringify(value: unknown): string {

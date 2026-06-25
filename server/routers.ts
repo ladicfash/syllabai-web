@@ -33,7 +33,7 @@ import { docxToText, docxToHtml, textToDocx, imageToPdf, textToPdf } from "./con
 import { PDFParse } from "pdf-parse";
 import { sendDeadlineReminder } from "./email";
 import { sendDeadlinePushNotifications } from "./webpush";
-import { academicSourceIds, getDoiOpenAccessItem, getSourceItem, listSourceCapabilities, makePracticePrompt, searchSources, sourceSafetyPolicy } from "./sources";
+import { academicSourceIds, autocompleteSources, getDoiOpenAccessItem, getSourceItem, listSourceCapabilities, makePracticePrompt, searchSources, sourceSafetyPolicy } from "./sources";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 async function callAI(systemPrompt: string, userContent: string, jsonSchema?: object): Promise<string> {
@@ -342,6 +342,10 @@ export const appRouter = router({
       field: z.enum(["medicine", "law", "general", "all"]).default("all"),
       limit: z.number().min(1).max(25).default(12),
     })).query(async ({ input }) => searchSources(input)),
+
+    autocomplete: protectedProcedure.input(z.object({
+      query: z.string().min(2).max(120),
+    })).query(async ({ input }) => autocompleteSources(input.query)),
 
     preview: protectedProcedure.input(z.object({
       source: z.enum(academicSourceIds),

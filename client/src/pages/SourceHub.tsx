@@ -21,7 +21,7 @@ import {
 import { useMemo, useState, type ElementType } from "react";
 
 type Field = "all" | "medicine" | "law" | "general";
-type Source = "openalex" | "pubmed" | "europepmc" | "arxiv" | "clinicaltrials" | "courtlistener" | "semanticscholar" | "govinfo" | "congress";
+type Source = "openalex" | "pubmed" | "europepmc" | "arxiv" | "clinicaltrials" | "courtlistener" | "semanticscholar" | "govinfo" | "congress" | "crossref" | "datacite" | "openlibrary";
 type StudyAidKind = "medical" | "law" | "research";
 
 type SearchResult = {
@@ -51,6 +51,9 @@ const sourceOptions: { value: "" | Source; label: string; field?: Field }[] = [
   { value: "courtlistener", label: "CourtListener", field: "law" },
   { value: "govinfo", label: "GovInfo", field: "law" },
   { value: "congress", label: "Congress.gov", field: "law" },
+  { value: "crossref", label: "Crossref", field: "general" },
+  { value: "datacite", label: "DataCite", field: "general" },
+  { value: "openlibrary", label: "Open Library", field: "general" },
 ];
 
 const fieldOptions: { value: Field; label: string; icon: ElementType }[] = [
@@ -68,6 +71,7 @@ function sourceTone(source: string) {
   if (["pubmed", "europepmc", "clinicaltrials"].includes(source)) return "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
   if (["courtlistener", "govinfo", "congress"].includes(source)) return "bg-purple-500/10 text-purple-700 border-purple-500/20";
   if (source === "semanticscholar") return "bg-cyan-500/10 text-cyan-700 border-cyan-500/20";
+  if (["crossref", "datacite", "openlibrary"].includes(source)) return "bg-sky-500/10 text-sky-700 border-sky-500/20";
   return "bg-blue-500/10 text-blue-700 border-blue-500/20";
 }
 
@@ -94,9 +98,14 @@ export default function SourceHub() {
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const [studyAid, setStudyAid] = useState("");
   const [doi, setDoi] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const searchQuery = trpc.sources.search.useQuery(submitted ?? { query: "", field: "all", limit: 12 }, {
     enabled: !!submitted,
+  });
+  const autocompleteQuery = trpc.sources.autocomplete.useQuery({ query }, {
+    enabled: showSuggestions && query.trim().length >= 2,
+    staleTime: 60_000,
   });
   const policyQuery = trpc.sources.policy.useQuery();
   const capabilitiesQuery = trpc.sources.capabilities.useQuery();
@@ -191,7 +200,7 @@ export default function SourceHub() {
             <div className="space-y-2 text-sm">
               <p className="font-semibold text-foreground">Copyright-safe by design</p>
               <p className="text-muted-foreground">
-                {policyQuery.data?.summary ?? "Only import public/open materials. Do not scrape or store commercial question banks."}
+                {policyQuery.data?.summary ?? "Only import public/open materials. Do not scrape or store commercial question banks."} Source Hub now searches scholarly papers, biomedical databases, preprints, clinical trials, law/government records, datasets, DOI registries, and open book metadata.
               </p>
               <p className="text-muted-foreground">
                 UWorld, NBME, AMBOSS, BARBRI/Themis-style content should be generated as original practice questions only — never copied or represented as official vendor content.
@@ -206,10 +215,27 @@ export default function SourceHub() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                onChange={(e) => { setQuery(e.target.value); setShowSuggestions(true); }}
                 placeholder="Search: myocardial infarction, Chevron deference, transformer attention..."
                 className="pl-9 h-11"
               />
+              {showSuggestions && (autocompleteQuery.data?.length ?? 0) > 0 && (
+                <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border bg-popover shadow-lg">
+                  {autocompleteQuery.data?.map((item: any) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { setQuery(item.label); setShowSuggestions(false); }}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <select
               value={source}

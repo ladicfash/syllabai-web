@@ -3,10 +3,13 @@ import { cachedSourceCall, getSourceCacheStats } from "./cache";
 import { clinicalTrialsConnector } from "./clinicaltrials";
 import { congressConnector } from "./congress";
 import { courtListenerConnector } from "./courtlistener";
+import { crossrefConnector } from "./crossref";
+import { dataCiteConnector } from "./datacite";
 import { fetchDoiOpenAccessItem } from "./doi";
 import { europePmcConnector } from "./europepmc";
 import { govInfoConnector } from "./govinfo";
 import { openAlexConnector } from "./openalex";
+import { openLibraryConnector } from "./openlibrary";
 import { pubMedConnector } from "./pubmed";
 import { semanticScholarConnector } from "./semanticscholar";
 import { assertImportAllowed, sourceSafetyPolicy, withLicenseConfidence } from "./policy";
@@ -28,6 +31,9 @@ export const connectors: Record<PublicAcademicSource, SourceConnector> = {
   semanticscholar: semanticScholarConnector,
   govinfo: govInfoConnector,
   congress: congressConnector,
+  crossref: crossrefConnector,
+  datacite: dataCiteConnector,
+  openlibrary: openLibraryConnector,
 };
 
 function connectorsFor(input: SourceSearchInput) {
@@ -87,4 +93,21 @@ export async function getSourceItem(source: PublicAcademicSource, externalId: st
 export async function getDoiOpenAccessItem(doi: string) {
   const item = await cachedSourceCall("unpaywall", "doi", { doi }, () => fetchDoiOpenAccessItem(doi));
   return { ...item, licenseConfidence: item.licenseConfidence ?? withLicenseConfidence(item).licenseConfidence };
+}
+
+export async function autocompleteSources(query: string) {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const [openAlex, crossref] = await Promise.allSettled([
+    fetch(`https://api.openalex.org/autocomplete/works?q=${encodeURIComponent(q)}&mailto=hello@syllabai.app`).then((r) => r.ok ? r.json() : { results: [] }),
+    fetch(`https://api.crossref.org/works?query=${encodeURIComponent(q)}&rows=5&mailto=hello@syllabai.app`).then((r) => r.ok ? r.json() : { message: { items: [] } }),
+  ]);
+  const suggestions = new Set<string>();
+  if (openAlex.status === "fulfilled") {
+    for (const item of openAlex.value.results ?? []) if (item.display_name) suggestions.add(item.display_name);
+  }
+  if (crossref.status === "fulfilled") {
+    for (const item of crossref.value.message?.items ?? []) if (item.title?.[0]) suggestions.add(item.title[0]);
+  }
+  return Array.from(suggestions).slice(0, 8).map((label) => ({ label }));
 }
