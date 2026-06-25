@@ -198,18 +198,33 @@ export async function transcribeAudio(
  * Helper function to get file extension from MIME type
  */
 function getFileExtension(mimeType: string): string {
+  const normalized = (mimeType || "").toLowerCase().split(";")[0].trim();
   const mimeToExt: Record<string, string> = {
     'audio/webm': 'webm',
     'audio/mp3': 'mp3',
     'audio/mpeg': 'mp3',
     'audio/wav': 'wav',
     'audio/wave': 'wav',
+    'audio/x-wav': 'wav',
     'audio/ogg': 'ogg',
     'audio/m4a': 'm4a',
+    'audio/x-m4a': 'm4a',
     'audio/mp4': 'm4a',
+    'audio/flac': 'flac',
+    'audio/x-flac': 'flac',
+    'video/webm': 'webm',
+    'video/mp4': 'mp4',
   };
-  
-  return mimeToExt[mimeType] || 'audio';
+
+  if (mimeToExt[normalized]) return mimeToExt[normalized];
+  if (normalized.startsWith('audio/webm')) return 'webm';
+  if (normalized.startsWith('audio/mp4') || normalized.startsWith('audio/m4a')) return 'm4a';
+  if (normalized.startsWith('audio/wav')) return 'wav';
+  if (normalized.startsWith('audio/mpeg') || normalized.startsWith('audio/mp3')) return 'mp3';
+  if (normalized.startsWith('audio/ogg')) return 'ogg';
+  if (normalized.startsWith('audio/')) return 'mp3';
+  if (normalized.startsWith('video/')) return 'mp4';
+  return 'mp3';
 }
 
 /**

@@ -49,13 +49,17 @@ export default function VoiceNotes() {
   });
   const convertToFlashMut = trpc.ai.generateFlashcards.useMutation({
     onSuccess: () => { utils.decks.list.invalidate(); toast.success("Flashcards created from voice note!"); },
+    onError: (err) => toast.error("Flashcard creation failed: " + (err.message ?? "Unknown error")),
   });
-  const summarizeMut = trpc.ai.summarizeText.useMutation({
-    onSuccess: (data, vars) => {
+  // Direct, dedicated voice-note note generator (uses the new voice.generateNotes endpoint).
+  // This endpoint is tuned for voice transcripts and gracefully falls back if the AI is unavailable.
+  const generateVoiceNotesMut = trpc.voice.generateNotes.useMutation({
+    onSuccess: (data) => {
       const labels = { summary: "Summary", cornell: "Cornell Notes", key_points: "Key Points" } as const;
-      setAiOutput({ title: labels[vars.mode as keyof typeof labels], content: data.content });
+      setAiOutput({ title: labels[data.mode as keyof typeof labels] ?? "AI Notes", content: data.content });
+      toast.success(`${labels[data.mode as keyof typeof labels] ?? "Notes"} generated!`);
     },
-    onError: (err) => toast.error("AI generation failed: " + err.message),
+    onError: (err) => toast.error("AI generation failed: " + (err.message ?? "Unknown error")),
   });
 
   const { data: savedNotes, isLoading: notesLoading } = trpc.voice.listNotes.useQuery();
@@ -162,8 +166,13 @@ export default function VoiceNotes() {
   };
 
   const runTranscriptAI = (mode: "summary" | "cornell" | "key_points") => {
-    if (!transcript.trim()) return;
-    summarizeMut.mutate({ text: transcript.slice(0, 12000), mode });
+    if (!transcript.trim()) {
+      toast.error("Transcribe this recording first to generate notes.");
+      return;
+    }
+    // Use the dedicated voice.generateNotes endpoint; the backend keeps an
+    // AI fallback so the user always sees usable output.
+    generateVoiceNotesMut.mutate({ id: 0, mode, text: transcript.slice(0, 12000) });
   };
 
   const formatDuration = (s: number) =>
@@ -304,13 +313,13 @@ export default function VoiceNotes() {
               <FileAudio className="w-4 h-4 text-primary" /> Transcript
             </h3>
             <div className="flex gap-2 flex-wrap justify-end">
-              <Button size="sm" variant="outline" onClick={() => runTranscriptAI("summary")} disabled={summarizeMut.isPending} className="gap-1.5">
-                {summarizeMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Summary
+              <Button size="sm" variant="outline" onClick={() => runTranscriptAI("summary")} disabled={generateVoiceNotesMut.isPending || convertToFlashMut.isPending} className="gap-1.5">
+                {generateVoiceNotesMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Summary
               </Button>
-              <Button size="sm" variant="outline" onClick={() => runTranscriptAI("cornell")} disabled={summarizeMut.isPending} className="gap-1.5">
+              <Button size="sm" variant="outline" onClick={() => runTranscriptAI("cornell")} disabled={generateVoiceNotesMut.isPending || convertToFlashMut.isPending} className="gap-1.5">
                 <FileText className="w-3.5 h-3.5" /> Cornell
               </Button>
-              <Button size="sm" variant="outline" onClick={() => runTranscriptAI("key_points")} disabled={summarizeMut.isPending} className="gap-1.5">
+              <Button size="sm" variant="outline" onClick={() => runTranscriptAI("key_points")} disabled={generateVoiceNotesMut.isPending || convertToFlashMut.isPending} className="gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" /> Key Points
               </Button>
               <Button

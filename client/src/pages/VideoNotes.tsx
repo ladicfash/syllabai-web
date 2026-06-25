@@ -358,14 +358,18 @@ export default function VideoNotes() {
 
   const convertToFlashMut = trpc.ai.generateFlashcards.useMutation({
     onSuccess: () => { utils.decks.list.invalidate(); toast.success("Flashcards created!"); },
-    onError: (err) => toast.error("Flashcard creation failed: " + err.message),
+    onError: (err) => toast.error("Flashcard creation failed: " + (err.message ?? "Unknown error")),
   });
-  const summarizeMut = trpc.ai.summarizeText.useMutation({
+  // Dedicated video-note AI generator (new videoNotes.generateNotes endpoint).
+  // The backend always returns useful output, even if the AI service is briefly unreachable.
+  const generateVideoNotesMut = trpc.videoNotes.generateNotes.useMutation({
     onSuccess: (data, vars: any) => {
       const labels = { summary: "Summary", cornell: "Cornell Notes", key_points: "Key Points" } as const;
-      setAiOutputByNote((prev) => ({ ...prev, [vars.noteId]: { title: labels[vars.mode as keyof typeof labels], content: data.content } }));
+      const label = labels[data.mode as keyof typeof labels] ?? "AI Notes";
+      setAiOutputByNote((prev) => ({ ...prev, [vars.noteId]: { title: label, content: data.content } }));
+      toast.success(`${label} generated!`);
     },
-    onError: (err) => toast.error("AI generation failed: " + err.message),
+    onError: (err) => toast.error("AI generation failed: " + (err.message ?? "Unknown error")),
   });
 
   const { data: videoNotes, isLoading: notesLoading } = trpc.videoNotes.list.useQuery();
@@ -492,8 +496,11 @@ export default function VideoNotes() {
   };
 
   const handleTranscriptAI = (note: { id: number; transcript: string | null }, mode: "summary" | "cornell" | "key_points") => {
-    if (!note.transcript) return;
-    summarizeMut.mutate({ text: note.transcript.slice(0, 12000), mode, noteId: note.id } as any);
+    if (!note.transcript) {
+      toast.error("Transcribe this video first to generate notes.");
+      return;
+    }
+    generateVideoNotesMut.mutate({ id: note.id, mode, text: note.transcript.slice(0, 12000) });
   };
 
   const handleEditorExport = (blob: Blob, editedDuration: number, editedTitle: string) => {
@@ -729,10 +736,10 @@ export default function VideoNotes() {
                     {/* Transcript AI actions */}
                     {note.transcript && (
                       <>
-                        <button onClick={() => handleTranscriptAI(note, "summary")} disabled={summarizeMut.isPending} className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors" title="Summarize transcript">
-                          {summarizeMut.isPending ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />}
+                        <button onClick={() => handleTranscriptAI(note, "summary")} disabled={generateVideoNotesMut.isPending} className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors" title="Summarize transcript">
+                          {generateVideoNotesMut.isPending ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />}
                         </button>
-                        <button onClick={() => handleTranscriptAI(note, "cornell")} disabled={summarizeMut.isPending} className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors" title="Create Cornell notes">
+                        <button onClick={() => handleTranscriptAI(note, "cornell")} disabled={generateVideoNotesMut.isPending} className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors" title="Create Cornell notes">
                           <FileText className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
                         <button

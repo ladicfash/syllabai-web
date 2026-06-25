@@ -36,7 +36,75 @@ import { sendDeadlinePushNotifications } from "./webpush";
 import { academicSourceIds, autocompleteSources, getDoiOpenAccessItem, getSourceItem, listSourceCapabilities, makePracticePrompt, searchSources, sourceSafetyPolicy } from "./sources";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-async function callAI(systemPrompt: string, userContent: string, jsonSchema?: object, maxTokens?: number): Promise<string> {
+/**
+ * Build a graceful fallback when the AI service is unavailable or returns empty.
+ * Produces a deterministic but useful markdown summary so the user always gets
+ * something back instead of a silent failure.
+ */
+function buildFallbackMarkdown(_systemPrompt: string, userContent: string, kind: "summary" | "cornell" | "key_points" | "generic"): string {
+  const snippet = userContent.replace(/^[\s\S]*?(?:SOURCE TEXT:|CONTENT:|TEXT:)/i, "").trim().slice(0, 4000);
+  const trimmed = snippet.length > 4000 ? snippet.slice(0, 4000) + "…" : snippet;
+  if (kind === "summary") {
+    return [
+      "## Study Summary",
+      "",
+      "> ⚠️ AI service was unavailable, so this is a basic summary of your transcript. Try regenerating later for a richer output.",
+      "",
+      "### Key Excerpt",
+      "",
+      trimmed || "_(no content available)_",
+      "",
+      "### Suggested Next Steps",
+      "- Re-read the highlighted passages.",
+      "- Convert this transcript into flashcards for spaced repetition.",
+      "- Generate Cornell notes or key points once the AI is reachable again.",
+    ].join("\n");
+  }
+  if (kind === "cornell") {
+    return [
+      "## Cornell Notes",
+      "",
+      "> ⚠️ AI service was unavailable, so this is a placeholder. Re-run generation for full Cornell formatting.",
+      "",
+      "### Cue Column",
+      "- _(add cues here)_",
+      "",
+      "### Notes Column",
+      trimmed || "_(no content available)_",
+      "",
+      "### Summary",
+      "Convert this transcript into a structured summary once the AI is reachable again.",
+    ].join("\n");
+  }
+  if (kind === "key_points") {
+    return [
+      "## Key Points",
+      "",
+      "> ⚠️ AI service was unavailable, so this is a placeholder. Re-run generation for ranked key points.",
+      "",
+      "1. **Start by reviewing the source transcript carefully.**",
+      "2. Highlight the most repeated terms.",
+      "3. Convert definitions into flashcards.",
+      "4. Re-generate key points when the AI service is back online.",
+    ].join("\n");
+  }
+  return [
+    "> ⚠️ AI service was unavailable. Showing a brief excerpt of your source so the workflow keeps moving.",
+    "",
+    trimmed || "_(no content available)_",
+  ].join("\n");
+}
+
+async function callAI(
+  systemPrompt: string,
+  userContent: string,
+  jsonSchema?: object,
+  maxTokens?: number,
+  options?: { fallbackKind?: "summary" | "cornell" | "key_points" | "generic"; allowFallback?: boolean }
+): Promise<string> {
+  const allowFallback = options?.allowFallback !== false;
+  const fallbackKind = options?.fallbackKind ?? "generic";
+
   const opts: any = {
     messages: [
       { role: "system", content: systemPrompt },
@@ -49,9 +117,25 @@ async function callAI(systemPrompt: string, userContent: string, jsonSchema?: ob
   if (maxTokens) {
     opts.max_tokens = maxTokens;
   }
-  const res = await invokeLLM(opts);
-  const content = res.choices[0].message.content;
-  return (typeof content === 'string' ? content.trim() : JSON.stringify(content)) ?? "";
+
+  try {
+    const res = await invokeLLM(opts);
+    const choice: any = res?.choices?.[0];
+    if (!choice) {
+      if (allowFallback) return buildFallbackMarkdown(systemPrompt, userContent, fallbackKind);
+      throw new Error("AI returned no choices. Please try again.");
+    }
+    const content = choice?.message?.content;
+    if (content == null || (typeof content === "string" && content.trim() === "")) {
+      if (allowFallback) return buildFallbackMarkdown(systemPrompt, userContent, fallbackKind);
+      throw new Error("AI returned an empty response. Please try again.");
+    }
+    return (typeof content === "string" ? content.trim() : JSON.stringify(content));
+  } catch (err: any) {
+    console.error("[callAI] failed:", err?.message ?? err);
+    if (allowFallback) return buildFallbackMarkdown(systemPrompt, userContent, fallbackKind);
+    throw err;
+  }
 }
 
 function repairJSON(raw: string): string {
@@ -675,7 +759,13 @@ flowchart TD
         cornell: "Create Cornell-style notes from this transcript/content with Cue Column, Notes Column, and Summary sections. Format in markdown.",
         key_points: "Extract the most important key points from this transcript/content as a numbered markdown list with bold concept names.",
       } as const;
-      const content = await callAI("You are an expert study assistant for voice/video lecture transcripts.", `${prompts[input.mode]}\n\n${input.text.slice(0, 12000)}`);
+      const content = await callAI(
+        "You are an expert study assistant for voice/video lecture transcripts.",
+        `${prompts[input.mode]}\n\n${input.text.slice(0, 12000)}`,
+        undefined,
+        undefined,
+        { fallbackKind: input.mode, allowFallback: true }
+      );
       return { content };
     }),
 
@@ -704,7 +794,10 @@ flowchart TD
       } as const;
       const content = await callAI(
         "You are syllabAI's advanced academic study-material designer. Produce polished, structured, high-signal study materials grounded in the selected document text. Use markdown with tables where helpful. Be specific to the source. Avoid generic filler. Include a 'Sources used' section and short source evidence snippets for major claims when possible.",
-        `TEMPLATE: ${input.template}\nDEPTH: ${input.depth} — ${depthRules[input.depth]}\nEXAM/COURSE CONTEXT: ${input.examType || "General academic study"}\nUSER INSTRUCTIONS: ${input.instructions || "None"}\nDOCUMENTS: ${docs.map((d: any) => d.originalName).join(", ")}\n\n${templatePrompts[input.template]}\n\nSOURCE TEXT:\n${text}`
+        `TEMPLATE: ${input.template}\nDEPTH: ${input.depth} — ${depthRules[input.depth]}\nEXAM/COURSE CONTEXT: ${input.examType || "General academic study"}\nUSER INSTRUCTIONS: ${input.instructions || "None"}\nDOCUMENTS: ${docs.map((d: any) => d.originalName).join(", ")}\n\n${templatePrompts[input.template]}\n\nSOURCE TEXT:\n${text}`,
+        undefined,
+        undefined,
+        { fallbackKind: "generic", allowFallback: true }
       );
       const title = `${input.template.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}${docs.length ? ` — ${docs[0].originalName}` : ""}`.slice(0, 250);
       const inserted = await createStudyOutput({
@@ -1478,6 +1571,31 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
       await updateVoiceNoteTranscript(input.id, ctx.user.id, input.transcript);
       return { success: true };
     }),
+
+    // Generate structured notes from an existing voice note transcript.
+    generateNotes: protectedProcedure.input(z.object({
+      id: z.number(),
+      mode: z.enum(["summary", "cornell", "key_points"]).default("summary"),
+      text: z.string().min(20).max(12000).optional(),
+    })).mutation(async ({ input }) => {
+      const transcript = (input.text && input.text.trim()) || "";
+      if (transcript.length < 20) {
+        throw new Error("Transcript is too short to generate notes. Please transcribe the recording first.");
+      }
+      const prompts = {
+        summary: "Create a clear study summary from this transcript/content. Include a short overview, major concepts, and what to review next. Format in markdown.",
+        cornell: "Create Cornell-style notes from this transcript/content with Cue Column, Notes Column, and Summary sections. Format in markdown.",
+        key_points: "Extract the most important key points from this transcript/content as a numbered markdown list with bold concept names.",
+      } as const;
+      const content = await callAI(
+        "You are an expert study assistant for voice/video lecture transcripts.",
+        `${prompts[input.mode]}\n\n${transcript.slice(0, 12000)}`,
+        undefined,
+        undefined,
+        { fallbackKind: input.mode, allowFallback: true }
+      );
+      return { content, mode: input.mode };
+    }),
   }),
 
   // ── Video Notes ───────────────────────────────────────────────────────────
@@ -1529,6 +1647,31 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
       if ('error' in result) throw new Error(result.error);
       await updateVideoNoteTranscript(input.id, ctx.user.id, result.text);
       return { text: result.text };
+    }),
+
+    // Generate structured notes from an existing video note transcript.
+    generateNotes: protectedProcedure.input(z.object({
+      id: z.number(),
+      mode: z.enum(["summary", "cornell", "key_points"]).default("summary"),
+      text: z.string().min(20).max(12000).optional(),
+    })).mutation(async ({ input }) => {
+      const transcript = (input.text && input.text.trim()) || "";
+      if (transcript.length < 20) {
+        throw new Error("Transcript is too short to generate notes. Please transcribe the video first.");
+      }
+      const prompts = {
+        summary: "Create a clear study summary from this transcript/content. Include a short overview, major concepts, and what to review next. Format in markdown.",
+        cornell: "Create Cornell-style notes from this transcript/content with Cue Column, Notes Column, and Summary sections. Format in markdown.",
+        key_points: "Extract the most important key points from this transcript/content as a numbered markdown list with bold concept names.",
+      } as const;
+      const content = await callAI(
+        "You are an expert study assistant for voice/video lecture transcripts.",
+        `${prompts[input.mode]}\n\n${transcript.slice(0, 12000)}`,
+        undefined,
+        undefined,
+        { fallbackKind: input.mode, allowFallback: true }
+      );
+      return { content, mode: input.mode };
     }),
   }),
   // ── Share ─────────────────────────────────────────────────────────────────

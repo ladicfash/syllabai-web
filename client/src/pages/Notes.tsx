@@ -9,11 +9,14 @@ import { toast } from "sonner";
 import {
   Plus, Pin, PinOff, Trash2, Share2, Edit3, Check, X, Search,
   FolderPlus, Folder, FolderOpen, ChevronDown, ChevronRight, FolderInput, Palette,
+  Brush,
 } from "lucide-react";
 import { SharePopup } from "@/components/SharePopup";
 import { EmptyState } from "@/components/study/EmptyState";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import WhiteboardDialog from "@/components/whiteboard/WhiteboardDialog";
+import Whiteboard, { type WhiteboardSnapshot } from "@/components/whiteboard/Whiteboard";
 
 // 30-colour ROYGBIV gradient palette for note cards
 const NOTE_COLORS: string[] = [
@@ -48,6 +51,18 @@ function contrastColor(hex: string): string {
   const toLinear = (c: number) => c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   const lum = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
   return lum > 0.35 ? "#1a1a1a" : "#f5f5f5";
+}
+
+// Try to count objects in a serialized whiteboard note for the card preview.
+function countWhiteboardObjects(raw: string): number {
+  try {
+    const match = raw.match(/^<!--syllabai-whiteboard:[^\n]*\n([\s\S]*?)\n-->$/);
+    if (!match) return 0;
+    const parsed = JSON.parse(match[1]);
+    return Array.isArray(parsed?.objects) ? parsed.objects.length : 0;
+  } catch {
+    return 0;
+  }
 }
 
 // Derive a slightly darker border from the card background
@@ -99,7 +114,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (hex: strin
   );
 }
 
-function NoteCard({ note, onUpdate, onDelete, folders, onMove, selected, onSelect }: any) {
+function NoteCard({ note, onUpdate, onDelete, folders, onMove, selected, onSelect, onOpenWhiteboard }: any) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
@@ -161,7 +176,14 @@ function NoteCard({ note, onUpdate, onDelete, folders, onMove, selected, onSelec
         <>
           <div className={cn("pr-6", note.isPinned && "pl-5")}>
             <p className="font-semibold text-sm mb-1.5" style={{ color: fg }}>{note.title}</p>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap line-clamp-6" style={{ color: fg, opacity: 0.85 }}>{note.content}</p>
+            {typeof note.content === "string" && note.content.startsWith("<!--syllabai-whiteboard:") ? (
+              <div className="rounded-md border border-current/15 p-2 mt-1 mb-1" style={{ backgroundColor: "rgba(255,255,255,0.4)" }}>
+                <p className="text-[11px] uppercase tracking-wider opacity-60 mb-1" style={{ color: fg }}>Whiteboard</p>
+                <p className="text-xs opacity-80" style={{ color: fg }}>{countWhiteboardObjects(note.content)} object{countWhiteboardObjects(note.content) === 1 ? "" : "s"} · click the brush to reopen</p>
+              </div>
+            ) : (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap line-clamp-6" style={{ color: fg, opacity: 0.85 }}>{note.content}</p>
+            )}
           </div>
           <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: `1px solid ${fg}18` }}>
             <span className="text-xs" style={{ color: fg, opacity: 0.55 }}>
@@ -177,6 +199,11 @@ function NoteCard({ note, onUpdate, onDelete, folders, onMove, selected, onSelec
                   ? <PinOff className="w-3.5 h-3.5" style={{ color: fg }} />
                   : <Pin className="w-3.5 h-3.5" style={{ color: fg }} />}
               </button>
+              {onOpenWhiteboard && (typeof note.content === "string" && note.content.startsWith("<!--syllabai-whiteboard:")) && (
+                <button onClick={() => onOpenWhiteboard(note)} className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10" title="Open in Whiteboard">
+                  <Brush className="w-3.5 h-3.5" style={{ color: fg }} />
+                </button>
+              )}
               <button onClick={() => setEditing(true)} className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10" title="Edit">
                 <Edit3 className="w-3.5 h-3.5" style={{ color: fg }} />
               </button>
@@ -216,7 +243,7 @@ function NoteCard({ note, onUpdate, onDelete, folders, onMove, selected, onSelec
   );
 }
 
-function FolderSection({ folder, notes, onUpdateFolder, onDeleteFolder, onUpdateNote, onDeleteNote, onMoveNote, allFolders, selectedNotes, onSelect }: any) {
+function FolderSection({ folder, notes, onUpdateFolder, onDeleteFolder, onUpdateNote, onDeleteNote, onMoveNote, allFolders, selectedNotes, onSelect, onOpenWhiteboardForEdit }: any) {
   const [expanded, setExpanded] = useState(true);
   const [renaming, setRenaming] = useState(false);
   const [newName, setNewName] = useState(folder.name);
@@ -279,6 +306,7 @@ function FolderSection({ folder, notes, onUpdateFolder, onDeleteFolder, onUpdate
                     onMove={onMoveNote}
                     selected={selectedNotes.has(note.id)}
                     onSelect={onSelect}
+                    onOpenWhiteboard={onOpenWhiteboardForEdit}
                   />
                 </div>
               ))}
@@ -306,6 +334,8 @@ export default function Notes() {
   const [shareEmail, setShareEmail] = useState("");
   const [sharePhone, setSharePhone] = useState("");
   const [showSharePopup, setShowSharePopup] = useState(false);
+  const [showWhiteboard, setShowWhiteboard] = useState(false);
+  const [editingWhiteboard, setEditingWhiteboard] = useState<{ noteId: number; snapshot: WhiteboardSnapshot; title: string; color: string; folderId: number | null } | null>(null);
   const [showAddFolder, setShowAddFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderColor, setNewFolderColor] = useState(FOLDER_COLORS[0]);
@@ -370,9 +400,42 @@ export default function Notes() {
   const toggleSelect = (id: number) => {
     setSelectedNotes(prev => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
+  };
+
+  const parseWhiteboardContent = (raw: string): { snapshot: WhiteboardSnapshot } | null => {
+    if (typeof raw !== "string") return null;
+    const match = raw.match(/^<!--syllabai-whiteboard:preview\n([\s\S]*?)\n-->$/);
+    if (!match) return null;
+    try {
+      const json = JSON.parse(match[1]);
+      return { snapshot: json };
+    } catch {
+      return null;
+    }
+  };
+
+  const openWhiteboardForEdit = (note: any) => {
+    const parsed = parseWhiteboardContent(note.content);
+    if (!parsed) return;
+    setEditingWhiteboard({
+      noteId: note.id,
+      snapshot: parsed.snapshot,
+      title: note.title,
+      color: note.color || NOTE_COLORS[6],
+      folderId: note.folderId ?? null,
+    });
+  };
+
+  const persistWhiteboardEdit = async (snapshot: WhiteboardSnapshot) => {
+    if (!editingWhiteboard) return;
+    const json = JSON.stringify(snapshot);
+    const content = `<!--syllabai-whiteboard:preview\n${json}\n-->`;
+    await updateNote.mutateAsync({ id: editingWhiteboard.noteId, title: editingWhiteboard.title, content });
+    toast.success("Whiteboard updated");
   };
 
   const filtered = notes.filter(n =>
@@ -420,6 +483,9 @@ export default function Notes() {
           <Button variant="outline" size="sm" onClick={() => setShowAddFolder(true)} className="gap-1.5">
             <FolderPlus className="w-4 h-4" /> New Folder
           </Button>
+          <Button size="sm" onClick={() => setShowWhiteboard(true)} className="gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20">
+            <Brush className="w-4 h-4" /> Whiteboard
+          </Button>
           <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5">
             <Plus className="w-4 h-4" /> New Note
           </Button>
@@ -453,6 +519,7 @@ export default function Notes() {
           allFolders={folders}
           selectedNotes={selectedNotes}
           onSelect={toggleSelect}
+          onOpenWhiteboardForEdit={openWhiteboardForEdit}
         />
       ))}
 
@@ -476,6 +543,7 @@ export default function Notes() {
                       onMove={(noteId: number, folderId: number | null) => moveNote.mutate({ noteId, folderId })}
                       selected={selectedNotes.has(note.id)}
                       onSelect={toggleSelect}
+                      onOpenWhiteboard={openWhiteboardForEdit}
                     />
                   </div>
                 ))}
@@ -500,6 +568,7 @@ export default function Notes() {
                       onMove={(noteId: number, folderId: number | null) => moveNote.mutate({ noteId, folderId })}
                       selected={selectedNotes.has(note.id)}
                       onSelect={toggleSelect}
+                      onOpenWhiteboard={openWhiteboardForEdit}
                     />
                   </div>
                 ))}
@@ -525,6 +594,43 @@ export default function Notes() {
           )}
         </div>
       )}
+
+      {/* Whiteboard dialog (create new) */}
+      <WhiteboardDialog
+        open={showWhiteboard}
+        onOpenChange={setShowWhiteboard}
+        onSave={async (data) => {
+          await createNote.mutateAsync(data as any);
+          setShowWhiteboard(false);
+        }}
+        folders={folders}
+        defaultFolderId={null}
+      />
+
+      {/* Whiteboard dialog (edit existing) */}
+      <Dialog open={!!editingWhiteboard} onOpenChange={(v) => !v && setEditingWhiteboard(null)}>
+        <DialogContent className="sm:max-w-[min(96vw,1200px)] w-full p-0 overflow-hidden">
+          <DialogHeader className="px-5 pt-5 pb-3 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <Brush className="w-5 h-5 text-primary" /> Edit Whiteboard
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground">Editing &ldquo;{editingWhiteboard?.title}&rdquo;. Changes save back to the same note.</p>
+          </DialogHeader>
+          {editingWhiteboard && (
+            <div className="p-3">
+              <Whiteboard
+                key={editingWhiteboard.noteId}
+                height={600}
+                initialData={editingWhiteboard.snapshot}
+                onSave={(snap) => persistWhiteboardEdit(snap)}
+              />
+            </div>
+          )}
+          <DialogFooter className="px-5 py-4 border-t bg-muted/20">
+            <Button variant="outline" onClick={() => setEditingWhiteboard(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Note Dialog */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
