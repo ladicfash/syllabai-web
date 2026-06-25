@@ -810,7 +810,7 @@ flowchart TD
         depth: input.depth,
         examContext: input.examType,
       });
-      await recordStudyActivity(ctx.user.id, "study_output", 1);
+      if (inserted) await recordStudyActivity(ctx.user.id, "study_output", 1);
       return { id: (inserted as any)?.insertId as number | undefined, title, content, sources: docs.map((d: any) => ({ id: d.id, name: d.originalName })) };
     }),
 

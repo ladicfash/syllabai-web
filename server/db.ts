@@ -116,9 +116,14 @@ export async function getSourceItemsByUser(userId: number) {
 // ── Study Studio Outputs + Activity ────────────────────────────────────────
 export async function createStudyOutput(output: InsertStudyOutput) {
   const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  const result = await db.insert(studyOutputs).values(output);
-  return result[0];
+  if (!db) return null;
+  try {
+    const result = await db.insert(studyOutputs).values(output);
+    return result[0];
+  } catch (err) {
+    console.warn('[DB] study_outputs table not ready, skipping save:', err);
+    return null;
+  }
 }
 
 export async function getStudyOutputsByUser(userId: number, limit = 20) {
@@ -327,9 +332,17 @@ export async function updateTask(id: number, userId: number, data: Partial<{
 
 export async function deleteTask(id: number, userId: number) {
   const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  await db.delete(taskSubtasks).where(and(eq(taskSubtasks.taskId, id), eq(taskSubtasks.userId, userId)));
-  await db.delete(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+  if (!db) return;
+  try {
+    await db.delete(taskSubtasks).where(and(eq(taskSubtasks.taskId, id), eq(taskSubtasks.userId, userId)));
+  } catch (err) {
+    console.warn('[DB] task_subtasks table delete failed:', err);
+  }
+  try {
+    await db.delete(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+  } catch (err) {
+    console.warn('[DB] tasks table delete failed:', err);
+  }
 }
 
 export async function getSubtasksByUser(userId: number) {
@@ -345,33 +358,56 @@ export async function getSubtasksByUser(userId: number) {
 
 export async function createSubtasks(items: { taskId: number; userId: number; title: string; orderIndex: number }[]) {
   const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  if (items.length) await db.insert(taskSubtasks).values(items);
+  if (!db) return;
+  if (items.length) {
+    try {
+      await db.insert(taskSubtasks).values(items);
+    } catch (err) {
+      console.warn('[DB] task_subtasks table not ready, skipping save:', err);
+    }
+  }
 }
 
 export async function updateSubtask(id: number, userId: number, data: Partial<{ title: string; isDone: boolean; orderIndex: number }>) {
   const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  await db.update(taskSubtasks).set(data).where(and(eq(taskSubtasks.id, id), eq(taskSubtasks.userId, userId)));
+  if (!db) return;
+  try {
+    await db.update(taskSubtasks).set(data).where(and(eq(taskSubtasks.id, id), eq(taskSubtasks.userId, userId)));
+  } catch (err) {
+    console.warn('[DB] task_subtasks table update failed:', err);
+  }
 }
 
 export async function deleteSubtask(id: number, userId: number) {
   const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  await db.delete(taskSubtasks).where(and(eq(taskSubtasks.id, id), eq(taskSubtasks.userId, userId)));
+  if (!db) return;
+  try {
+    await db.delete(taskSubtasks).where(and(eq(taskSubtasks.id, id), eq(taskSubtasks.userId, userId)));
+  } catch (err) {
+    console.warn('[DB] task_subtasks table delete failed:', err);
+  }
 }
 
 // ── Timer Sessions ─────────────────────────────────────────────────────────
 export async function saveTimerSession(userId: number, sessionType: "work" | "short_break" | "long_break", durationMinutes: number) {
   const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  await db.insert(timerSessions).values({ userId, sessionType, durationMinutes });
+  if (!db) return;
+  try {
+    await db.insert(timerSessions).values({ userId, sessionType, durationMinutes });
+  } catch (err) {
+    console.warn('[DB] timerSessions table not ready, skipping save:', err);
+  }
 }
 
 export async function getTimerHistory(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(timerSessions).where(eq(timerSessions.userId, userId)).orderBy(desc(timerSessions.createdAt)).limit(50);
+  try {
+    return await db.select().from(timerSessions).where(eq(timerSessions.userId, userId)).orderBy(desc(timerSessions.createdAt)).limit(50);
+  } catch (err) {
+    console.warn('[DB] timerSessions table not ready:', err);
+    return [];
+  }
 }
 
 // ── AI Outputs ─────────────────────────────────────────────────────────────
@@ -534,9 +570,14 @@ export async function createVideoNote(data: {
   userId: number; title: string; s3Key: string; s3Url: string; duration: number; videoMimeType: string; transcript?: string;
 }) {
   const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  const result = await db.insert(videoNotes).values(data);
-  return result[0];
+  if (!db) return null;
+  try {
+    const result = await db.insert(videoNotes).values(data);
+    return result[0];
+  } catch (err) {
+    console.warn('[DB] video_notes table not ready, skipping save:', err);
+    return null;
+  }
 }
 
 export async function getVideoNotesByUser(userId: number) {
@@ -564,14 +605,22 @@ export async function countVideoNotesByUser(userId: number) {
 
 export async function updateVideoNoteTranscript(id: number, userId: number, transcript: string) {
   const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  await db.update(videoNotes).set({ transcript }).where(and(eq(videoNotes.id, id), eq(videoNotes.userId, userId)));
+  if (!db) return;
+  try {
+    await db.update(videoNotes).set({ transcript }).where(and(eq(videoNotes.id, id), eq(videoNotes.userId, userId)));
+  } catch (err) {
+    console.warn('[DB] video_notes table update failed:', err);
+  }
 }
 
 export async function deleteVideoNote(id: number, userId: number) {
   const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  await db.delete(videoNotes).where(and(eq(videoNotes.id, id), eq(videoNotes.userId, userId)));
+  if (!db) return;
+  try {
+    await db.delete(videoNotes).where(and(eq(videoNotes.id, id), eq(videoNotes.userId, userId)));
+  } catch (err) {
+    console.warn('[DB] video_notes table delete failed:', err);
+  }
 }
 
 export async function upsertUserSettings(userId: number, data: {
