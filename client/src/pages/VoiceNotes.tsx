@@ -186,11 +186,11 @@ export default function VoiceNotes() {
           {Array.from({ length: 20 }).map((_, i) => (
             <div
               key={i}
-              className={cn("w-1.5 rounded-full bg-primary transition-all", recordingState === "recording" ? "animate-bounce" : "h-2")}
+              className={cn("w-1.5 rounded-full bg-primary transition-all", recordingState === "recording" ? "animate-rise" : "h-2")}
               style={recordingState === "recording" ? {
                 height: `${Math.random() * 32 + 8}px`,
                 animationDelay: `${i * 0.05}s`,
-                animationDuration: `${0.5 + Math.random() * 0.5}s`,
+                animationDuration: `${0.6 + Math.random() * 0.4}s`,
               } : { height: "8px" }}
             />
           ))}
