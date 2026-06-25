@@ -82,6 +82,8 @@ export default function Simulations() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const quizRef = useRef<HTMLDivElement>(null);
+  const isFinishingRef = useRef(false);
+  const finishQuizRef = useRef<(() => void) | null>(null);
 
   const utils = trpc.useUtils();
   const { data: docs = [] } = trpc.documents.list.useQuery();
@@ -107,7 +109,16 @@ export default function Simulations() {
       utils.ai.quizMeReports.invalidate();
       toast.success(`Quiz complete — ${data.scorePercent}%`);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      // If submission fails (e.g. missing DB table), show local report instead of crashing
+      console.warn('[Quiz] Submit failed, showing local report:', err.message);
+      const mcqCorrect = questions.filter((q) => q.type === "mcq" && Number(answers[q.id]) === q.correctChoiceIndex).length;
+      const mcqTotal = questions.filter((q) => q.type === "mcq").length;
+      const scorePercent = Math.round((mcqCorrect / Math.max(questions.length, 1)) * 100);
+      setQuizReport({ scorePercent, mcqCorrect, mcqTotal, shortAnswerScore: 0, shortGrades: [], flags: quizFlags });
+      setQuizState("report");
+      toast.warning("Quiz scored locally — report could not be saved to database.");
+    },
   });
 
   const activeDomain = selectedDomain === "custom"
@@ -124,7 +135,12 @@ export default function Simulations() {
     const onFullscreen = () => {
       if (document.fullscreenElement !== quizRef.current) {
         flag("fullscreenExits");
-        toast.warning("Focus Lock warning: fullscreen was exited. This will be saved in your report.");
+        // If user exited fullscreen via ESC or browser controls, auto-finish the quiz
+        // Use a small delay to let the flag state update first
+        setTimeout(() => {
+          toast.warning("Focus Lock exited — finishing quiz and saving your progress.");
+          finishQuizRef.current?.();
+        }, 300);
       }
     };
     const onVisibility = () => {
@@ -219,11 +235,32 @@ export default function Simulations() {
     }
   };
 
-  const finishQuiz = async () => {
-    if (!quizDocId || questions.length === 0) return;
+  const finishQuiz = async (currentAnswers?: Record<string, string>, currentFlags?: QuizFlags) => {
+    if (questions.length === 0 || isFinishingRef.current) return;
+    isFinishingRef.current = true;
     if (document.fullscreenElement) await document.exitFullscreen().catch(() => undefined);
-    submitQuiz.mutate({ documentId: quizDocId, title: quizTitle, startedAt: startedAt || new Date().toISOString(), questions, answers, flags: quizFlags });
+    setQuizState("report" as any); // optimistically move out of taking state
+    const finalAnswers = currentAnswers ?? answers;
+    const finalFlags = currentFlags ?? quizFlags;
+    // If no document ID, show report with local scoring only
+    if (!quizDocId) {
+      const mcqCorrect = questions.filter((q) => q.type === "mcq" && Number(finalAnswers[q.id]) === q.correctChoiceIndex).length;
+      const mcqTotal = questions.filter((q) => q.type === "mcq").length;
+      const scorePercent = Math.round((mcqCorrect / Math.max(questions.length, 1)) * 100);
+      setQuizReport({ scorePercent, mcqCorrect, mcqTotal, shortAnswerScore: 0, shortGrades: [], flags: finalFlags });
+      isFinishingRef.current = false;
+      return;
+    }
+    submitQuiz.mutate(
+      { documentId: quizDocId, title: quizTitle, startedAt: startedAt || new Date().toISOString(), questions, answers: finalAnswers, flags: finalFlags },
+      { onSettled: () => { isFinishingRef.current = false; } }
+    );
   };
+
+  // Keep a ref to finishQuiz so the fullscreen event listener can call it without stale closure
+  useEffect(() => {
+    finishQuizRef.current = () => finishQuiz();
+  });
 
   const currentQuestion = questions[quizIndex];
   const answeredCount = questions.filter((q) => (answers[q.id] ?? "").trim()).length;
@@ -294,11 +331,11 @@ export default function Simulations() {
             </div>
           </div>
         </div>
-      ) : quizState === "taking" && currentQuestion ? (
+      ) : (quizState === "taking" || (quizState as string) === "submitting") && currentQuestion ? (
         <div className="h-full flex flex-col">
           <div className="border-b bg-card p-4 flex flex-wrap items-center justify-between gap-3">
             <div><p className="font-semibold flex items-center gap-2"><EyeOff className="w-4 h-4 text-primary" /> Focus Lock: {quizTitle}</p><p className="text-xs text-muted-foreground">Question {quizIndex + 1} of {questions.length} · {answeredCount}/{questions.length} answered</p></div>
-            <div className="flex items-center gap-2"><Badge variant="outline">Flags: {quizFlags.fullscreenExits + quizFlags.tabHidden + quizFlags.windowBlur + quizFlags.copyAttempts}</Badge><Button variant="destructive" onClick={finishQuiz} disabled={submitQuiz.isPending}>Finish</Button></div>
+            <div className="flex items-center gap-2"><Badge variant="outline">Flags: {quizFlags.fullscreenExits + quizFlags.tabHidden + quizFlags.windowBlur + quizFlags.copyAttempts}</Badge><Button variant="destructive" onClick={() => finishQuiz()} disabled={submitQuiz.isPending}>Finish</Button></div>
           </div>
           <div className="flex-1 overflow-y-auto p-4 md:p-8">
             <div className="mx-auto max-w-4xl space-y-5">
@@ -317,9 +354,14 @@ export default function Simulations() {
                   )}
                 </div>
               </div>
-              <div className="flex items-center justify-between gap-2"><Button variant="outline" onClick={() => setQuizIndex((i) => Math.max(0, i - 1))} disabled={quizIndex === 0}>Previous</Button><Button onClick={() => quizIndex === questions.length - 1 ? finishQuiz() : setQuizIndex((i) => Math.min(questions.length - 1, i + 1))}>{quizIndex === questions.length - 1 ? "Done / Score Quiz" : "Next"}</Button></div>
+              <div className="flex items-center justify-between gap-2"><Button variant="outline" onClick={() => setQuizIndex((i) => Math.max(0, i - 1))} disabled={quizIndex === 0}>Previous</Button><Button onClick={() => { if (quizIndex === questions.length - 1) { finishQuiz(); } else { setQuizIndex((i) => Math.min(questions.length - 1, i + 1)); } }} disabled={submitQuiz.isPending}>{quizIndex === questions.length - 1 ? "Done / Score Quiz" : "Next"}</Button></div>
             </div>
           </div>
+        </div>
+      ) : quizState === "report" && !quizReport ? (
+        <div className="p-8 flex flex-col items-center justify-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Grading your answers…</p>
         </div>
       ) : quizState === "report" && quizReport ? (
         <div className="p-6 md:p-8 space-y-5">

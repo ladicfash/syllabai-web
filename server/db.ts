@@ -143,7 +143,11 @@ export async function recordStudyActivity(userId: number, activityType: string, 
   const db = await getDb();
   if (!db) return;
   const activityDate = date.toISOString().slice(0, 10);
-  await db.insert(studyActivity).values({ userId, activityType, count, activityDate });
+  try {
+    await db.insert(studyActivity).values({ userId, activityType, count, activityDate });
+  } catch (err) {
+    console.warn('[DB] study_activity table not ready, skipping record:', err);
+  }
 }
 
 export async function getStudyActivityByUser(userId: number, days = 60) {
@@ -242,9 +246,14 @@ export async function getQuizHistory(userId: number, deckId?: number) {
 
 export async function saveQuizMeReport(data: InsertQuizMeReport) {
   const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  const result = await db.insert(quizMeReports).values(data);
-  return result[0];
+  if (!db) return null;
+  try {
+    const result = await db.insert(quizMeReports).values(data);
+    return result[0];
+  } catch (err) {
+    console.warn('[DB] quiz_me_reports table not ready, skipping save:', err);
+    return null;
+  }
 }
 
 export async function getQuizMeReportsByUser(userId: number, limit = 20) {

@@ -36,7 +36,7 @@ import { sendDeadlinePushNotifications } from "./webpush";
 import { academicSourceIds, autocompleteSources, getDoiOpenAccessItem, getSourceItem, listSourceCapabilities, makePracticePrompt, searchSources, sourceSafetyPolicy } from "./sources";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-async function callAI(systemPrompt: string, userContent: string, jsonSchema?: object): Promise<string> {
+async function callAI(systemPrompt: string, userContent: string, jsonSchema?: object, maxTokens?: number): Promise<string> {
   const opts: any = {
     messages: [
       { role: "system", content: systemPrompt },
@@ -46,9 +46,34 @@ async function callAI(systemPrompt: string, userContent: string, jsonSchema?: ob
   if (jsonSchema) {
     opts.response_format = { type: "json_schema", json_schema: { name: "response", strict: true, schema: jsonSchema } };
   }
+  if (maxTokens) {
+    opts.max_tokens = maxTokens;
+  }
   const res = await invokeLLM(opts);
   const content = res.choices[0].message.content;
-return (typeof content === 'string' ? content.trim() : JSON.stringify(content)) ?? "";
+  return (typeof content === 'string' ? content.trim() : JSON.stringify(content)) ?? "";
+}
+
+function repairJSON(raw: string): string {
+  // Try to extract valid JSON from a potentially truncated response
+  const start = raw.indexOf('{');
+  if (start === -1) return raw;
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let end = -1;
+  for (let i = start; i < raw.length; i++) {
+    const ch = raw[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') depth++;
+    else if (ch === '}') { depth--; if (depth === 0) { end = i; break; } }
+  }
+  if (end !== -1) return raw.slice(start, end + 1);
+  // Truncated — try to close open structures
+  return raw;
 }
 
 type FlashcardDifficulty = "beginner" | "intermediate" | "advanced";
@@ -885,37 +910,62 @@ flowchart TD
     })).mutation(async ({ ctx, input }) => {
       const doc = await getDocumentById(input.documentId, ctx.user.id);
       if (!doc?.extractedText) throw new Error("Select a document with extracted text first");
-      const raw = await callAI(
-        "You create original document-grounded quizzes for a fullscreen focus mode. Make mixed multiple-choice and short-answer questions. Never copy proprietary exams. Return JSON only.",
-        `Create exactly ${input.questionCount} questions at ${input.difficulty} difficulty from this document. Use about 70% MCQ and 30% short answer. For MCQ, provide 4 plausible choices and correctChoiceIndex. For short answer, use choices: [] and correctChoiceIndex: -1. Include concise explanations and short source snippets.\n\nDocument: ${doc.originalName}\n\n${doc.extractedText.slice(0, 14000)}`,
-        {
-          type: "object",
-          properties: {
-            title: { type: "string" },
-            questions: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  id: { type: "string" },
-                  type: { type: "string", enum: ["mcq", "short_answer"] },
-                  question: { type: "string" },
-                  choices: { type: "array", items: { type: "string" } },
-                  correctAnswer: { type: "string" },
-                  correctChoiceIndex: { type: "number" },
-                  explanation: { type: "string" },
-                  sourceSnippet: { type: "string" },
-                },
-                required: ["id", "type", "question", "choices", "correctAnswer", "correctChoiceIndex", "explanation", "sourceSnippet"],
-                additionalProperties: false,
+      // Generate in batches of 5 to avoid truncation
+      const batchSize = 5;
+      const totalCount = Math.min(input.questionCount, 25);
+      const batches = Math.ceil(totalCount / batchSize);
+      const allQuestions: any[] = [];
+      let quizTitle = `Quiz Me — ${doc.originalName}`;
+      const docText = doc.extractedText.slice(0, 5000);
+      const questionSchema = {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          questions: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                type: { type: "string", enum: ["mcq", "short_answer"] },
+                question: { type: "string" },
+                choices: { type: "array", items: { type: "string" } },
+                correctAnswer: { type: "string" },
+                correctChoiceIndex: { type: "number" },
+                explanation: { type: "string" },
+                sourceSnippet: { type: "string" },
               },
+              required: ["id", "type", "question", "choices", "correctAnswer", "correctChoiceIndex", "explanation", "sourceSnippet"],
+              additionalProperties: false,
             },
           },
-          required: ["title", "questions"],
-          additionalProperties: false,
+        },
+        required: ["title", "questions"],
+        additionalProperties: false,
+      };
+      for (let b = 0; b < batches; b++) {
+        const batchCount = Math.min(batchSize, totalCount - allQuestions.length);
+        if (batchCount <= 0) break;
+        const startIdx = b * batchSize + 1;
+        const raw = await callAI(
+          `You create original document-grounded quizzes. Make mixed multiple-choice and short-answer questions. Never copy proprietary exams. Return JSON only. Keep explanations under 60 words. Keep source snippets under 30 words. Generate exactly ${batchCount} questions.`,
+          `Create exactly ${batchCount} questions (numbered ${startIdx} to ${startIdx + batchCount - 1}) at ${input.difficulty} difficulty. Use 70% MCQ and 30% short answer. For MCQ: 4 choices, set correctChoiceIndex. For short answer: choices=[], correctChoiceIndex=-1.\n\nDocument: ${doc.originalName}\n\n${docText}`,
+          questionSchema,
+          2000
+        );
+        let parsed: any;
+        try {
+          parsed = JSON.parse(repairJSON(raw));
+        } catch (parseErr) {
+          console.warn(`[Quiz] Batch ${b + 1} parse failed:`, parseErr);
+          if (allQuestions.length > 0) break; // use what we have
+          throw new Error("Quiz generation failed — please try again.");
         }
-      );
-      const parsed = JSON.parse(raw) as any;
+        if (b === 0) quizTitle = parsed.title || quizTitle;
+        allQuestions.push(...(parsed.questions ?? []));
+      }
+      if (allQuestions.length === 0) throw new Error("Quiz generation failed — no questions returned. Please try again.");
+      const parsed = { title: quizTitle, questions: allQuestions };
       return { title: parsed.title || `Quiz Me — ${doc.originalName}`, documentName: doc.originalName, questions: (parsed.questions ?? []).slice(0, input.questionCount) };
     }),
 
@@ -943,7 +993,7 @@ flowchart TD
       if (shortQuestions.length > 0) {
         const raw = await callAI(
           "Grade short answers fairly against the provided correct answers. Award points from 0 to 1. Return JSON only.",
-          JSON.stringify(shortQuestions.map((q) => ({ id: q.id, question: q.question, expected: q.correctAnswer, student: input.answers[q.id] || "" }))),
+          JSON.stringify(shortQuestions.map((q) => ({ id: q.id, question: q.question, expected: q.correctAnswer, student: input.answers[q.id] || "" })), null, 2),
           {
             type: "object",
             properties: {
@@ -961,7 +1011,13 @@ flowchart TD
             additionalProperties: false,
           }
         );
-        shortGrades = (JSON.parse(raw).grades ?? []).map((g: any) => ({ id: g.id, points: Math.max(0, Math.min(1, Number(g.points) || 0)), feedback: String(g.feedback || "") }));
+        try {
+          const parsed = JSON.parse(raw);
+          shortGrades = (parsed.grades ?? []).map((g: any) => ({ id: g.id, points: Math.max(0, Math.min(1, Number(g.points) || 0)), feedback: String(g.feedback || "") }));
+        } catch (parseErr) {
+          console.warn('[Quiz] Failed to parse AI grading response:', parseErr);
+          shortGrades = shortQuestions.map((q) => ({ id: q.id, points: 0, feedback: "Grading error" }));
+        }
       }
       const shortPoints = shortGrades.reduce((sum, g) => sum + g.points, 0);
       const totalPoints = mcqCorrect + shortPoints;
