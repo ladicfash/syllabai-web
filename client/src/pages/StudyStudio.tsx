@@ -35,7 +35,7 @@ import { EmptyState } from "@/components/study/EmptyState";
 import { AiGenerationStepper } from "@/components/study/AiGenerationStepper";
 import { OutputAssetHeader } from "@/components/study/OutputAssetHeader";
 
-type TemplateId = "key_points" | "cornell" | "exam_review" | "practice_quiz" | "study_guide" | "glossary" | "concept_outline" | "weak_spots";
+type TemplateId = "key_points" | "cornell" | "exam_review" | "practice_quiz" | "study_guide" | "glossary" | "concept_outline" | "weak_spots" | "mind_map" | "timeline" | "flowchart" | "code_tutorial";
 type Depth = "concise" | "standard" | "deep";
 
 const TEMPLATES: Array<{
@@ -118,6 +118,42 @@ const TEMPLATES: Array<{
     icon: BookOpen,
     accent: "from-lime-500/20 to-green-500/5 border-lime-500/25",
     bestFor: ["New subjects", "Vocabulary", "Technical docs"],
+  },
+  {
+    id: "mind_map",
+    title: "Mind Map Diagram",
+    eyebrow: "Visual learning",
+    description: "Interactive mind map showing concept relationships, hierarchies, and connections.",
+    icon: Brain,
+    accent: "from-purple-500/20 to-pink-500/5 border-purple-500/25",
+    bestFor: ["Concept mapping", "Brainstorming", "Relationships"],
+  },
+  {
+    id: "timeline",
+    title: "Timeline Diagram",
+    eyebrow: "Visual learning",
+    description: "Chronological timeline showing events, dates, and historical progression.",
+    icon: Layers3,
+    accent: "from-orange-500/20 to-yellow-500/5 border-orange-500/25",
+    bestFor: ["History", "Chronology", "Process flows"],
+  },
+  {
+    id: "flowchart",
+    title: "Flowchart Diagram",
+    eyebrow: "Visual learning",
+    description: "Process flowchart with decision points and concept relationships.",
+    icon: SearchCheck,
+    accent: "from-teal-500/20 to-cyan-500/5 border-teal-500/25",
+    bestFor: ["Algorithms", "Processes", "Decision trees"],
+  },
+  {
+    id: "code_tutorial",
+    title: "Code Tutorial",
+    eyebrow: "Programming",
+    description: "Step-by-step coding tutorial with examples, explanations, and practice challenges.",
+    icon: FileText,
+    accent: "from-indigo-500/20 to-blue-500/5 border-indigo-500/25",
+    bestFor: ["Programming", "Code examples", "Technical docs"],
   },
 ];
 

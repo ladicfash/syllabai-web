@@ -771,7 +771,7 @@ flowchart TD
 
     generateStudyTemplate: protectedProcedure.input(z.object({
       documentIds: z.array(z.number()).min(1).max(8),
-      template: z.enum(["key_points", "cornell", "exam_review", "practice_quiz", "study_guide", "glossary", "concept_outline", "weak_spots"]),
+      template: z.enum(["key_points", "cornell", "exam_review", "practice_quiz", "study_guide", "glossary", "concept_outline", "weak_spots", "mind_map", "timeline", "flowchart", "code_tutorial"]),
       depth: z.enum(["concise", "standard", "deep"]).default("deep"),
       examType: z.string().max(80).optional(),
       instructions: z.string().max(1200).optional(),
@@ -786,6 +786,10 @@ flowchart TD
         glossary: `Create a smart glossary of key terms. For each term include definition, plain-English explanation, why it matters, related terms, and a quick recall question.`,
         concept_outline: `Create a structured concept outline with hierarchy, dependencies, relationships, comparison tables, and what to learn first/next.`,
         weak_spots: `Create a weak-spot diagnostic: identify concepts students are likely to misunderstand, explain warning signs, give corrective drills, and provide targeted practice questions.`,
+        mind_map: `Create a Mermaid mindmap diagram. Output ONLY raw Mermaid code, no markdown fences. First line: mindmap. Second line: root((Main Topic)). Use plain text labels under 40 chars, 3-4 hierarchy levels, 5-8 main branches. NO parentheses, commas, colons, or special chars in labels.`,
+        timeline: `Create a Mermaid timeline diagram. Output ONLY raw Mermaid code. Start with: timeline. Include title and 6-12 events in format: YEAR/DATE : Event description (max 60 chars each). No markdown fences.`,
+        flowchart: `Create a Mermaid flowchart showing process flow or concept relationships. Output ONLY raw Mermaid code. Use flowchart TD format. Include decision points, process boxes, and clear flow direction. Max 15 nodes.`,
+        code_tutorial: `Create an interactive code tutorial with step-by-step explanations. Include: learning objectives, code snippets with syntax highlighting, explanations of each section, common mistakes, and practice challenges. Format in markdown with code blocks.`,
       };
       const depthRules = {
         concise: "Be efficient but still structured. Prioritize clarity and fast review.",
