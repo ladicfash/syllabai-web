@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -262,7 +262,7 @@ function LiteVideoEditor({ source, onClose, onExport }: { source: VideoEditorSou
               <div className="flex min-h-16 gap-2 overflow-x-auto rounded-xl bg-muted/30 p-3">
                 {clips.map((clip, index) => {
                   const active = clip.id === selectedClip?.id;
-                  const width = Math.max(88, ((clip.end - clip.start) / Math.max(totalDuration, 1)) * 520);
+                  const width = Math.max(88, ((clip.end - clip.start) / Math.max(totalDuration, 1)) * 520) || 88;
                   return (
                     <button key={clip.id} onClick={() => { setSelectedClipId(clip.id); seek(clip.start); }} style={{ width }} className={cn("shrink-0 rounded-xl border p-3 text-left transition-all", active ? "border-primary bg-primary/10 ring-2 ring-primary/15" : "bg-card hover:bg-muted")}>
                       <p className="text-xs font-semibold">{index + 1}. {clip.label}</p>
