@@ -14,7 +14,7 @@ import {
   createStudyOutput, getStudyOutputsByUser, getStudyOutputById, recordStudyActivity, getStudyActivityByUser,
   createDeck, getDecksByUser, getDeckById,
   createFlashcards, getFlashcardsByDeck, getFlashcardById, updateFlashcardContent, updateFlashcardSRS, getDueFlashcards,
-  saveQuizSession, getQuizHistory,
+  saveQuizSession, getQuizHistory, saveQuizMeReport, getQuizMeReportsByUser,
   createNote, getNotesByUser, updateNote, deleteNote, getNotesByIds,
   createTask, getTasksByUser, updateTask, deleteTask, getSubtasksByUser, createSubtasks, updateSubtask, deleteSubtask,
   saveTimerSession, getTimerHistory,
@@ -876,6 +876,121 @@ flowchart TD
         wordCount: extractedText.split(/\s+/).filter(Boolean).length,
       };
     }),
+    quizMeReports: protectedProcedure.query(({ ctx }) => getQuizMeReportsByUser(ctx.user.id, 20)),
+
+    generateQuizMe: protectedProcedure.input(z.object({
+      documentId: z.number(),
+      questionCount: z.number().min(3).max(25).default(10),
+      difficulty: z.enum(["beginner", "intermediate", "advanced"]).default("intermediate"),
+    })).mutation(async ({ ctx, input }) => {
+      const doc = await getDocumentById(input.documentId, ctx.user.id);
+      if (!doc?.extractedText) throw new Error("Select a document with extracted text first");
+      const raw = await callAI(
+        "You create original document-grounded quizzes for a fullscreen focus mode. Make mixed multiple-choice and short-answer questions. Never copy proprietary exams. Return JSON only.",
+        `Create exactly ${input.questionCount} questions at ${input.difficulty} difficulty from this document. Use about 70% MCQ and 30% short answer. For MCQ, provide 4 plausible choices and correctChoiceIndex. For short answer, use choices: [] and correctChoiceIndex: -1. Include concise explanations and short source snippets.\n\nDocument: ${doc.originalName}\n\n${doc.extractedText.slice(0, 14000)}`,
+        {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            questions: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                  type: { type: "string", enum: ["mcq", "short_answer"] },
+                  question: { type: "string" },
+                  choices: { type: "array", items: { type: "string" } },
+                  correctAnswer: { type: "string" },
+                  correctChoiceIndex: { type: "number" },
+                  explanation: { type: "string" },
+                  sourceSnippet: { type: "string" },
+                },
+                required: ["id", "type", "question", "choices", "correctAnswer", "correctChoiceIndex", "explanation", "sourceSnippet"],
+                additionalProperties: false,
+              },
+            },
+          },
+          required: ["title", "questions"],
+          additionalProperties: false,
+        }
+      );
+      const parsed = JSON.parse(raw) as any;
+      return { title: parsed.title || `Quiz Me — ${doc.originalName}`, documentName: doc.originalName, questions: (parsed.questions ?? []).slice(0, input.questionCount) };
+    }),
+
+    submitQuizMe: protectedProcedure.input(z.object({
+      documentId: z.number(),
+      title: z.string().max(256),
+      startedAt: z.string(),
+      questions: z.array(z.object({
+        id: z.string(),
+        type: z.enum(["mcq", "short_answer"]),
+        question: z.string(),
+        choices: z.array(z.string()),
+        correctAnswer: z.string(),
+        correctChoiceIndex: z.number(),
+        explanation: z.string(),
+        sourceSnippet: z.string().optional(),
+      })).min(1).max(30),
+      answers: z.record(z.string(), z.string()),
+      flags: z.object({ fullscreenExits: z.number().default(0), tabHidden: z.number().default(0), windowBlur: z.number().default(0), copyAttempts: z.number().default(0) }),
+    })).mutation(async ({ ctx, input }) => {
+      const mcqQuestions = input.questions.filter((q) => q.type === "mcq");
+      const shortQuestions = input.questions.filter((q) => q.type === "short_answer");
+      const mcqCorrect = mcqQuestions.filter((q) => Number(input.answers[q.id]) === q.correctChoiceIndex).length;
+      let shortGrades: { id: string; points: number; feedback: string }[] = [];
+      if (shortQuestions.length > 0) {
+        const raw = await callAI(
+          "Grade short answers fairly against the provided correct answers. Award points from 0 to 1. Return JSON only.",
+          JSON.stringify(shortQuestions.map((q) => ({ id: q.id, question: q.question, expected: q.correctAnswer, student: input.answers[q.id] || "" }))),
+          {
+            type: "object",
+            properties: {
+              grades: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: { id: { type: "string" }, points: { type: "number" }, feedback: { type: "string" } },
+                  required: ["id", "points", "feedback"],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ["grades"],
+            additionalProperties: false,
+          }
+        );
+        shortGrades = (JSON.parse(raw).grades ?? []).map((g: any) => ({ id: g.id, points: Math.max(0, Math.min(1, Number(g.points) || 0)), feedback: String(g.feedback || "") }));
+      }
+      const shortPoints = shortGrades.reduce((sum, g) => sum + g.points, 0);
+      const totalPoints = mcqCorrect + shortPoints;
+      const scorePercent = Math.round((totalPoints / input.questions.length) * 100);
+      const shortAnswerScore = shortQuestions.length ? Math.round((shortPoints / shortQuestions.length) * 100) : 0;
+      const report = {
+        questions: input.questions,
+        answers: input.answers,
+        shortGrades,
+        mcqCorrect,
+        mcqTotal: mcqQuestions.length,
+      };
+      const inserted = await saveQuizMeReport({
+        userId: ctx.user.id,
+        documentId: input.documentId,
+        title: input.title,
+        questionCount: input.questions.length,
+        scorePercent,
+        mcqScore: mcqQuestions.length ? Math.round((mcqCorrect / mcqQuestions.length) * 100) : 0,
+        shortAnswerScore,
+        answersJson: report,
+        flagsJson: input.flags,
+        startedAt: new Date(input.startedAt),
+        completedAt: new Date(),
+      });
+      await recordStudyActivity(ctx.user.id, "quiz_me", input.questions.length);
+      return { id: (inserted as any)?.insertId as number | undefined, scorePercent, mcqCorrect, mcqTotal: mcqQuestions.length, shortAnswerScore, shortGrades, flags: input.flags, report };
+    }),
+
     simulation: protectedProcedure.input(z.object({
       domain: z.enum(["medical", "finance", "coding", "history", "custom"]),
       customDomain: z.string().max(120).optional(),
@@ -1609,6 +1724,22 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
           \`createdAt\` timestamp NOT NULL DEFAULT (now()),
           \`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
           CONSTRAINT \`task_subtasks_id\` PRIMARY KEY(\`id\`)
+        );
+        CREATE TABLE IF NOT EXISTS \`quiz_me_reports\` (
+          \`id\` int AUTO_INCREMENT NOT NULL,
+          \`userId\` int NOT NULL,
+          \`documentId\` int NOT NULL,
+          \`title\` varchar(256) NOT NULL,
+          \`questionCount\` int NOT NULL DEFAULT 0,
+          \`scorePercent\` int NOT NULL DEFAULT 0,
+          \`mcqScore\` int NOT NULL DEFAULT 0,
+          \`shortAnswerScore\` int NOT NULL DEFAULT 0,
+          \`answersJson\` json,
+          \`flagsJson\` json,
+          \`startedAt\` timestamp,
+          \`completedAt\` timestamp NOT NULL DEFAULT (now()),
+          \`createdAt\` timestamp NOT NULL DEFAULT (now()),
+          CONSTRAINT \`quiz_me_reports_id\` PRIMARY KEY(\`id\`)
         );
       `;
       try {

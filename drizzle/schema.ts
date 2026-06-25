@@ -119,6 +119,22 @@ export const quizSessions = mysqlTable("quiz_sessions", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const quizMeReports = mysqlTable("quiz_me_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  documentId: int("documentId").notNull(),
+  title: varchar("title", { length: 256 }).notNull(),
+  questionCount: int("questionCount").default(0).notNull(),
+  scorePercent: int("scorePercent").default(0).notNull(),
+  mcqScore: int("mcqScore").default(0).notNull(),
+  shortAnswerScore: int("shortAnswerScore").default(0).notNull(),
+  answersJson: json("answersJson"),
+  flagsJson: json("flagsJson"),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const notes = mysqlTable("notes", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
@@ -217,6 +233,8 @@ export type TaskSubtask = typeof taskSubtasks.$inferSelect;
 export type InsertTaskSubtask = typeof taskSubtasks.$inferInsert;
 export type TimerSession = typeof timerSessions.$inferSelect;
 export type AiOutput = typeof aiOutputs.$inferSelect;
+export type QuizMeReport = typeof quizMeReports.$inferSelect;
+export type InsertQuizMeReport = typeof quizMeReports.$inferInsert;
 export type FlashcardDeckWithCount = FlashcardDeck & { cardCount: number };
 
 export const userSettings = mysqlTable("user_settings", {

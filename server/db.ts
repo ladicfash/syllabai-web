@@ -2,9 +2,9 @@ import { eq, desc, and, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   users, documents, sourceItems, studyOutputs, studyActivity, flashcardDecks, flashcards, notes, tasks, taskSubtasks,
-  timerSessions, aiOutputs, quizSessions, shareTokens, userSettings,
+  timerSessions, aiOutputs, quizSessions, quizMeReports, shareTokens, userSettings,
   voiceNotes, videoNotes, noteFolders,
-  type InsertUser, type Document, type InsertDocument, type InsertSourceItem, type InsertStudyOutput,
+  type InsertUser, type Document, type InsertDocument, type InsertSourceItem, type InsertStudyOutput, type InsertQuizMeReport,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -238,6 +238,24 @@ export async function getQuizHistory(userId: number, deckId?: number) {
     ? and(eq(quizSessions.userId, userId), eq(quizSessions.deckId, deckId))
     : eq(quizSessions.userId, userId);
   return db.select().from(quizSessions).where(conditions).orderBy(desc(quizSessions.createdAt)).limit(20);
+}
+
+export async function saveQuizMeReport(data: InsertQuizMeReport) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(quizMeReports).values(data);
+  return result[0];
+}
+
+export async function getQuizMeReportsByUser(userId: number, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(quizMeReports).where(eq(quizMeReports.userId, userId)).orderBy(desc(quizMeReports.createdAt)).limit(limit);
+  } catch (err) {
+    console.warn('[DB] quiz_me_reports table not ready:', err);
+    return [];
+  }
 }
 
 // ── Notes ──────────────────────────────────────────────────────────────────
