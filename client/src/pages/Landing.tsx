@@ -35,8 +35,8 @@ const features = [
     icon: Eye,
     title: "Focus Lock Quiz Me",
     desc: "Fullscreen quiz mode with AI grading, focus tracking, and detailed performance reports.",
-    color: "from-violet-500/20 to-violet-600/5",
-    iconColor: "text-violet-500",
+    color: "from-primary/20 to-primary/5",
+    iconColor: "text-primary",
     badge: "NEW",
   },
   {
@@ -265,7 +265,7 @@ export default function Landing() {
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40 animate-bounce">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40 animate-rise">
           <div className="w-px h-8 bg-gradient-to-b from-transparent to-primary" />
           <ChevronRight className="w-4 h-4 rotate-90 text-primary" />
         </div>
