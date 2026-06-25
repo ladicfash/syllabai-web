@@ -53,7 +53,7 @@ const TEMPLATES: Array<{
     eyebrow: "Exam prep",
     description: "High-yield concepts, likely question angles, common traps, and final cram checklist.",
     icon: GraduationCap,
-    accent: "from-indigo-500/20 to-blue-500/5 border-indigo-500/25",
+    accent: "from-primary/20 to-cyan-500/5 border-primary/25",
     bestFor: ["Midterms", "Finals", "Board-style review"],
   },
   {
@@ -89,7 +89,7 @@ const TEMPLATES: Array<{
     eyebrow: "Academic notes",
     description: "Cue column, deep notes, synthesis, memory hooks, exam angles, and self-test questions.",
     icon: NotebookTabs,
-    accent: "from-violet-500/20 to-purple-500/5 border-violet-500/25",
+    accent: "from-primary/20 to-cyan-500/5 border-primary/25",
     bestFor: ["Class notes", "Lectures", "Textbook chapters"],
   },
   {
