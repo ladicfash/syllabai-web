@@ -90,7 +90,7 @@ export default function LogoIntro({ onComplete }: LogoIntroProps) {
         {/* Icon */}
         <div
           className={`transition-all duration-500 ${iconScale}`}
-          style={{ transitionTimingFunction: "cubic-bezier(0.34,1.56,0.64,1)" }}
+          style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }}
         >
           <img
             src={ICON_URL}
@@ -129,7 +129,7 @@ export default function LogoIntro({ onComplete }: LogoIntroProps) {
               backgroundClip: "text",
               opacity: phase === "ai" || phase === "hold" || phase === "exit" ? 1 : 0,
               transform: phase === "ai" || phase === "hold" || phase === "exit" ? "translateY(0) scale(1)" : "translateY(8px) scale(0.9)",
-              transition: "opacity 0.18s cubic-bezier(0.34,1.56,0.64,1), transform 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+              transition: "opacity 0.18s cubic-bezier(0.16,1,0.3,1), transform 0.22s cubic-bezier(0.16,1,0.3,1)",
               filter: phase === "ai" ? "brightness(1.6)" : "brightness(1)",
             }}
           >
