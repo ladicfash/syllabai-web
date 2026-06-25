@@ -7,7 +7,8 @@ import {
   Brain, Zap, Clock, FileText, Mic, FlaskConical,
   ArrowRight, CheckCircle2, ChevronRight, Star,
   BookOpen, Target, Calendar, StickyNote, BarChart3,
-  Upload, Layers, Sparkles, TrendingUp, Code2, Landmark, Globe
+  Upload, Layers, Sparkles, TrendingUp, Code2, Landmark, Globe,
+  Search, Video, Eye, Lightbulb
 } from "lucide-react";
 
 const LOGO_URL = "/manus-storage/syllibai-logo_2db0f2cf.png";
@@ -16,70 +17,74 @@ const ICON_URL = "/manus-storage/syllibai-icon_7a0c12a1.jpeg";
 const features = [
   {
     icon: Brain,
-    title: "AI Study Tools",
-    desc: "Flashcards, Cornell notes, mind maps, timelines, and flowcharts — generated from your documents in seconds.",
+    title: "Study Studio",
+    desc: "AI generates flashcards, mind maps, Cornell notes, timelines, and flowcharts in seconds.",
     color: "from-blue-500/20 to-blue-600/5",
     iconColor: "text-blue-500",
+    badge: "NEW",
+  },
+  {
+    icon: Search,
+    title: "Source Hub",
+    desc: "Search 13+ academic databases (PubMed, arXiv, OpenAlex, Semantic Scholar, DOI, and more).",
+    color: "from-cyan-500/20 to-cyan-600/5",
+    iconColor: "text-cyan-500",
+    badge: "NEW",
+  },
+  {
+    icon: Eye,
+    title: "Focus Lock Quiz Me",
+    desc: "Fullscreen quiz mode with AI grading, focus tracking, and detailed performance reports.",
+    color: "from-violet-500/20 to-violet-600/5",
+    iconColor: "text-violet-500",
+    badge: "NEW",
+  },
+  {
+    icon: Video,
+    title: "Lite Video Editor",
+    desc: "Record lectures, trim clips, add chapters, and auto-transcribe with Whisper AI.",
+    color: "from-rose-500/20 to-rose-600/5",
+    iconColor: "text-rose-500",
+    badge: "NEW",
   },
   {
     icon: Zap,
     title: "Spaced Repetition",
-    desc: "SM-2 algorithm schedules your reviews at the exact moment your memory needs reinforcement. Built to surpass Anki.",
-    color: "from-violet-500/20 to-violet-600/5",
-    iconColor: "text-violet-500",
-  },
-  {
-    icon: Clock,
-    title: "Pomodoro Timer",
-    desc: "Customizable work/break cycles with session history and sound alerts to keep your focus locked in.",
-    color: "from-emerald-500/20 to-emerald-600/5",
-    iconColor: "text-emerald-500",
-  },
-  {
-    icon: Upload,
-    title: "Smart File Library",
-    desc: "Upload PDFs, images, DOCX files. Preview, convert, and extract text — even from photos via OCR.",
+    desc: "SM-2 algorithm schedules reviews at the exact moment your memory needs reinforcement.",
     color: "from-amber-500/20 to-amber-600/5",
     iconColor: "text-amber-500",
   },
   {
+    icon: Clock,
+    title: "Pomodoro Timer",
+    desc: "Customizable work/break cycles with session history and sound alerts.",
+    color: "from-emerald-500/20 to-emerald-600/5",
+    iconColor: "text-emerald-500",
+  },
+  {
     icon: FlaskConical,
-    title: "Simulation Environments",
-    desc: "Role-aware AI scenarios for medical, finance, coding, and history. Learn by doing, not memorizing.",
-    color: "from-rose-500/20 to-rose-600/5",
-    iconColor: "text-rose-500",
+    title: "AI Simulations",
+    desc: "Role-aware scenarios for medical, finance, coding, history. Learn by doing.",
+    color: "from-pink-500/20 to-pink-600/5",
+    iconColor: "text-pink-500",
   },
   {
     icon: Mic,
-    title: "Voice Notes + Whisper",
-    desc: "Record lectures or thoughts. Whisper AI transcribes them instantly and converts to study materials.",
+    title: "Voice Notes",
+    desc: "Record thoughts. Whisper AI transcribes instantly and converts to study materials.",
     color: "from-sky-500/20 to-sky-600/5",
     iconColor: "text-sky-500",
-  },
-  {
-    icon: Calendar,
-    title: "Planner & Deadlines",
-    desc: "AI detects deadlines from your syllabi. Calendar view, task tracking, and assignment management.",
-    color: "from-indigo-500/20 to-indigo-600/5",
-    iconColor: "text-indigo-500",
-  },
-  {
-    icon: StickyNote,
-    title: "Inline Notes",
-    desc: "Color-coded, pinnable notes with rich editing. Share specific notes via email or phone — selectively.",
-    color: "from-pink-500/20 to-pink-600/5",
-    iconColor: "text-pink-500",
   },
 ];
 
 const toolMarqueeItems = [
-  "Flashcards", "Mind Maps", "Cornell Notes", "Timelines", "Flowcharts",
-  "Spaced Repetition", "Pomodoro Timer", "Voice Notes", "OCR", "Simulations",
-  "Planner", "Quiz Mode", "Key Points", "TTS Read-Aloud", "File Conversion",
+  "Study Studio", "Source Hub", "Focus Lock Quiz", "Video Editor",
+  "Flashcards", "Mind Maps", "Cornell Notes", "Spaced Repetition",
+  "Pomodoro Timer", "Voice Notes", "AI Simulations", "Planner",
 ];
 
 const stats = [
-  { value: "10+", label: "Study Tools" },
+  { value: "13+", label: "Research DBs" },
   { value: "AI", label: "Powered" },
   { value: "∞", label: "Documents" },
   { value: "Free", label: "To Start" },
@@ -126,7 +131,7 @@ export default function Landing() {
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a>
-            <a href="#simulations" className="hover:text-foreground transition-colors">Simulations</a>
+            <a href="#new" className="hover:text-foreground transition-colors">What's New</a>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={handleStart} className="hidden sm:flex text-muted-foreground hover:text-foreground">
@@ -146,19 +151,21 @@ export default function Landing() {
         <div className="absolute inset-0 landing-glow" />
         <div className="absolute inset-0 landing-noise pointer-events-none" />
 
-        {/* Floating orbs */}
+        {/* Animated gradient orbs */}
         <div
-          className="absolute top-1/4 -left-40 w-[500px] h-[500px] rounded-full opacity-[0.12] blur-3xl pointer-events-none"
+          className="absolute top-1/3 -left-48 w-96 h-96 rounded-full opacity-[0.15] blur-3xl pointer-events-none"
           style={{
             background: "oklch(0.52 0.19 232)",
             transform: `translateY(${scrollY * 0.12}px)`,
+            animation: "float 6s ease-in-out infinite",
           }}
         />
         <div
-          className="absolute bottom-1/4 -right-40 w-96 h-96 rounded-full opacity-[0.10] blur-3xl pointer-events-none"
+          className="absolute bottom-1/3 -right-48 w-96 h-96 rounded-full opacity-[0.12] blur-3xl pointer-events-none"
           style={{
             background: "oklch(0.55 0.2 285)",
             transform: `translateY(${scrollY * -0.08}px)`,
+            animation: "float 8s ease-in-out infinite reverse",
           }}
         />
 
@@ -203,9 +210,7 @@ export default function Landing() {
             className="text-lg sm:text-xl text-muted-foreground max-w-2xl leading-relaxed animate-slide-up"
             style={{ animationDelay: "0.1s" }}
           >
-            Upload your syllabus, notes, or textbook.{" "}
-            <strong className="text-foreground font-semibold">syllabAI</strong> extracts every deadline,
-            builds your flashcards, maps your knowledge, and schedules your reviews — before you even open a notebook.
+            Upload your syllabus. Search 13+ research databases. Generate study materials with AI. Take fullscreen quizzes. All in one platform.
           </p>
 
           {/* CTAs */}
@@ -283,25 +288,68 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── What's New ──────────────────────────────────────────────────── */}
+      <section id="new" className="py-28 relative">
+        <div className="container">
+          <div className="flex flex-col items-center text-center gap-4 mb-16">
+            <div className="pill-badge">
+              <Lightbulb className="w-3 h-3" />
+              Latest Features
+            </div>
+            <h2 className="font-display text-4xl sm:text-5xl font-bold tracking-tight max-w-2xl leading-tight">
+              What's New in{" "}
+              <span className="gradient-text">syllabAI</span>
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-xl">
+              Four powerful new tools to supercharge your study workflow.
+            </p>
+          </div>
+
+          {/* New features grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {features.slice(0, 4).map((f, i) => (
+              <div
+                key={f.title}
+                className="group relative rounded-2xl border border-border/50 bg-card p-6 hover:border-primary/50 hover:shadow-lg transition-all duration-300"
+                style={{ animationDelay: `${i * 0.1}s` }}
+              >
+                {/* Badge */}
+                {f.badge && (
+                  <div className="absolute top-4 right-4 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                    {f.badge}
+                  </div>
+                )}
+                
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-4`}>
+                  <f.icon className={`w-6 h-6 ${f.iconColor}`} />
+                </div>
+                <h3 className="font-display font-semibold text-lg mb-2 leading-snug">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Features ────────────────────────────────────────────────────── */}
-      <section id="features" className="py-28 relative">
+      <section id="features" className="py-28 bg-muted/25 relative">
         <div className="container">
           {/* Section header */}
           <div className="flex flex-col items-center text-center gap-4 mb-16">
             <div className="pill-badge">
               <Layers className="w-3 h-3" />
-              Everything You Need
+              Complete Toolkit
             </div>
             <h2 className="font-display text-4xl sm:text-5xl font-bold tracking-tight max-w-2xl leading-tight">
-              One Platform.{" "}
-              <span className="gradient-text">Every Study Tool.</span>
+              Everything You Need{" "}
+              <span className="gradient-text">to Ace Your Exams</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl">
-              From AI-generated flashcards to spaced repetition, from voice notes to exam planners — all seamlessly integrated.
+              From AI-generated study materials to fullscreen quizzes, spaced repetition, and voice notes — all seamlessly integrated.
             </p>
           </div>
 
-          {/* Feature grid — 4 cols on large, 2 on md, 1 on sm */}
+          {/* Feature grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {features.map((f, i) => (
               <div
@@ -321,7 +369,7 @@ export default function Landing() {
       </section>
 
       {/* ── How It Works ────────────────────────────────────────────────── */}
-      <section id="how-it-works" className="py-28 bg-muted/25 relative overflow-hidden">
+      <section id="how-it-works" className="py-28 relative overflow-hidden">
         <div className="absolute inset-0 landing-grid opacity-40" />
         <div className="container relative z-10">
           <div className="flex flex-col items-center text-center gap-4 mb-16">
@@ -330,8 +378,8 @@ export default function Landing() {
               How It Works
             </div>
             <h2 className="font-display text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
-              Three Steps to{" "}
-              <span className="gradient-text">Deep Understanding</span>
+              From Upload to{" "}
+              <span className="gradient-text">Ace in Minutes</span>
             </h2>
           </div>
 
@@ -341,225 +389,115 @@ export default function Landing() {
                 step: "01",
                 icon: Upload,
                 title: "Upload Your Materials",
-                desc: "Drop in PDFs, DOCX files, images, or even photos of your notes. OCR extracts text from anything.",
+                desc: "Drop in PDFs, DOCX files, images, or photos. OCR extracts text from anything.",
               },
               {
                 step: "02",
                 icon: Brain,
-                title: "AI Does the Heavy Lifting",
-                desc: "syllabAI generates flashcards, mind maps, Cornell notes, quizzes, and key points — all from your content.",
+                title: "AI Generates Study Tools",
+                desc: "Get flashcards, mind maps, Cornell notes, quizzes, and key points instantly.",
               },
               {
                 step: "03",
-                icon: BarChart3,
-                title: "Study Smarter Over Time",
-                desc: "Spaced repetition schedules your reviews. The planner tracks deadlines. The timer keeps you focused.",
+                icon: TrendingUp,
+                title: "Track Progress & Master",
+                desc: "Spaced repetition schedules reviews. Fullscreen quizzes track your mastery.",
               },
-            ].map((step, i) => (
-              <div key={step.step} className="relative flex flex-col items-center text-center gap-4">
-                {i < 2 && (
-                  <div className="hidden md:block absolute top-8 left-[calc(50%+3.5rem)] w-[calc(100%-7rem)] h-px border-t border-dashed border-border" />
-                )}
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/8 border border-primary/20 flex items-center justify-center">
-                    <step.icon className="w-7 h-7 text-primary" />
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center font-mono">
-                    {i + 1}
+            ].map((item, i) => (
+              <div key={i} className="relative">
+                {/* Step number */}
+                <div className="absolute -top-6 left-0 right-0 flex justify-center">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center font-display font-bold text-primary">
+                    {item.step}
                   </div>
                 </div>
-                <h3 className="font-display font-semibold text-lg">{step.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
+
+                {/* Card */}
+                <div className="pt-8 rounded-2xl border border-border/50 bg-card p-6 text-center">
+                  <item.icon className="w-8 h-8 text-primary mx-auto mb-4" />
+                  <h3 className="font-display font-semibold text-lg mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground">{item.desc}</p>
+                </div>
+
+                {/* Connector line */}
+                {i < 2 && (
+                  <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-px bg-gradient-to-r from-primary/50 to-transparent" />
+                )}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Simulations ─────────────────────────────────────────────────── */}
-      <section id="simulations" className="py-28 relative overflow-hidden">
-        <div className="absolute inset-0 landing-glow opacity-40" />
-        <div className="container relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="flex flex-col gap-6">
-              <div className="pill-badge w-fit">
-                <FlaskConical className="w-3 h-3" />
-                Simulation Environments
-              </div>
-              <h2 className="font-display text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
-                Learn by Doing,{" "}
-                <span className="gradient-text">Not Memorizing</span>
-              </h2>
-              <p className="text-muted-foreground text-lg leading-relaxed">
-                Role-aware AI scenarios put you in the room. Diagnose patients, analyze markets, debug systems, or rewrite history — with contextually accurate AI feedback at every step.
-              </p>
-              <div className="flex flex-col gap-3">
-                {[
-                  { icon: FlaskConical, label: "Medical", desc: "Clinical case scenarios & diagnostic reasoning", color: "text-rose-500" },
-                  { icon: TrendingUp, label: "Finance", desc: "Investment decisions & market analysis", color: "text-emerald-500" },
-                  { icon: Code2, label: "Coding", desc: "Technical interviews & system design", color: "text-blue-500" },
-                  { icon: Landmark, label: "History", desc: "What-if scenarios & historical analysis", color: "text-amber-500" },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                      <item.icon className={`w-4 h-4 ${item.color}`} />
-                    </div>
-                    <div>
-                      <span className="text-sm font-semibold">{item.label}</span>
-                      <span className="text-sm text-muted-foreground"> — {item.desc}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Button onClick={handleStart} className="gap-2 w-fit shadow-md shadow-primary/20">
-                Try a Simulation <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* Simulation preview card */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-violet-500/10 rounded-3xl blur-2xl scale-95" />
-              <div className="relative bg-card border border-border rounded-2xl p-6 shadow-2xl">
-                <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
-                  <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
-                    <FlaskConical className="w-4 h-4 text-rose-500" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold font-display">Medical Simulation</div>
-                    <div className="text-xs text-muted-foreground">Clinical Case #47</div>
-                  </div>
-                  <div className="ml-auto px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-xs font-semibold">● Live</div>
-                </div>
-                <div className="space-y-3">
-                  <div className="bg-muted/50 rounded-xl p-3">
-                    <p className="text-xs text-muted-foreground mb-1 font-semibold uppercase tracking-wide">Patient Presentation</p>
-                    <p className="text-sm leading-relaxed">A 58-year-old male presents with sudden onset chest pain radiating to the left arm, diaphoresis, and shortness of breath...</p>
-                  </div>
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
-                    <p className="text-xs text-primary font-semibold mb-1 uppercase tracking-wide">Your Response</p>
-                    <p className="text-sm text-muted-foreground italic">Order a 12-lead ECG and troponin levels immediately...</p>
-                  </div>
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3">
-                    <p className="text-xs text-emerald-600 font-semibold mb-1 uppercase tracking-wide">AI Feedback</p>
-                    <p className="text-sm text-muted-foreground">Excellent clinical reasoning. ECG shows ST elevation in leads II, III, aVF — consistent with inferior STEMI...</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Collaborate Section ──────────────────────────────────────── */}
+      {/* ── CTA Section ─────────────────────────────────────────────────── */}
       <section className="py-28 relative overflow-hidden">
-        <div className="absolute inset-0 landing-grid opacity-30" />
+        <div className="absolute inset-0 landing-glow opacity-50" />
         <div className="container relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* Left: copy */}
-            <div className="flex flex-col gap-6">
-              <div className="pill-badge w-fit">
-                <Globe className="w-3 h-3" />
-                Explore & Collaborate
-              </div>
-              <h2 className="font-display text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
-                Share What You Know.{" "}
-                <span className="gradient-text">Learn Together.</span>
-              </h2>
-              <p className="text-muted-foreground text-lg leading-relaxed">
-                Publish your best study sets and notes to the public Explore feed — or keep them private. Anyone can browse; only members can unlock full content.
-              </p>
-              <div className="flex flex-col gap-3">
-                {[
-                  { icon: CheckCircle2, label: "Selective sharing", desc: "Choose exactly which notes and decks to make public" },
-                  { icon: CheckCircle2, label: "Quizlet-style gating", desc: "Guests see previews; full access requires an account" },
-                  { icon: CheckCircle2, label: "Subject tagging", desc: "Browse by subject — Biology, CS, History, and more" },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-start gap-3">
-                    <item.icon className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                    <div>
-                      <span className="text-sm font-semibold">{item.label}</span>
-                      <span className="text-sm text-muted-foreground"> — {item.desc}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Button onClick={handleStart} variant="outline" className="gap-2 w-fit">
-                Browse Explore <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-            {/* Right: mock Explore card */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-sky-500/10 to-violet-500/10 rounded-3xl blur-2xl scale-95" />
-              <div className="relative bg-card border border-border rounded-2xl p-6 shadow-2xl space-y-3">
-                <div className="flex items-center justify-between pb-4 border-b border-border">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">S</div>
-                    <div>
-                      <p className="text-sm font-semibold">Organic Chemistry — Exam 2</p>
-                      <p className="text-xs text-muted-foreground">by @student · 48 cards</p>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 text-[10px] font-semibold">Chemistry</span>
-                </div>
-                {/* Blurred preview cards */}
-                {["Describe the mechanism of an SN2 reaction.", "What is Markovnikov's rule?", "Define chirality and give an example."].map((q, i) => (
-                  <div key={i} className={`bg-muted/50 rounded-xl p-3 ${i > 0 ? "relative overflow-hidden" : ""}`}>
-                    <p className="text-xs text-muted-foreground mb-0.5 font-semibold uppercase tracking-wide">Card {i + 1}</p>
-                    <p className={`text-sm ${i > 0 ? "blur-[3px] select-none" : ""}`}>{q}</p>
-                    {i > 0 && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-[10px] font-semibold text-muted-foreground bg-background/80 px-2 py-0.5 rounded-full border border-border">Sign in to unlock</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="rounded-3xl border border-border/50 bg-gradient-to-br from-primary/5 to-primary/10 p-12 md:p-16 text-center">
+            <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
+              Ready to Study Smarter?
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Join thousands of students using syllabAI to ace their exams. No credit card required.
+            </p>
+            <Button
+              size="lg"
+              onClick={handleStart}
+              className="gap-2 px-8 h-12 text-base shadow-xl shadow-primary/30 hover:shadow-primary/45 transition-all hover:-translate-y-0.5"
+            >
+              Get Started Free
+              <ArrowRight className="w-4 h-4" />
+            </Button>
           </div>
-        </div>
-      </section>
-
-      {/* ── CTA ─────────────────────────────────────────────────────────── */}
-      <section className="py-32 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/6 via-transparent to-violet-500/6" />
-        <div className="absolute inset-0 landing-grid opacity-25" />
-        {/* Big blurred circle behind CTA */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10 blur-3xl"
-          style={{ background: "oklch(0.52 0.19 232)" }} />
-        <div className="container relative z-10 flex flex-col items-center text-center gap-8">
-          <img src={ICON_URL} alt="syllabAI" className="w-16 h-16 rounded-2xl shadow-xl shadow-primary/20" />
-          <h2 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight max-w-3xl leading-tight">
-            Ready to Transform{" "}
-            <span className="gradient-text">How You Study?</span>
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-xl">
-            Join students who are already studying smarter with AI-powered tools built for deep understanding.
-          </p>
-          <Button
-            size="lg"
-            onClick={handleStart}
-            className="gap-2 px-12 h-14 text-lg shadow-2xl shadow-primary/35 hover:shadow-primary/50 transition-all hover:-translate-y-0.5"
-          >
-            Get Started Free
-            <ArrowRight className="w-5 h-5" />
-          </Button>
-          <p className="text-xs text-muted-foreground">No credit card required · Works on any device</p>
         </div>
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <footer className="border-t border-border py-12">
-        <div className="container flex flex-col md:flex-row items-center justify-between gap-6">
-          <img src={LOGO_URL} alt="syllabAI" className="h-7 object-contain" />
-          <p className="text-xs text-muted-foreground text-center max-w-md italic leading-relaxed">
-            "The best platform would be invisible — it removes friction between you and deep understanding,
-            rather than adding features for their own sake."
-          </p>
-          <p className="text-xs text-muted-foreground whitespace-nowrap">
-            © {new Date().getFullYear()} syllabAI
-          </p>
+      <footer className="py-12 border-t border-border/50 bg-muted/20">
+        <div className="container">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <img src={LOGO_URL} alt="syllabAI" className="h-6 object-contain mb-4" />
+              <p className="text-sm text-muted-foreground">AI-powered study platform for the modern student.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4 text-sm">Product</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
+                <li><a href="#new" className="hover:text-foreground transition-colors">What's New</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4 text-sm">Legal</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition-colors">Privacy</a></li>
+                <li><a href="#" className="hover:text-foreground transition-colors">Terms</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4 text-sm">Connect</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition-colors">Twitter</a></li>
+                <li><a href="#" className="hover:text-foreground transition-colors">Discord</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-border/50 pt-8 flex flex-col md:flex-row items-center justify-between">
+            <p className="text-sm text-muted-foreground">© 2026 syllabAI. All rights reserved.</p>
+            <div className="flex items-center gap-4 mt-4 md:mt-0">
+              <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Status</a>
+              <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Support</a>
+            </div>
+          </div>
         </div>
       </footer>
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(20px); }
+        }
+      `}</style>
     </div>
   );
 }
