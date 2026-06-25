@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 const quickActions = [
   { label: "Upload Document", icon: Upload, path: "/library", accent: "from-primary/20 to-primary/5", iconColor: "text-primary", border: "border-primary/20" },
-  { label: "Study Studio", icon: Brain, path: "/study-tools", accent: "from-violet-500/20 to-violet-500/5", iconColor: "text-violet-500", border: "border-violet-500/20" },
+  { label: "Study Studio", icon: Brain, path: "/study-tools", accent: "from-primary/20 to-primary/5", iconColor: "text-primary", border: "border-primary/20" },
   { label: "Start Timer", icon: Clock, path: "/timer", accent: "from-amber-500/20 to-amber-500/5", iconColor: "text-amber-500", border: "border-amber-500/20" },
   { label: "Voice Notes", icon: Mic, path: "/voice", accent: "from-rose-500/20 to-rose-500/5", iconColor: "text-rose-500", border: "border-rose-500/20" },
   { label: "My Notes", icon: StickyNote, path: "/notes", accent: "from-emerald-500/20 to-emerald-500/5", iconColor: "text-emerald-500", border: "border-emerald-500/20" },
@@ -344,13 +344,13 @@ export default function Dashboard() {
       {/* Spaced Repetition Banner */}
       {dueCards && dueCards.length > 0 && (
         <div
-          className="study-card p-5 border-l-4 border-l-violet-500 animate-slide-up bg-gradient-to-r from-violet-500/5 to-transparent"
+          className="study-card p-5 border-l border-l-primary animate-slide-up bg-gradient-to-r from-primary/5 to-transparent"
           style={{ animationDelay: "0.2s" }}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-violet-500" />
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <p className="font-semibold text-sm">Spaced Repetition Due</p>
@@ -360,7 +360,7 @@ export default function Dashboard() {
               </div>
             </div>
             <Link href="/spaced-rep">
-              <Button size="sm" className="gap-2 bg-violet-600 hover:bg-violet-700 text-white">
+              <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
                 Review Now <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </Link>
