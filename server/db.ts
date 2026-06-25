@@ -533,14 +533,24 @@ export async function createVideoNote(data: {
 export async function getVideoNotesByUser(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(videoNotes).where(eq(videoNotes.userId, userId)).orderBy(desc(videoNotes.createdAt));
+  try {
+    return await db.select().from(videoNotes).where(eq(videoNotes.userId, userId)).orderBy(desc(videoNotes.createdAt));
+  } catch (err) {
+    console.warn('[DB] video_notes table query failed:', err);
+    return [];
+  }
 }
 
 export async function countVideoNotesByUser(userId: number) {
   const db = await getDb();
   if (!db) return 0;
-  const rows = await db.select().from(videoNotes).where(eq(videoNotes.userId, userId));
-  return rows.length;
+  try {
+    const rows = await db.select().from(videoNotes).where(eq(videoNotes.userId, userId));
+    return rows.length;
+  } catch (err) {
+    console.warn('[DB] video_notes table query failed:', err);
+    return 0;
+  }
 }
 
 export async function updateVideoNoteTranscript(id: number, userId: number, transcript: string) {
