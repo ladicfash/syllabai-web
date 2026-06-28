@@ -1,6 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch } from "wouter";
+import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import NotFound from "@/pages/NotFound";
@@ -233,6 +233,10 @@ function AppRoutes() {
           {isAuthenticated ? <StudyLayout><Settings /></StudyLayout> : <Landing />}
         </Route>
 
+        {/* Root path — serves Landing for guests, redirects authenticated users to /dashboard */}
+        <Route path="/">
+          {isAuthenticated ? <Redirect to="/dashboard" /> : <Landing />}
+        </Route>
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
