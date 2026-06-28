@@ -94,9 +94,10 @@ function AppRoutes() {
   useEffect(() => {
     if (loading) return;
     const justLoggedIn = prevAuth.current === false && isAuthenticated;
-    const neverShown = !sessionStorage.getItem(SESSION_KEY);
+    let neverShown = true;
+    try { neverShown = !sessionStorage.getItem(SESSION_KEY); } catch { /* ignore */ }
     if (isAuthenticated && (justLoggedIn || neverShown)) {
-      sessionStorage.setItem(SESSION_KEY, "1");
+      try { sessionStorage.setItem(SESSION_KEY, "1"); } catch { /* ignore */ }
       setShowIntro(true);
     }
     prevAuth.current = isAuthenticated;
