@@ -132,3 +132,10 @@
 - [x] Apply user accent color globally via CSS variable (--color-primary override in App.tsx)
 - [x] Fix email notifications (Brevo SMTP via nodemailer, sendDeadlineReminder helper)
 - [x] Fix phone number notifications (replaced with browser push notifications via Web Push API + VAPID; SMS marked coming soon)
+
+## Phase 17: CourseGraph Onboarding Wizard
+- [x] Build CourseGraphOnboarding 3-step wizard page (client/src/pages/CourseGraphOnboarding.tsx)
+- [x] Add AI topic extraction endpoint (courseGraph.extractTopics) to server/routers/courseGraph.ts
+- [x] Add /course-graph/new route to App.tsx
+- [x] Wire "New Course" button on CourseGraph page to navigate to /course-graph/new
+- [x] Write Vitest tests for onboarding flow

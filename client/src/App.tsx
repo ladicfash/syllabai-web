@@ -22,6 +22,7 @@ import Profile from "./pages/Profile";
 import CollabSpace from "./pages/CollabSpace";
 import Settings from "./pages/Settings";
 import { CourseGraph } from "./pages/CourseGraph";
+import CourseGraphOnboarding from "./pages/CourseGraphOnboarding";
 import StudyLayout from "./components/StudyLayout";
 import LogoIntro from "./components/LogoIntro";
 import TermsModal from "./components/TermsModal";
@@ -144,6 +145,9 @@ function AppRoutes() {
       <Switch>
         {/* Public landing */}
         <Route path="/settings" component={Settings} />
+        <Route path="/course-graph/new">
+          {isAuthenticated ? <CourseGraphOnboarding /> : <Landing />}
+        </Route>
         <Route path="/course-graph" component={CourseGraph} />
 
         {/* Protected app routes inside StudyLayout */}

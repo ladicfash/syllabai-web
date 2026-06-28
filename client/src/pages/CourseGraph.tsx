@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { useLocation } from 'wouter';
 import DashboardLayout from '@/components/DashboardLayout';
 import { CourseGraphVisualization } from '@/components/CourseGraphVisualization';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Download, Plus, Settings } from 'lucide-react';
+import { Download, Plus } from 'lucide-react';
 
 interface Topic {
   id: number;
@@ -17,6 +18,7 @@ interface Topic {
 }
 
 export const CourseGraph: React.FC = () => {
+  const [, navigate] = useLocation();
   // Mock data - replace with real API calls
   const [topics] = useState<Topic[]>([
     {
@@ -86,7 +88,7 @@ export const CourseGraph: React.FC = () => {
               <Download className="w-4 h-4 mr-2" />
               Export Data
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={() => navigate('/course-graph/new')}>
               <Plus className="w-4 h-4 mr-2" />
               New Course
             </Button>
