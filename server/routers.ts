@@ -7,6 +7,7 @@ import { invokeLLM } from "./_core/llm";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { storagePut, storageGetSignedUrl } from "./storage";
 import { getDb } from "./db";
+import { courseGraphRouter } from "./routers/courseGraph";
 import {
   upsertUser, getUserByOpenId,
   createDocument, getDocumentsByUser, getDocumentById, deleteDocument, updateDocumentText,
@@ -241,6 +242,7 @@ function sm2(card: { interval: number; repetitions: number; easeFactor: number }
 // ── Router ─────────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
+  courseGraph: courseGraphRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

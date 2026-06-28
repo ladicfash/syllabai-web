@@ -319,3 +319,92 @@ export const pushSubscriptions = mysqlTable("push_subscriptions", {
 });
 export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
 export type InsertPushSubscriptionRow = typeof pushSubscriptions.$inferInsert;
+
+// CourseGraph: Knowledge Graph Tables
+export const courses = mysqlTable("courses", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 256 }).notNull(),
+  syllabus: text("syllabus"), // Course syllabus/description
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const topics = mysqlTable("topics", {
+  id: int("id").autoincrement().primaryKey(),
+  courseId: int("courseId").notNull(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 256 }).notNull(),
+  description: text("description"),
+  parentTopicId: int("parentTopicId"), // For subtopics
+  masteryScore: float("masteryScore").default(0).notNull(), // 0-100%
+  lastReviewedAt: timestamp("lastReviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const topicAssets = mysqlTable("topicAssets", {
+  id: int("id").autoincrement().primaryKey(),
+  topicId: int("topicId").notNull(),
+  userId: int("userId").notNull(),
+  assetType: mysqlEnum("assetType", [
+    "document",
+    "note",
+    "flashcard_deck",
+    "quiz_result",
+    "voice_note",
+    "video_note",
+    "source_item",
+  ]).notNull(),
+  assetId: int("assetId").notNull(), // FK to the actual asset table
+  weight: float("weight").default(1).notNull(), // Importance multiplier
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const masteryHistory = mysqlTable("masteryHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  topicId: int("topicId").notNull(),
+  userId: int("userId").notNull(),
+  score: float("score").notNull(), // 0-100%
+  source: mysqlEnum("source", [
+    "quiz_result",
+    "flashcard_review",
+    "manual_update",
+    "ai_assessment",
+  ]).notNull(),
+  evidence: text("evidence"), // JSON: {quizId, deckId, etc.}
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const topicDependencies = mysqlTable("topicDependencies", {
+  id: int("id").autoincrement().primaryKey(),
+  topicId: int("topicId").notNull(),
+  userId: int("userId").notNull(),
+  dependsOnTopicId: int("dependsOnTopicId").notNull(),
+  weight: float("weight").default(1).notNull(), // Strength of dependency
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const courseGraphExports = mysqlTable("courseGraphExports", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  exportType: mysqlEnum("exportType", ["json", "csv", "svg"]).notNull(),
+  data: text("data").notNull(), // Serialized export data
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// Types
+export type Course = typeof courses.$inferSelect;
+export type InsertCourse = typeof courses.$inferInsert;
+export type Topic = typeof topics.$inferSelect;
+export type InsertTopic = typeof topics.$inferInsert;
+export type TopicAsset = typeof topicAssets.$inferSelect;
+export type InsertTopicAsset = typeof topicAssets.$inferInsert;
+export type MasteryHistoryRow = typeof masteryHistory.$inferSelect;
+export type InsertMasteryHistoryRow = typeof masteryHistory.$inferInsert;
+export type TopicDependency = typeof topicDependencies.$inferSelect;
+export type InsertTopicDependency = typeof topicDependencies.$inferInsert;
+export type CourseGraphExport = typeof courseGraphExports.$inferSelect;
+export type InsertCourseGraphExport = typeof courseGraphExports.$inferInsert;

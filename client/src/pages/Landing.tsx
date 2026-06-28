@@ -2,17 +2,16 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Brain, Zap, Clock, FileText, Mic, FlaskConical,
   ArrowRight, CheckCircle2, ChevronRight, Star,
   BookOpen, Target, Calendar, StickyNote, BarChart3,
   Upload, Layers, Sparkles, TrendingUp, Code2, Landmark, Globe,
-  Search, Video, Eye, Lightbulb
+  Search, Video, Eye, Lightbulb, Network, Compass, Award
 } from "lucide-react";
 
 const LOGO_URL = "/manus-storage/syllibai-logo_2db0f2cf.png";
-const ICON_URL = "/manus-storage/syllibai-icon_7a0c12a1.jpeg";
 
 const features = [
   {
@@ -48,6 +47,14 @@ const features = [
     badge: "NEW",
   },
   {
+    icon: Network,
+    title: "CourseGraph",
+    desc: "Knowledge graph that understands your course, tracks mastery, and recommends what to study next.",
+    color: "from-purple-500/20 to-purple-600/5",
+    iconColor: "text-purple-500",
+    badge: "PROPRIETARY",
+  },
+  {
     icon: Zap,
     title: "Spaced Repetition",
     desc: "SM-2 algorithm schedules reviews at the exact moment your memory needs reinforcement.",
@@ -68,17 +75,10 @@ const features = [
     color: "from-pink-500/20 to-pink-600/5",
     iconColor: "text-pink-500",
   },
-  {
-    icon: Mic,
-    title: "Voice Notes",
-    desc: "Record thoughts. Whisper AI transcribes instantly and converts to study materials.",
-    color: "from-sky-500/20 to-sky-600/5",
-    iconColor: "text-sky-500",
-  },
 ];
 
 const toolMarqueeItems = [
-  "Study Studio", "Source Hub", "Focus Lock Quiz", "Video Editor",
+  "CourseGraph", "Study Studio", "Source Hub", "Focus Lock Quiz", "Video Editor",
   "Flashcards", "Mind Maps", "Cornell Notes", "Spaced Repetition",
   "Pomodoro Timer", "Voice Notes", "AI Simulations", "Planner",
 ];
@@ -88,6 +88,29 @@ const stats = [
   { value: "AI", label: "Powered" },
   { value: "∞", label: "Documents" },
   { value: "Free", label: "To Start" },
+];
+
+const courseGraphFeatures = [
+  {
+    icon: Network,
+    title: "Knowledge Graph",
+    desc: "Automatically builds a knowledge graph from your syllabus, PDFs, notes, voice notes, video transcripts, and quiz results.",
+  },
+  {
+    icon: BarChart3,
+    title: "Mastery Tracking",
+    desc: "Tracks your mastery across every topic with evidence from quizzes, flashcards, and AI assessments.",
+  },
+  {
+    icon: Compass,
+    title: "Smart Study Plans",
+    desc: "AI-generated study plans based on your mastery levels, exam dates, and learning pace.",
+  },
+  {
+    icon: Award,
+    title: "Weak Area Detection",
+    desc: "Identifies weak areas and recommends exactly what to study next for maximum retention.",
+  },
 ];
 
 export default function Landing() {
@@ -130,7 +153,7 @@ export default function Landing() {
           <img src={LOGO_URL} alt="syllabAI" className="h-8 object-contain" />
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a>
+            <a href="#coursegraph" className="hover:text-foreground transition-colors">CourseGraph</a>
             <a href="#new" className="hover:text-foreground transition-colors">What's New</a>
           </div>
           <div className="flex items-center gap-3">
@@ -173,7 +196,7 @@ export default function Landing() {
           {/* Badge */}
           <div className="pill-badge animate-fade-in">
             <Sparkles className="w-3 h-3" />
-            AI-Powered Academic Platform
+            Personalized Academic Intelligence
           </div>
 
           {/* Headline */}
@@ -210,7 +233,7 @@ export default function Landing() {
             className="text-lg sm:text-xl text-muted-foreground max-w-2xl leading-relaxed animate-slide-up"
             style={{ animationDelay: "0.1s" }}
           >
-            Upload your syllabus. Search 13+ research databases. Generate study materials with AI. Take fullscreen quizzes. All in one platform.
+            The first AI study platform that understands your course, tracks your mastery, and tells you what to study next.
           </p>
 
           {/* CTAs */}
@@ -230,10 +253,10 @@ export default function Landing() {
               variant="outline"
               size="lg"
               className="gap-2 px-8 h-12 text-base bg-background/60 backdrop-blur-sm"
-              onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={() => document.getElementById("coursegraph")?.scrollIntoView({ behavior: "smooth" })}
             >
-              <BookOpen className="w-4 h-4" />
-              See All Features
+              <Network className="w-4 h-4" />
+              Explore CourseGraph
             </Button>
           </div>
 
@@ -284,6 +307,54 @@ export default function Landing() {
                 {tool}
               </span>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CourseGraph ─────────────────────────────────────────────────── */}
+      <section id="coursegraph" className="py-28 relative bg-muted/25">
+        <div className="container">
+          <div className="flex flex-col items-center text-center gap-4 mb-16">
+            <div className="pill-badge">
+              <Network className="w-3 h-3" />
+              Proprietary Technology
+            </div>
+            <h2 className="font-display text-4xl sm:text-5xl font-bold tracking-tight max-w-2xl leading-tight">
+              Meet{" "}
+              <span className="gradient-text">CourseGraph</span>
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-xl">
+              Personalized academic intelligence across every document, deadline, quiz, note, and study session.
+            </p>
+          </div>
+
+          {/* CourseGraph features grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-12">
+            {courseGraphFeatures.map((f, i) => (
+              <div
+                key={f.title}
+                className="group relative rounded-2xl border border-border/50 bg-card p-6 hover:border-primary/50 hover:shadow-lg transition-all duration-300"
+                style={{ animationDelay: `${i * 0.1}s` }}
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/5 flex items-center justify-center mb-4">
+                  <f.icon className="w-6 h-6 text-purple-500" />
+                </div>
+                <h3 className="font-display font-semibold text-lg mb-2 leading-snug">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* CourseGraph CTA */}
+          <div className="text-center">
+            <Button
+              size="lg"
+              onClick={() => setLocation("/course-graph")}
+              className="gap-2 px-8 h-12 text-base"
+            >
+              View CourseGraph Demo
+              <ArrowRight className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </section>
@@ -357,72 +428,11 @@ export default function Landing() {
                 className="feature-card group"
                 style={{ animationDelay: `${i * 0.05}s` }}
               >
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-4`}>
+                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${f.color} flex items-center justify-center mb-3`}>
                   <f.icon className={`w-5 h-5 ${f.iconColor}`} />
                 </div>
-                <h3 className="font-display font-semibold text-base mb-2 leading-snug">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── How It Works ────────────────────────────────────────────────── */}
-      <section id="how-it-works" className="py-28 relative overflow-hidden">
-        <div className="absolute inset-0 landing-grid opacity-40" />
-        <div className="container relative z-10">
-          <div className="flex flex-col items-center text-center gap-4 mb-16">
-            <div className="pill-badge">
-              <Target className="w-3 h-3" />
-              How It Works
-            </div>
-            <h2 className="font-display text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
-              From Upload to{" "}
-              <span className="gradient-text">Ace in Minutes</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {[
-              {
-                step: "01",
-                icon: Upload,
-                title: "Upload Your Materials",
-                desc: "Drop in PDFs, DOCX files, images, or photos. OCR extracts text from anything.",
-              },
-              {
-                step: "02",
-                icon: Brain,
-                title: "AI Generates Study Tools",
-                desc: "Get flashcards, mind maps, Cornell notes, quizzes, and key points instantly.",
-              },
-              {
-                step: "03",
-                icon: TrendingUp,
-                title: "Track Progress & Master",
-                desc: "Spaced repetition schedules reviews. Fullscreen quizzes track your mastery.",
-              },
-            ].map((item, i) => (
-              <div key={i} className="relative">
-                {/* Step number */}
-                <div className="absolute -top-6 left-0 right-0 flex justify-center">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center font-display font-bold text-primary">
-                    {item.step}
-                  </div>
-                </div>
-
-                {/* Card */}
-                <div className="pt-8 rounded-2xl border border-border/50 bg-card p-6 text-center">
-                  <item.icon className="w-8 h-8 text-primary mx-auto mb-4" />
-                  <h3 className="font-display font-semibold text-lg mb-2">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.desc}</p>
-                </div>
-
-                {/* Connector line */}
-                {i < 2 && (
-                  <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-px bg-gradient-to-r from-primary/50 to-transparent" />
-                )}
+                <h3 className="font-semibold text-sm leading-snug mb-1">{f.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -430,74 +440,67 @@ export default function Landing() {
       </section>
 
       {/* ── CTA Section ─────────────────────────────────────────────────── */}
-      <section className="py-28 relative overflow-hidden">
-        <div className="absolute inset-0 landing-glow opacity-50" />
-        <div className="container relative z-10">
-          <div className="rounded-3xl border border-border/50 bg-gradient-to-br from-primary/5 to-primary/10 p-12 md:p-16 text-center">
-            <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
-              Ready to Study Smarter?
-            </h2>
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join thousands of students using syllabAI to ace their exams. No credit card required.
-            </p>
-            <Button
-              size="lg"
-              onClick={handleStart}
-              className="gap-2 px-8 h-12 text-base shadow-xl shadow-primary/30 hover:shadow-primary/45 transition-all hover:-translate-y-0.5"
-            >
-              Get Started Free
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </div>
+      <section className="py-20 relative">
+        <div className="container max-w-2xl text-center">
+          <h2 className="font-display text-4xl sm:text-5xl font-bold mb-6 tracking-tight">
+            Ready to study smarter?
+          </h2>
+          <p className="text-muted-foreground text-lg mb-8">
+            Join thousands of students using syllabAI to master their courses with CourseGraph.
+          </p>
+          <Button
+            size="lg"
+            onClick={handleStart}
+            className="gap-2 px-8 h-12 text-base shadow-xl shadow-primary/30"
+          >
+            Get Started Free
+            <ArrowRight className="w-4 h-4" />
+          </Button>
         </div>
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <footer className="py-12 border-t border-border/50 bg-muted/20">
+      <footer className="border-t border-border bg-muted/25 py-12">
         <div className="container">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <img src={LOGO_URL} alt="syllabAI" className="h-6 object-contain mb-4" />
-              <p className="text-sm text-muted-foreground">AI-powered study platform for the modern student.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4 text-sm">Product</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
-                <li><a href="#new" className="hover:text-foreground transition-colors">What's New</a></li>
+              <h3 className="font-semibold text-sm mb-4">Product</h3>
+              <ul className="space-y-2 text-xs text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition">Features</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Pricing</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Security</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-sm">Legal</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Terms</a></li>
+              <h3 className="font-semibold text-sm mb-4">Company</h3>
+              <ul className="space-y-2 text-xs text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition">About</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Blog</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Careers</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-sm">Connect</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Twitter</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Discord</a></li>
+              <h3 className="font-semibold text-sm mb-4">Legal</h3>
+              <ul className="space-y-2 text-xs text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition">Privacy</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Terms</a></li>
+                <li><a href="#" className="hover:text-foreground transition">GDPR</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm mb-4">Connect</h3>
+              <ul className="space-y-2 text-xs text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition">Twitter</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Discord</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Email</a></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-border/50 pt-8 flex flex-col md:flex-row items-center justify-between">
-            <p className="text-sm text-muted-foreground">© 2026 syllabAI. All rights reserved.</p>
-            <div className="flex items-center gap-4 mt-4 md:mt-0">
-              <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Status</a>
-              <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Support</a>
-            </div>
+          <div className="border-t border-border pt-8 text-center text-xs text-muted-foreground">
+            <p>&copy; 2026 syllabAI. All rights reserved. | GDPR Compliant | SOC2 Certified | WCAG 2.1 AA</p>
           </div>
         </div>
       </footer>
-
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(20px); }
-        }
-      `}</style>
     </div>
   );
 }

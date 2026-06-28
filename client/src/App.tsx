@@ -21,6 +21,7 @@ import Explore from "./pages/Explore";
 import Profile from "./pages/Profile";
 import CollabSpace from "./pages/CollabSpace";
 import Settings from "./pages/Settings";
+import { CourseGraph } from "./pages/CourseGraph";
 import StudyLayout from "./components/StudyLayout";
 import LogoIntro from "./components/LogoIntro";
 import TermsModal from "./components/TermsModal";
@@ -142,7 +143,8 @@ function AppRoutes() {
       <CommandPalette />
       <Switch>
         {/* Public landing */}
-        <Route path="/" component={Landing} />
+        <Route path="/settings" component={Settings} />
+        <Route path="/course-graph" component={CourseGraph} />
 
         {/* Protected app routes inside StudyLayout */}
         <Route path="/dashboard">
