@@ -201,7 +201,9 @@ export default defineConfig({
           if (id.includes("react") || id.includes("scheduler")) return "vendor-react";
           if (id.includes("@radix-ui") || id.includes("lucide-react") || id.includes("framer-motion")) return "vendor-ui";
           if (id.includes("streamdown") || id.includes("shiki") || id.includes("katex") || id.includes("hast") || id.includes("remark") || id.includes("rehype") || id.includes("unified")) return "vendor-markdown";
-          if (id.includes("mermaid") || id.includes("cytoscape") || id.includes("dagre") || id.includes("elkjs")) return "vendor-diagrams";
+          // mermaid/cytoscape intentionally excluded from manualChunks — they have
+          // circular dependencies that Rollup must resolve in its own order.
+          // Forcing them into a single chunk causes "Cannot access before initialization" in prod.
           if (id.includes("@tanstack") || id.includes("@trpc") || id.includes("superjson")) return "vendor-data";
           if (id.includes("recharts")) return "vendor-charts";
           return "vendor-misc";
