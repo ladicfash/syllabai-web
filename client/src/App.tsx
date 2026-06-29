@@ -90,25 +90,23 @@ function AppRoutes() {
   const prevAuth = useRef<boolean | null>(null);
   const utils = trpc.useUtils();
 
-  // Show the intro animation exactly once per browser session, when the user
-  // transitions from unauthenticated → authenticated (i.e. just logged in).
+  // Show the intro animation only on login/logout transition
   useEffect(() => {
     if (loading) return;
     const justLoggedIn = prevAuth.current === false && isAuthenticated;
-    let neverShown = true;
-    try { neverShown = !sessionStorage.getItem(SESSION_KEY); } catch { /* ignore */ }
-    if (isAuthenticated && (justLoggedIn || neverShown)) {
-      try { sessionStorage.setItem(SESSION_KEY, "1"); } catch { /* ignore */ }
+    const justLoggedOut = prevAuth.current === true && !isAuthenticated;
+    if (justLoggedIn || justLoggedOut) {
       setShowIntro(true);
     }
     prevAuth.current = isAuthenticated;
   }, [isAuthenticated, loading]);
 
-  // Show onboarding tutorial for first-time users
+  // Show onboarding tutorial only for first-time users on login
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
+      const justLoggedIn = prevAuth.current === false;
       const hasSeenTutorial = !!(user as any).onboardingCompleted;
-      if (!hasSeenTutorial) {
+      if (justLoggedIn && !hasSeenTutorial) {
         setShowIntro(true);
       }
     }

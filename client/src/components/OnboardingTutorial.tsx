@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ChevronRight, ChevronLeft, X, BookOpen, Brain, Zap, Clock, StickyNote, Users, Compass, Database, Video, Mic, FlaskConical, ListTodo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -14,48 +14,37 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
   const slides = [
     {
       title: "Welcome to syllabAI",
-      subtitle: "Your All-in-One Study Platform",
-      description: "We've built the most comprehensive study tool to help you learn smarter, not harder.",
-      icon: "🎓",
+      description: "Your all-in-one study platform. Upload syllabi, generate study materials, and track your progress.",
       color: "from-blue-600 to-blue-400",
+      icon: Brain,
     },
     {
       title: "CourseGraph",
-      subtitle: "Visualize Your Knowledge",
-      description: "Upload your syllabus and watch as AI automatically creates an interactive knowledge graph. See how concepts connect and build your understanding visually.",
-      icon: "🧠",
+      description: "Upload your syllabus and create an interactive knowledge graph. Visualize how concepts connect.",
       color: "from-purple-600 to-purple-400",
       feature: { icon: Brain, label: "CourseGraph", path: "/course-graph" },
     },
     {
       title: "Study Studio",
-      subtitle: "AI-Powered Study Materials",
-      description: "Transform your documents into flashcards, mind maps, Cornell notes, timelines, and more. Let AI generate study materials tailored to your learning style.",
-      icon: "✨",
+      description: "Generate flashcards, mind maps, Cornell notes, and timelines from your documents.",
       color: "from-pink-600 to-pink-400",
       feature: { icon: Database, label: "Study Studio", path: "/study-tools" },
     },
     {
       title: "Spaced Repetition",
-      subtitle: "Learn Smarter with Science",
-      description: "Our intelligent spaced repetition system optimizes your review schedule using proven learning science. Study less, remember more.",
-      icon: "⚡",
+      description: "Optimize your review schedule with intelligent spaced repetition based on learning science.",
       color: "from-yellow-600 to-yellow-400",
       feature: { icon: Zap, label: "Spaced Repetition", path: "/spaced-rep" },
     },
     {
       title: "Study Timer",
-      subtitle: "Focus & Productivity",
-      description: "Pomodoro-style timer with work/break cycles. Track your study sessions and build a consistent study habit.",
-      icon: "⏱️",
+      description: "Pomodoro-style timer with work and break cycles. Track your study sessions.",
       color: "from-orange-600 to-orange-400",
       feature: { icon: Clock, label: "Study Timer", path: "/timer" },
     },
     {
       title: "Voice & Video Notes",
-      subtitle: "Learn Your Way",
-      description: "Record voice notes and video lectures. AI transcribes and summarizes them automatically for quick review.",
-      icon: "🎙️",
+      description: "Record and transcribe voice and video lectures for quick review.",
       color: "from-red-600 to-red-400",
       features: [
         { icon: Mic, label: "Voice Notes", path: "/voice" },
@@ -64,9 +53,7 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
     },
     {
       title: "Notes & Planning",
-      subtitle: "Organize Your Studies",
-      description: "Take rich notes, plan your study schedule, and track your progress all in one place.",
-      icon: "📝",
+      description: "Take rich notes and plan your study schedule in one place.",
       color: "from-green-600 to-green-400",
       features: [
         { icon: StickyNote, label: "Notes", path: "/notes" },
@@ -75,9 +62,7 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
     },
     {
       title: "Collaborate & Explore",
-      subtitle: "Learn Together",
-      description: "Share your study materials, collaborate with classmates, and explore what others are studying.",
-      icon: "👥",
+      description: "Share study materials, collaborate with classmates, and explore what others are studying.",
       color: "from-indigo-600 to-indigo-400",
       features: [
         { icon: Users, label: "Collab Space", path: "/collab" },
@@ -85,10 +70,8 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
       ],
     },
     {
-      title: "You're All Set!",
-      subtitle: "Ready to Study Smarter",
-      description: "Start by uploading your first syllabus to CourseGraph, or explore any feature from the sidebar. Your learning journey starts now.",
-      icon: "🚀",
+      title: "Ready to start",
+      description: "Begin by uploading your first syllabus to CourseGraph, or explore any feature from the sidebar.",
       color: "from-cyan-600 to-cyan-400",
       cta: true,
     },
@@ -96,6 +79,7 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
 
   const slide = slides[step];
   const isLast = step === slides.length - 1;
+  const IconComponent = slide.icon;
 
   const handleNext = () => {
     if (isLast) {
@@ -121,26 +105,29 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
       <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className={cn(
-          "relative h-40 bg-gradient-to-br flex items-center justify-center text-white overflow-hidden",
+          "relative h-32 bg-gradient-to-br flex items-center justify-center overflow-hidden",
           `bg-gradient-to-br ${slide.color}`
         )}>
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full -mr-20 -mt-20" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-white rounded-full -ml-16 -mb-16" />
           </div>
-          <div className="relative text-6xl">{slide.icon}</div>
+          {IconComponent && (
+            <div className="relative text-white">
+              <IconComponent className="w-12 h-12" />
+            </div>
+          )}
           <button
             onClick={handleComplete}
             className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-white" />
           </button>
         </div>
 
         {/* Content */}
         <div className="p-8">
-          <h2 className="text-3xl font-bold mb-2 text-slate-900 dark:text-white">{slide.title}</h2>
-          <p className="text-lg text-slate-600 dark:text-slate-400 mb-4">{slide.subtitle}</p>
+          <h2 className="text-2xl font-bold mb-3 text-slate-900 dark:text-white">{slide.title}</h2>
           <p className="text-slate-700 dark:text-slate-300 mb-8 leading-relaxed">{slide.description}</p>
 
           {/* Feature buttons */}
@@ -215,7 +202,7 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
 
           {/* Step counter */}
           <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-4">
-            Step {step + 1} of {slides.length}
+            {step + 1} of {slides.length}
           </p>
         </div>
       </div>
