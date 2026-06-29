@@ -61,6 +61,10 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [location] = useLocation();
+
+  const handleBack = () => {
+    window.history.back();
+  };
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { data: dueCards } = trpc.decks.dueCards.useQuery(undefined, { enabled: !!user, staleTime: 60_000 });
@@ -274,6 +278,13 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
         {/* Mobile Header */}
         <header className="lg:hidden flex items-center h-14 px-4 border-b border-border bg-card flex-shrink-0 gap-3">
           <button
+            onClick={handleBack}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            title="Go back"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
             onClick={() => setMobileOpen(true)}
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -283,6 +294,24 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
             <img src={LOGO_ICON} alt="syllabAI" className="w-7 h-7 rounded-lg object-cover" />
             <span className="font-display font-bold text-sm tracking-tight">syllabAI</span>
           </div>
+          <button
+            onClick={toggleTheme}
+            className="text-muted-foreground hover:text-foreground transition-colors p-1.5"
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+        </header>
+
+        {/* Desktop Header with Back Button */}
+        <header className="hidden lg:flex items-center h-14 px-6 border-b border-border bg-card flex-shrink-0 gap-4">
+          <button
+            onClick={handleBack}
+            className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded hover:bg-muted"
+            title="Go back"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1" />
           <button
             onClick={toggleTheme}
             className="text-muted-foreground hover:text-foreground transition-colors p-1.5"
