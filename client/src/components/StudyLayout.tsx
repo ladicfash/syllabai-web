@@ -8,7 +8,7 @@ import {
   LayoutDashboard, BookOpen, Brain, Clock, Calendar,
   Mic, ChevronLeft, ChevronRight, Sun, Moon,
   LogOut, Menu, X, StickyNote, Zap, FlaskConical,
-  Compass, Timer, ListTodo, Users, Settings, Video, Database, Wand2, Search
+  Compass, Timer, ListTodo, Users, Settings, Video, Database, Wand2, Search, Network
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
@@ -25,6 +25,7 @@ const navSections = [
   {
     label: "Study",
     items: [
+      { path: "/course-graph", icon: Network,     label: "CourseGraph"      },
       { path: "/library",     icon: BookOpen,    label: "Library"          },
       { path: "/source-hub",  icon: Database,    label: "Source Hub"       },
       { path: "/study-tools", icon: Wand2,       label: "Study Studio"     },

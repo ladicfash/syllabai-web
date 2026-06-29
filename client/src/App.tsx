@@ -27,6 +27,7 @@ import StudyLayout from "./components/StudyLayout";
 import LogoIntro from "./components/LogoIntro";
 import TermsModal from "./components/TermsModal";
 import { CommandPalette } from "./components/CommandPalette";
+import { OnboardingTutorial } from "./components/OnboardingTutorial";
 import { useAuth } from "./_core/hooks/useAuth";
 import { trpc } from "./lib/trpc";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -103,6 +104,24 @@ function AppRoutes() {
     prevAuth.current = isAuthenticated;
   }, [isAuthenticated, loading]);
 
+  // Show onboarding tutorial for first-time users
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      const hasSeenTutorial = !!(user as any).onboardingCompleted;
+      if (!hasSeenTutorial) {
+        setShowIntro(true);
+      }
+    }
+  }, [isAuthenticated, loading, user]);
+
+  const handleOnboardingComplete = useCallback(async () => {
+    try {
+      await utils.auth.me.invalidate();
+    } catch (e) {
+      console.warn("Failed to mark onboarding as complete", e);
+    }
+  }, [utils]);
+
   // Show terms if user is authenticated but hasn't accepted yet
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
@@ -123,6 +142,10 @@ function AppRoutes() {
     utils.auth.me.invalidate();
   }, [utils]);
 
+  const handleOnboardingCompleteCallback = useCallback(() => {
+    handleOnboardingComplete();
+  }, [handleOnboardingComplete]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "oklch(0.09 0.03 258)" }}>
@@ -140,6 +163,7 @@ function AppRoutes() {
   return (
     <>
       {showIntro && <LogoIntro onComplete={handleIntroComplete} />}
+      {isAuthenticated && !(user as any)?.onboardingCompleted && <OnboardingTutorial onComplete={handleOnboardingCompleteCallback} />}
       <TermsModal open={showTerms} onAccepted={handleTermsAccepted} />
 
       <CommandPalette />
@@ -236,9 +260,9 @@ function AppRoutes() {
           {loading ? null : isAuthenticated ? <StudyLayout><Settings /></StudyLayout> : <Landing />}
         </Route>
 
-        {/* Root path — serves Landing for guests, redirects authenticated users to /course-graph */}
+        {/* Root path — serves Landing for guests, redirects authenticated users to /dashboard */}
         <Route path="/">
-          {loading ? null : isAuthenticated ? <Redirect to="/course-graph" /> : <Landing />}
+          {loading ? null : isAuthenticated ? <Redirect to="/dashboard" /> : <Landing />}
         </Route>
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
