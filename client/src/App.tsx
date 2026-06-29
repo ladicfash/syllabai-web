@@ -147,55 +147,57 @@ function AppRoutes() {
         {/* Public landing */}
         <Route path="/settings" component={Settings} />
         <Route path="/course-graph/new">
-          {isAuthenticated ? <CourseGraphOnboarding /> : <Landing />}
+          {loading ? null : isAuthenticated ? <CourseGraphOnboarding /> : <Landing />}
         </Route>
-        <Route path="/course-graph" component={CourseGraph} />
+        <Route path="/course-graph">
+          {isAuthenticated ? <CourseGraph /> : loading ? null : <Landing />}
+        </Route>
 
         {/* Protected app routes inside StudyLayout */}
         <Route path="/dashboard">
-          {isAuthenticated ? <StudyLayout><Dashboard /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><Dashboard /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/library">
-          {isAuthenticated ? <StudyLayout><Library /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><Library /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/source-hub">
-          {isAuthenticated ? <StudyLayout><SourceHub /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><SourceHub /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/study-tools/classic">
-          {isAuthenticated ? <StudyLayout><StudyToolsClassic /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><StudyToolsClassic /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/study-tools">
-          {isAuthenticated ? <StudyLayout><StudyStudio /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><StudyStudio /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/study-studio">
-          {isAuthenticated ? <StudyLayout><StudyStudio /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><StudyStudio /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/timer">
-          {isAuthenticated ? <StudyLayout><Timer /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><Timer /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/planner">
-          {isAuthenticated ? <StudyLayout><Planner /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><Planner /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/spaced-rep">
-          {isAuthenticated ? <StudyLayout><SpacedRep /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><SpacedRep /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/spaced-repetition">
-          {isAuthenticated ? <StudyLayout><SpacedRep /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><SpacedRep /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/notes">
-          {isAuthenticated ? <StudyLayout><Notes /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><Notes /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/simulations">
-          {isAuthenticated ? <StudyLayout><Simulations /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><Simulations /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/voice">
-          {isAuthenticated ? <StudyLayout><VoiceNotes /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><VoiceNotes /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/voice-notes">
-          {isAuthenticated ? <StudyLayout><VoiceNotes /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><VoiceNotes /></StudyLayout> : <Landing />}
         </Route>
         <Route path="/video-notes">
-          {isAuthenticated ? <StudyLayout><VideoNotes /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><VideoNotes /></StudyLayout> : <Landing />}
         </Route>
 
         {/* Collab Space — public but gated */}
@@ -231,12 +233,12 @@ function AppRoutes() {
 
         {/* Settings — protected */}
         <Route path="/settings">
-          {isAuthenticated ? <StudyLayout><Settings /></StudyLayout> : <Landing />}
+          {loading ? null : isAuthenticated ? <StudyLayout><Settings /></StudyLayout> : <Landing />}
         </Route>
 
-        {/* Root path — serves Landing for guests, redirects authenticated users to /dashboard */}
+        {/* Root path — serves Landing for guests, redirects authenticated users to /course-graph */}
         <Route path="/">
-          {isAuthenticated ? <Redirect to="/dashboard" /> : <Landing />}
+          {loading ? null : isAuthenticated ? <Redirect to="/course-graph" /> : <Landing />}
         </Route>
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
