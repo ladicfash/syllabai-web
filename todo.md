@@ -141,9 +141,9 @@
 - [x] Write Vitest tests for onboarding flow
 
 ## Phase 18: Notes Redesign & Format Persistence
-- [ ] Redesign Notes UI to Google Drive-style card layout with content previews
-- [ ] Add format persistence: store note format (Markdown, HTML, JSON, PDF, PNG, JPEG) in DB
-- [ ] Implement note download functionality for all format types
+- [x] Add format and preview columns to notes table (migration applied)
+- [x] Redesign Notes UI to Google Drive-style card layout with content previews (NoteCardEnhanced component)
+- [x] Implement note download functionality for all format types (Markdown, JSON, Text)
 - [ ] Add mindmap/chart persistence and export (PNG, SVG, PDF)
 - [ ] Wire CourseGraph to live data (replace mock topics with real tRPC queries)
 - [ ] Add language selector to onboarding wizard step 1

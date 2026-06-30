@@ -13,10 +13,12 @@ import {
 } from "lucide-react";
 import { SharePopup } from "@/components/SharePopup";
 import { EmptyState } from "@/components/study/EmptyState";
+import { NoteCardEnhanced } from "@/components/study/NoteCardEnhanced";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import WhiteboardDialog from "@/components/whiteboard/WhiteboardDialog";
 import Whiteboard, { type WhiteboardSnapshot } from "@/components/whiteboard/Whiteboard";
+import { downloadNote } from "@/lib/noteDownload";
 
 // 30-colour ROYGBIV gradient palette for note cards
 const NOTE_COLORS: string[] = [
@@ -114,132 +116,22 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (hex: strin
   );
 }
 
-function NoteCard({ note, onUpdate, onDelete, folders, onMove, selected, onSelect, onOpenWhiteboard }: any) {
-  const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState(note.title);
-  const [content, setContent] = useState(note.content);
-  const [showMove, setShowMove] = useState(false);
-
-  const bg = note.color || NOTE_COLORS[6]; // default yellow
-  const fg = contrastColor(bg);
-  const border = borderColor(bg);
-
-  const save = () => {
-    onUpdate(note.id, { title, content });
-    setEditing(false);
+// Use the enhanced NoteCard component instead of the old one
+function NoteCard(props: any) {
+  const handleDownload = (note: any, format: string) => {
+    try {
+      downloadNote(note, format);
+      toast.success(`Downloaded as ${format}`);
+    } catch (error) {
+      toast.error(`Failed to download as ${format}`);
+    }
   };
 
   return (
-    <div
-      className={cn(
-        "rounded-xl border-2 p-4 transition-all duration-200 group relative shadow-sm hover:shadow-md",
-        selected && "ring-2 ring-primary ring-offset-2"
-      )}
-      style={{ backgroundColor: bg, borderColor: border, color: fg }}
-    >
-      {/* Select checkbox */}
-      <button
-        onClick={() => onSelect(note.id)}
-        className={cn(
-          "absolute top-3 right-3 w-5 h-5 rounded border-2 transition-all",
-          selected ? "bg-primary border-primary" : "border-current opacity-20 group-hover:opacity-60"
-        )}
-      >
-        {selected && <Check className="w-3 h-3 text-white mx-auto" />}
-      </button>
-
-      {/* Pinned indicator */}
-      {note.isPinned && !editing && (
-        <Pin className="absolute top-3 left-3 w-3 h-3 opacity-50" style={{ color: fg }} />
-      )}
-
-      {editing ? (
-        <div className="space-y-2">
-          <Input
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            className="text-sm font-semibold border-0 shadow-none px-0 h-auto bg-transparent"
-            style={{ color: fg }}
-          />
-          <Textarea
-            value={content}
-            onChange={e => setContent(e.target.value)}
-            className="text-sm border-0 shadow-none px-0 resize-none min-h-[80px] bg-transparent"
-            style={{ color: fg }}
-          />
-          <div className="flex gap-2">
-            <Button size="sm" onClick={save} className="h-7 text-xs gap-1"><Check className="w-3 h-3" /> Save</Button>
-            <Button size="sm" variant="ghost" onClick={() => setEditing(false)} className="h-7 text-xs gap-1"><X className="w-3 h-3" /> Cancel</Button>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className={cn("pr-6", note.isPinned && "pl-5")}>
-            <p className="font-semibold text-sm mb-1.5" style={{ color: fg }}>{note.title}</p>
-            {typeof note.content === "string" && note.content.startsWith("<!--syllabai-whiteboard:") ? (
-              <div className="rounded-md border border-current/15 p-2 mt-1 mb-1" style={{ backgroundColor: "rgba(255,255,255,0.4)" }}>
-                <p className="text-[11px] uppercase tracking-wider opacity-60 mb-1" style={{ color: fg }}>Whiteboard</p>
-                <p className="text-xs opacity-80" style={{ color: fg }}>{countWhiteboardObjects(note.content)} object{countWhiteboardObjects(note.content) === 1 ? "" : "s"} · click the brush to reopen</p>
-              </div>
-            ) : (
-              <p className="text-sm leading-relaxed whitespace-pre-wrap line-clamp-6" style={{ color: fg, opacity: 0.85 }}>{note.content}</p>
-            )}
-          </div>
-          <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: `1px solid ${fg}18` }}>
-            <span className="text-xs" style={{ color: fg, opacity: 0.55 }}>
-              {formatDistanceToNow(new Date(note.updatedAt), { addSuffix: true })}
-            </span>
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={() => onUpdate(note.id, { isPinned: !note.isPinned })}
-                className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
-                title={note.isPinned ? "Unpin" : "Pin"}
-              >
-                {note.isPinned
-                  ? <PinOff className="w-3.5 h-3.5" style={{ color: fg }} />
-                  : <Pin className="w-3.5 h-3.5" style={{ color: fg }} />}
-              </button>
-              {onOpenWhiteboard && (typeof note.content === "string" && note.content.startsWith("<!--syllabai-whiteboard:")) && (
-                <button onClick={() => onOpenWhiteboard(note)} className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10" title="Open in Whiteboard">
-                  <Brush className="w-3.5 h-3.5" style={{ color: fg }} />
-                </button>
-              )}
-              <button onClick={() => setEditing(true)} className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10" title="Edit">
-                <Edit3 className="w-3.5 h-3.5" style={{ color: fg }} />
-              </button>
-              <div className="relative">
-                <button onClick={() => setShowMove(v => !v)} className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10" title="Move to folder">
-                  <FolderInput className="w-3.5 h-3.5" style={{ color: fg }} />
-                </button>
-                {showMove && (
-                  <div className="absolute right-0 bottom-7 z-50 bg-popover border border-border rounded-lg shadow-lg p-1 min-w-[160px]">
-                    <button
-                      onClick={() => { onMove(note.id, null); setShowMove(false); }}
-                      className="w-full text-left px-3 py-1.5 text-xs rounded hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
-                    >
-                      <X className="w-3 h-3" /> No folder
-                    </button>
-                    {folders?.map((f: any) => (
-                      <button
-                        key={f.id}
-                        onClick={() => { onMove(note.id, f.id); setShowMove(false); }}
-                        className="w-full text-left px-3 py-1.5 text-xs rounded hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
-                      >
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: f.color }} />
-                        {f.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button onClick={() => onDelete(note.id)} className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10" title="Delete">
-                <Trash2 className="w-3.5 h-3.5 text-red-500" />
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+    <NoteCardEnhanced
+      {...props}
+      onDownload={handleDownload}
+    />
   );
 }
 
