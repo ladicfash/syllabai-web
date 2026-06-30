@@ -17,6 +17,7 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  language: varchar("language", { length: 16 }).default("en-US").notNull(),
   acceptedTermsAt: timestamp("acceptedTermsAt"),
   termsVersion: varchar("termsVersion", { length: 16 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
