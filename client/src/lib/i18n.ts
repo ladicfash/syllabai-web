@@ -811,6 +811,73 @@ const resources = {
         noData: 'Aaye ko si.',
       },
     },
+  'ko-KR': {
+    translation: {
+      "nav": {
+            "dashboard": "대시보드",
+            "courseGraph": "코스 그래프",
+            "studyStudio": "스터디 스튜디오",
+            "spacedRepetition": "간격 반복",
+            "studyTimer": "학습 타이머",
+            "voiceNotes": "음성 메모",
+            "videoNotes": "비디오 메모",
+            "notes": "노트",
+            "planner": "플래너",
+            "collaborate": "협업",
+            "explore": "탐색",
+            "settings": "설정",
+            "logout": "로그아웃"
+      },
+      "onboarding": {
+            "welcome": "syllabAI에 오신 것을 환영합니다",
+            "description": "올인원 학습 플랫폼입니다. 강의계획서를 업로드하고, 학습 자료를 생성하고, 진행 상황을 추적하세요.",
+            "courseGraph": "코스 그래프 - 지식 구조 시각화",
+            "studyStudio": "스터디 스튜디오 - 학습 자료 생성",
+            "spacedRepetition": "간격 반복 - 효율적으로 학습",
+            "studyTimer": "학습 타이머 - 학습 세션 추적",
+            "voiceNotes": "음성 메모 - 생각 녹음",
+            "videoNotes": "비디오 메모 - 비디오 설명 캡처",
+            "notes": "노트 - 학습 정리",
+            "planner": "플래너 - 학습 일정 계획",
+            "collaborate": "협업 - 다른 사람과 함께 공부",
+            "explore": "탐색 - 새로운 학습 자료 발견"
+      },
+      "buttons": {
+            "next": "다음",
+            "previous": "이전",
+            "skip": "건너뛰기",
+            "getStarted": "시작하기",
+            "createCourse": "새 코스 만들기",
+            "upload": "업로드",
+            "cancel": "취소",
+            "save": "저장",
+            "delete": "삭제",
+            "edit": "편집",
+            "back": "뒤로"
+      },
+      "settings": {
+            "title": "설정",
+            "language": "언어",
+            "theme": "테마",
+            "darkMode": "다크 모드",
+            "lightMode": "라이트 모드",
+            "notifications": "알림",
+            "privacy": "개인정보",
+            "account": "계정"
+      },
+      "errors": {
+            "uploadFailed": "업로드 실패. 다시 시도하세요.",
+            "loadingFailed": "로드 실패. 페이지를 새로고침하세요.",
+            "unauthorized": "이 작업을 수행할 권한이 없습니다.",
+            "notFound": "페이지를 찾을 수 없습니다."
+      },
+      "messages": {
+            "success": "성공!",
+            "loading": "로드 중...",
+            "noData": "사용 가능한 데이터가 없습니다."
+      }
+}
+  },
   },
 };
 

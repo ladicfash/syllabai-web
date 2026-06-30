@@ -19,6 +19,7 @@ const LANGUAGES = [
   { code: 'it-IT', name: 'Italiano' },
   { code: 'ja-JP', name: '日本語' },
   { code: 'yo-NG', name: 'Yorùbá' },
+  { code: 'ko-KR', name: '한국어' },
 ];
 
 export function LanguageSelector() {

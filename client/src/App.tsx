@@ -31,6 +31,7 @@ import { OnboardingTutorial } from "./components/OnboardingTutorial";
 import { useAuth } from "./_core/hooks/useAuth";
 import { trpc } from "./lib/trpc";
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 // Load Mermaid.js from CDN
 function MermaidLoader() {
@@ -59,6 +60,23 @@ function MermaidLoader() {
 
 
 const SESSION_KEY = "syllabai_intro_shown";
+
+// Syncs user's saved language preference on login
+function LanguageSyncer() {
+  const { isAuthenticated, user } = useAuth();
+  const { i18n } = useTranslation();
+  
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const userLanguage = (user as any)?.language || 'en-US';
+      if (userLanguage && i18n.language !== userLanguage) {
+        i18n.changeLanguage(userLanguage);
+      }
+    }
+  }, [isAuthenticated, user, i18n]);
+  
+  return null;
+}
 
 // Applies the user's saved accent color as a CSS variable on the document root
 function AccentColorApplier() {
@@ -165,6 +183,7 @@ function AppRoutes() {
       <TermsModal open={showTerms} onAccepted={handleTermsAccepted} />
 
       <CommandPalette />
+      <LanguageSyncer />
       <Switch>
         {/* Public landing */}
         <Route path="/course-graph/new">
