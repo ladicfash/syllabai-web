@@ -167,7 +167,6 @@ function AppRoutes() {
       <CommandPalette />
       <Switch>
         {/* Public landing */}
-        <Route path="/settings" component={Settings} />
         <Route path="/course-graph/new">
           {loading ? null : isAuthenticated ? <CourseGraphOnboarding /> : <Landing />}
         </Route>
