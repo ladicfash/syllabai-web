@@ -94,10 +94,10 @@ export const CourseGraph: React.FC = () => {
                 <h3 className="text-lg font-semibold text-white">{selectedTopic.name}</h3>
                 <p className="text-slate-400 text-sm mt-2">{selectedTopic.description}</p>
                 <div className="flex gap-2 mt-4">
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" onClick={() => navigate('/study-tools')}>
                     Study Materials
                   </Button>
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" onClick={() => navigate('/spaced-rep')}>
                     Practice Quiz
                   </Button>
                 </div>

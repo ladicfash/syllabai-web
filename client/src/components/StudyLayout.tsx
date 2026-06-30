@@ -178,16 +178,16 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
                 "text-white/45 hover:text-white hover:bg-white/8 transition-all",
                 collapsed && "justify-center px-2"
               )}
-              disabled
-              title="Dark mode is the default. Light mode toggle coming soon."
             >
-              <Moon className="w-[17px] h-[17px] flex-shrink-0" />
-              {!collapsed && <span>Dark Mode</span>}
+              {theme === "dark"
+                ? <Sun className="w-[17px] h-[17px] flex-shrink-0" />
+                : <Moon className="w-[17px] h-[17px] flex-shrink-0" />}
+              {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
             </button>
           </TooltipTrigger>
           {collapsed && (
             <TooltipContent side="right" className="text-xs">
-              Dark Mode (Default)
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
             </TooltipContent>
           )}
         </Tooltip>
