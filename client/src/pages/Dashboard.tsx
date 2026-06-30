@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow, isToday, isThisWeek } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const quickActions = [
   { label: "Upload Document", icon: Upload, path: "/library", accent: "from-primary/20 to-primary/5", iconColor: "text-primary", border: "border-primary/20" },
@@ -44,6 +45,7 @@ function StatCard({ label, value, icon: Icon, color, bg, loading, sub }: any) {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { data: docs, isLoading: docsLoading } = trpc.documents.list.useQuery();
   const { data: decks, isLoading: decksLoading } = trpc.decks.list.useQuery();
   const { data: tasks, isLoading: tasksLoading } = trpc.tasks.list.useQuery();

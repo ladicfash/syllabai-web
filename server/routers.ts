@@ -1317,6 +1317,8 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
         create: protectedProcedure.input(z.object({
       title: z.string().default("Untitled Note"),
       content: z.string(),
+      format: z.string().default("markdown").optional(),
+      preview: z.string().optional(),
       color: z.string().optional(),
       documentId: z.number().optional(),
       folderId: z.number().optional(),
@@ -1328,6 +1330,8 @@ return { response: (typeof simContent === 'string' ? simContent.trim() : JSON.st
       id: z.number(),
       title: z.string().optional(),
       content: z.string().optional(),
+      format: z.string().optional(),
+      preview: z.string().optional(),
       color: z.string().optional(),
       isPinned: z.boolean().optional(),
       folderId: z.number().nullable().optional(),

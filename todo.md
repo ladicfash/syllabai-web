@@ -139,3 +139,12 @@
 - [x] Add /course-graph/new route to App.tsx
 - [x] Wire "New Course" button on CourseGraph page to navigate to /course-graph/new
 - [x] Write Vitest tests for onboarding flow
+
+## Phase 18: Notes Redesign & Format Persistence
+- [ ] Redesign Notes UI to Google Drive-style card layout with content previews
+- [ ] Add format persistence: store note format (Markdown, HTML, JSON, PDF, PNG, JPEG) in DB
+- [ ] Implement note download functionality for all format types
+- [ ] Add mindmap/chart persistence and export (PNG, SVG, PDF)
+- [ ] Wire CourseGraph to live data (replace mock topics with real tRPC queries)
+- [ ] Add language selector to onboarding wizard step 1
+- [ ] Apply useTranslation to remaining pages (Explore, Library, Planner, Timer)

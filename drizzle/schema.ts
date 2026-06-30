@@ -142,6 +142,8 @@ export const notes = mysqlTable("notes", {
   documentId: int("documentId"),
   title: varchar("title", { length: 256 }).default("Untitled Note").notNull(),
   content: text("content").notNull(),
+  format: varchar("format", { length: 32 }).default("markdown").notNull(), // markdown, html, json, pdf, png, jpeg
+  preview: text("preview"), // text preview for card display
   color: varchar("color", { length: 32 }).default("#fef3c7").notNull(),
   folderId: int("folderId"),
   isPinned: boolean("isPinned").default(false).notNull(),

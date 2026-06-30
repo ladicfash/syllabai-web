@@ -273,10 +273,10 @@ export async function getQuizMeReportsByUser(userId: number, limit = 20) {
 }
 
 // ── Notes ──────────────────────────────────────────────────────────────────
-export async function createNote(data: { userId: number; documentId?: number; title: string; content: string; color?: string }) {
+export async function createNote(data: { userId: number; documentId?: number; title: string; content: string; format?: string; preview?: string; color?: string }) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  const result = await db.insert(notes).values({ ...data, color: data.color ?? "#fef3c7" });
+  const result = await db.insert(notes).values({ ...data, format: data.format ?? "markdown", color: data.color ?? "#fef3c7" });
   return result[0];
 }
 
@@ -286,7 +286,7 @@ export async function getNotesByUser(userId: number) {
   return db.select().from(notes).where(eq(notes.userId, userId)).orderBy(desc(notes.isPinned), desc(notes.updatedAt));
 }
 
-export async function updateNote(id: number, userId: number, data: Partial<{ title: string; content: string; color: string; isPinned: boolean }>) {
+export async function updateNote(id: number, userId: number, data: Partial<{ title: string; content: string; format: string; preview: string; color: string; isPinned: boolean; folderId: number | null }>) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(notes).set(data).where(and(eq(notes.id, id), eq(notes.userId, userId)));
