@@ -23,6 +23,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { LanguageSelector } from '@/components/LanguageSelector';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -136,16 +138,21 @@ function Step1Upload({ courseName, setCourseName, syllabusFile, setSyllabusFile,
     [handleFile]
   );
 
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Course Name *</label>
-        <Input
-          placeholder="e.g. Introduction to Machine Learning"
-          value={courseName}
-          onChange={(e) => setCourseName(e.target.value)}
-          className="text-base"
-        />
+      <div className="flex items-end justify-between gap-4">
+        <div className="flex-1 space-y-2">
+          <label className="text-sm font-medium">{t('courseName')} *</label>
+          <Input
+            placeholder="e.g. Introduction to Machine Learning"
+            value={courseName}
+            onChange={(e) => setCourseName(e.target.value)}
+            className="text-base"
+          />
+        </div>
+        <LanguageSelector />
       </div>
 
       <div className="space-y-2">

@@ -145,6 +145,7 @@
 - [x] Redesign Notes UI to Google Drive-style card layout with content previews (NoteCardEnhanced component)
 - [x] Implement note download functionality for all format types (Markdown, JSON, Text)
 - [ ] Add mindmap/chart persistence and export (PNG, SVG, PDF)
-- [ ] Wire CourseGraph to live data (replace mock topics with real tRPC queries)
-- [ ] Add language selector to onboarding wizard step 1
+- [x] Wire CourseGraph to live data (replace mock topics with real tRPC queries)
+- [x] Add language selector to onboarding wizard step 1
 - [ ] Apply useTranslation to remaining pages (Explore, Library, Planner, Timer)
+- [x] Notes redesign complete: Google Drive-style cards, format/folder badges, multi-format downloads

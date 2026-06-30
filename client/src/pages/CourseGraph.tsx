@@ -1,11 +1,11 @@
-import { useTranslation } from "react-i18next";
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation } from 'wouter';
+import { trpc } from '@/lib/trpc';
 import StudyLayout from '@/components/StudyLayout';
 import { CourseGraphInteractive } from '@/components/CourseGraphInteractive';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 
 interface Topic {
   id: string;
@@ -17,45 +17,38 @@ interface Topic {
 
 export const CourseGraph: React.FC = () => {
   const [, navigate] = useLocation();
-  
-  // Mock data - replace with real API calls from trpc.courseGraph.getTopics
-  const [topics] = useState<Topic[]>([
-    {
-      id: '1',
-      name: 'SQL Fundamentals',
-      description: 'Core SQL concepts including SELECT, WHERE, and basic queries',
-      completed: true,
-    },
-    {
-      id: '2',
-      name: 'SELECT Basics',
-      description: 'Master SELECT statements and column filtering',
-      completed: true,
-    },
-    {
-      id: '3',
-      name: 'JOINs',
-      description: 'Learn INNER, LEFT, RIGHT, and FULL OUTER joins',
-      inProgress: true,
-    },
-    {
-      id: '4',
-      name: 'GROUP BY & Aggregates',
-      description: 'Aggregate functions and grouping data',
-    },
-    {
-      id: '5',
-      name: 'Window Functions',
-      description: 'Advanced analytics with window functions',
-    },
-    {
-      id: '6',
-      name: 'Subqueries',
-      description: 'Nested queries and correlated subqueries',
-    },
-  ]);
-
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+
+  // Fetch user's courses
+  const { data: courses = [], isLoading: coursesLoading } = trpc.courseGraph.getCourses.useQuery();
+
+  // Fetch topics for selected course
+  const { data: dbTopics = [], isLoading: topicsLoading } = trpc.courseGraph.getTopics.useQuery(
+    { courseId: selectedCourseId! },
+    { enabled: selectedCourseId !== null }
+  );
+
+  // Set first course as selected on load
+  React.useEffect(() => {
+    if (courses.length > 0 && selectedCourseId === null) {
+      setSelectedCourseId(courses[0].id);
+    }
+  }, [courses, selectedCourseId]);
+
+  // Transform DB topics to UI format
+  const topics: Topic[] = useMemo(() => {
+    return dbTopics.map((t: any) => ({
+      id: String(t.id),
+      name: t.name,
+      description: t.description || '',
+      completed: t.masteryScore && t.masteryScore >= 80,
+      inProgress: t.masteryScore && t.masteryScore >= 30 && t.masteryScore < 80,
+    }));
+  }, [dbTopics]);
+
+  const selectedCourse = courses.find((c: any) => c.id === selectedCourseId);
+  const isLoading = coursesLoading || topicsLoading;
 
   return (
     <StudyLayout>
@@ -74,18 +67,74 @@ export const CourseGraph: React.FC = () => {
           </Button>
         </div>
 
+        {/* Course selector */}
+        {courses.length > 1 && (
+          <div className="flex gap-2 flex-wrap">
+            {courses.map((course: any) => (
+              <Button
+                key={course.id}
+                variant={selectedCourseId === course.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setSelectedCourseId(course.id);
+                  setSelectedTopic(null);
+                }}
+              >
+                {course.name}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <p className="text-slate-400">Loading course graph...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && courses.length === 0 && (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-slate-400 mb-4">No courses yet. Create your first course to get started.</p>
+              <Button onClick={() => navigate('/course-graph/new')}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Course
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Main interactive graph */}
-        <div className="flex-1 min-h-0">
-          <CourseGraphInteractive
-            courseId="demo-sql"
-            courseName="SQL Mastery"
-            topics={topics}
-            onTopicClick={(topicId) => {
-              const topic = topics.find((t) => t.id === topicId);
-              if (topic) setSelectedTopic(topic);
-            }}
-          />
-        </div>
+        {!isLoading && selectedCourse && topics.length > 0 && (
+          <div className="flex-1 min-h-0">
+            <CourseGraphInteractive
+              courseId={String(selectedCourse.id)}
+              courseName={selectedCourse.name}
+              topics={topics}
+              onTopicClick={(topicId) => {
+                const topic = topics.find((t) => t.id === topicId);
+                if (topic) setSelectedTopic(topic);
+              }}
+            />
+          </div>
+        )}
+
+        {/* Empty topics state */}
+        {!isLoading && selectedCourse && topics.length === 0 && (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-slate-400 mb-4">No topics in this course yet.</p>
+              <Button onClick={() => navigate('/course-graph/new')} variant="outline">
+                Add Topics
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Selected topic details panel */}
         {selectedTopic && (
@@ -103,12 +152,13 @@ export const CourseGraph: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setSelectedTopic(null)}
-                className="text-slate-400 hover:text-white transition-colors"
               >
                 ✕
-              </button>
+              </Button>
             </div>
           </Card>
         )}
@@ -116,5 +166,3 @@ export const CourseGraph: React.FC = () => {
     </StudyLayout>
   );
 };
-
-export default CourseGraph;
