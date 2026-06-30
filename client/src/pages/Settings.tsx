@@ -7,6 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import {
   Bell, Share2, UserX, Save, Plus, Trash2,
   Mail, User, Loader2, ShieldAlert, Palette, Info,
@@ -249,6 +251,16 @@ export default function Settings() {
             <p className="text-sm text-muted-foreground">{user?.email ?? "—"}</p>
           </div>
         </div>
+      </section>
+
+      {/* ── Language ───────────────────────────────────────── */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <User className="w-4 h-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Language</h2>
+        </div>
+        <Separator />
+        <LanguageSelector />
       </section>
 
       {/* ── Appearance ──────────────────────────────────────── */}

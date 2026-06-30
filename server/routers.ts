@@ -263,6 +263,18 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    updateLanguage: protectedProcedure.input(z.object({
+      language: z.string().min(2).max(16),
+    })).mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database unavailable");
+      const { eq } = await import("drizzle-orm");
+      const { users: usersTable } = await import("../drizzle/schema");
+      await db.update(usersTable)
+        .set({ language: input.language })
+        .where(eq(usersTable.id, ctx.user.id));
+      return { success: true, language: input.language };
+    }),
   }),
 
   // ── Documents ────────────────────────────────────────────────────────────
