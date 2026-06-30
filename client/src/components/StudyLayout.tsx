@@ -12,41 +12,42 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
+import { useTranslation } from "react-i18next";
 
-const navSections = [
+const getNavSections = (t: any) => [
   {
     label: "Overview",
     items: [
-      { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-      { path: "/explore",   icon: Compass,         label: "Explore"   },
-      { path: "/collab",    icon: Users,           label: "Collab Space" },
+      { path: "/dashboard", icon: LayoutDashboard, label: t('nav.dashboard') },
+      { path: "/explore",   icon: Compass,         label: t('nav.explore') },
+      { path: "/collab",    icon: Users,           label: t('nav.collaborate') },
     ],
   },
   {
     label: "Study",
     items: [
-      { path: "/course-graph", icon: Network,     label: "CourseGraph"      },
-      { path: "/library",     icon: BookOpen,    label: "Library"          },
-      { path: "/source-hub",  icon: Database,    label: "Source Hub"       },
-      { path: "/study-tools", icon: Wand2,       label: "Study Studio"     },
-      { path: "/spaced-rep",  icon: Zap,         label: "Spaced Repetition"},
-      { path: "/voice",       icon: Mic,         label: "Voice Notes"      },
-      { path: "/video-notes", icon: Video,        label: "Video Notes"      },
-      { path: "/simulations", icon: FlaskConical,label: "Simulations"      },
+      { path: "/course-graph", icon: Network,     label: t('nav.courseGraph') },
+      { path: "/library",     icon: BookOpen,    label: "Library" },
+      { path: "/source-hub",  icon: Database,    label: "Source Hub" },
+      { path: "/study-tools", icon: Wand2,       label: t('nav.studyStudio') },
+      { path: "/spaced-rep",  icon: Zap,         label: t('nav.spacedRepetition') },
+      { path: "/voice",       icon: Mic,         label: t('nav.voiceNotes') },
+      { path: "/video-notes", icon: Video,        label: t('nav.videoNotes') },
+      { path: "/simulations", icon: FlaskConical, label: "Simulations" },
     ],
   },
   {
     label: "Organise",
     items: [
-      { path: "/notes",   icon: StickyNote, label: "Notes"       },
-      { path: "/planner", icon: ListTodo,   label: "Planner"     },
-      { path: "/timer",   icon: Timer,      label: "Study Timer" },
+      { path: "/notes",   icon: StickyNote, label: t('nav.notes') },
+      { path: "/planner", icon: ListTodo,   label: t('nav.planner') },
+      { path: "/timer",   icon: Timer,      label: t('nav.studyTimer') },
     ],
   },
   {
     label: "Account",
     items: [
-      { path: "/settings", icon: Settings, label: "Settings" },
+      { path: "/settings", icon: Settings, label: t('nav.settings') },
     ],
   },
 ];
@@ -61,6 +62,8 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [location] = useLocation();
+  const { t } = useTranslation();
+  const navSections = getNavSections(t);
 
   const handleBack = () => {
     window.history.back();
@@ -219,7 +222,7 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
                     <LogOut className="w-3.5 h-3.5" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="text-xs">Sign out</TooltipContent>
+                <TooltipContent side="right" className="text-xs">{t('nav.logout')}</TooltipContent>
               </Tooltip>
             </>
           )}

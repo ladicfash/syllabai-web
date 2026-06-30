@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface Recipient {
   name: string;
@@ -50,6 +51,7 @@ export default function Settings() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
+  const { t } = useTranslation();
 
   const { data: settings, isLoading } = trpc.settings.get.useQuery();
 
@@ -226,7 +228,7 @@ export default function Settings() {
         <Separator />
         <div className="space-y-3">
           <div>
-            <label className="text-sm font-medium block mb-1.5">Display Name</label>
+            <label className="text-sm font-medium block mb-1.5">{t('settings.displayName') || 'Display Name'}</label>
             <Input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
@@ -236,7 +238,7 @@ export default function Settings() {
           </div>
           <div>
             <label className="text-sm font-medium block mb-1.5">
-              Bio <span className="text-muted-foreground font-normal">(optional)</span>
+              {t('settings.bio') || 'Bio'} <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
             <Input
               value={bio}
@@ -322,7 +324,7 @@ export default function Settings() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Bell className="w-4 h-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Deadline Notifications</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.notifications') || 'Deadline Notifications'}</h2>
         </div>
         <Separator />
 
@@ -518,9 +520,9 @@ export default function Settings() {
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saveMutation.isPending} className="gap-2 min-w-32">
           {saveMutation.isPending ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+            <>            <Loader2 className="w-4 h-4 animate-spin" /> {t('messages.loading') || 'Saving...'}</>
           ) : (
-            <><Save className="w-4 h-4" /> Save Settings</>
+            <><Save className="w-4 h-4" /> {t('buttons.save') || 'Save Settings'}</>
           )}
         </Button>
       </div>
