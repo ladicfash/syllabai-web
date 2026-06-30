@@ -11,26 +11,26 @@
   --radius-xl: 1.25rem;
   --radius-2xl: 1.75rem;
 
-  /* Light mode palette — gold accent + clean white */
-  --color-background: oklch(0.985 0.002 240);
-  --color-foreground: oklch(0.12 0.02 240);
-  --color-card: oklch(1 0 0);
-  --color-card-foreground: oklch(0.12 0.02 240);
-  --color-popover: oklch(1 0 0);
-  --color-popover-foreground: oklch(0.12 0.02 240);
-  --color-primary: oklch(0.62 0.19 232);   /* Blue accent for light mode */
+  /* Light mode palette — deep charcoal becomes default (true dark mode) */
+  --color-background: oklch(0.08 0.01 240);
+  --color-foreground: oklch(0.93 0.01 240);
+  --color-card: oklch(0.12 0.015 240);
+  --color-card-foreground: oklch(0.93 0.01 240);
+  --color-popover: oklch(0.12 0.015 240);
+  --color-popover-foreground: oklch(0.93 0.01 240);
+  --color-primary: oklch(0.60 0.22 260);   /* Vibrant cyan-blue */
   --color-primary-foreground: oklch(0.96 0.005 240);
-  --color-secondary: oklch(0.94 0.01 85);
-  --color-secondary-foreground: oklch(0.22 0.02 85);
-  --color-muted: oklch(0.95 0.006 85);
-  --color-muted-foreground: oklch(0.50 0.02 85);
-  --color-accent: oklch(0.88 0.07 85);
-  --color-accent-foreground: oklch(0.22 0.12 85);
-  --color-destructive: oklch(0.55 0.22 25);
-  --color-destructive-foreground: oklch(0.99 0 0);
-  --color-border: oklch(0.88 0.01 85);
-  --color-input: oklch(0.88 0.01 85);
-  --color-ring: oklch(0.72 0.18 85);
+  --color-secondary: oklch(0.72 0.18 50);  /* Amber-orange */
+  --color-secondary-foreground: oklch(0.12 0.02 240);
+  --color-muted: oklch(0.20 0.01 240);
+  --color-muted-foreground: oklch(0.65 0.02 240);
+  --color-accent: oklch(0.60 0.22 260);    /* Cyan accent */
+  --color-accent-foreground: oklch(0.96 0.005 240);
+  --color-destructive: oklch(0.60 0.22 25);
+  --color-destructive-foreground: oklch(0.96 0.005 240);
+  --color-border: oklch(0.18 0.01 240);
+  --color-input: oklch(0.14 0.015 240);
+  --color-ring: oklch(0.60 0.22 260);
 
   /* Study palette extras */
   --color-study-amber: oklch(0.78 0.14 75);
@@ -60,31 +60,31 @@
   --animate-rise: rise 1.4s var(--ease-expo) infinite;
 }
 
-/* ── Dark Mode Tokens ─────────────────────────────────────────────────────── */
-.dark {
-  --color-background: oklch(0.06 0.01 255);   /* Very dark near-black */
-  --color-foreground: oklch(0.96 0.005 240);  /* Near-white */
-  --color-card: oklch(0.10 0.015 255);        /* Slightly lighter dark */
-  --color-card-foreground: oklch(0.96 0.005 240);
-  --color-popover: oklch(0.10 0.015 255);
-  --color-popover-foreground: oklch(0.96 0.005 240);
-  --color-primary: oklch(0.62 0.19 232);      /* Blue accent for dark mode */
+/* ── Light Mode Tokens (for future light mode toggle) ─────────────────────── */
+.light {
+  --color-background: oklch(0.985 0.002 240);
+  --color-foreground: oklch(0.12 0.02 240);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.12 0.02 240);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.12 0.02 240);
+  --color-primary: oklch(0.62 0.19 232);
   --color-primary-foreground: oklch(0.96 0.005 240);
-  --color-secondary: oklch(0.12 0.015 232);
-  --color-secondary-foreground: oklch(0.90 0.01 232);
-  --color-muted: oklch(0.12 0.01 232);
-  --color-muted-foreground: oklch(0.65 0.02 232);
-  --color-accent: oklch(0.18 0.07 232);
-  --color-accent-foreground: oklch(0.90 0.06 232);
-  --color-destructive: oklch(0.6 0.22 25);
-  --color-destructive-foreground: oklch(0.96 0.005 240);
-  --color-border: oklch(0.16 0.015 232);
-  --color-input: oklch(0.14 0.015 232);
-  --color-ring: oklch(0.62 0.19 232);
+  --color-secondary: oklch(0.94 0.01 85);
+  --color-secondary-foreground: oklch(0.22 0.02 85);
+  --color-muted: oklch(0.95 0.006 85);
+  --color-muted-foreground: oklch(0.50 0.02 85);
+  --color-accent: oklch(0.88 0.07 85);
+  --color-accent-foreground: oklch(0.22 0.12 85);
+  --color-destructive: oklch(0.55 0.22 25);
+  --color-destructive-foreground: oklch(0.99 0 0);
+  --color-border: oklch(0.88 0.01 85);
+  --color-input: oklch(0.88 0.01 85);
+  --color-ring: oklch(0.72 0.18 85);
 
-  --color-study-surface: oklch(0.10 0.015 255);
-  --color-study-sidebar: oklch(0.07 0.01 258);
-  --color-study-sidebar-fg: oklch(0.90 0.01 240);
+  --color-study-surface: oklch(0.97 0.008 240);
+  --color-study-sidebar: oklch(0.10 0.04 232);
+  --color-study-sidebar-fg: oklch(0.88 0.01 232);
 }
 
 /* ── Base Styles ──────────────────────────────────────────────────────────── */
@@ -98,6 +98,10 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  html.dark {
+    /* Dark mode is now the default */
   }
 
   body {

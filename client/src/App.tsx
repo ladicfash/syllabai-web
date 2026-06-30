@@ -273,7 +273,7 @@ function App() {
   return (
     <ErrorBoundary>
       <a href="#main-content" className="skip-link">Skip to content</a>
-      <ThemeProvider defaultTheme="light" switchable>
+      <ThemeProvider defaultTheme="dark" switchable>
         <TooltipProvider>
           <MermaidLoader />
           <AccentColorApplier />
