@@ -149,3 +149,23 @@
 - [x] Add language selector to onboarding wizard step 1
 - [ ] Complete i18n application: wire all hardcoded strings to t() calls in Explore, Library, Planner, Timer
 - [x] Notes redesign complete: Google Drive-style cards, format/folder badges, multi-format downloads
+
+
+## Known Constraints
+- DocChat API: 12-message limit per conversation (affects multi-turn document analysis features)
+
+## Phase 19: Bug Fixes & Polish
+- [ ] Fix markdown rendering in NoteCardEnhanced preview: display formatted content instead of raw markdown syntax
+  * Currently shows literal ##, **, etc. instead of styled headings and bold text
+  * Need to integrate markdown parser (react-markdown or similar) in preview area
+  * Ensure preview respects line-clamp-4 and doesn't overflow card
+
+
+## Phase 20: Ad-Friendly Layout
+- [x] Add ad container component (AdSpace.tsx) with standard sizes (300x250, 728x90, 160x600)
+- [x] Add sidebar ad space to Dashboard layout (right sidebar, 300x250 or 160x600)
+- [x] Add horizontal ad banner to Explore page (728x90 below header)
+- [x] Add ad space to Notes page (right sidebar or bottom)
+- [ ] Add ad space to Library page (sidebar or between sections)
+- [ ] Create AdProvider context for ad network integration (Google AdSense, etc.)
+- [ ] Connect custom domain (syllibai.com or similar) in Management UI Settings → Domains

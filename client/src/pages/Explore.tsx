@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { AdSpace } from "@/components/AdSpace";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -191,6 +192,10 @@ export default function Explore() {
 
       {/* Access gate for logged-out users */}
       {!isAuthenticated && <AccessGateBanner />}
+      {/* Ad banner below header */}
+      <div className="mb-6 flex justify-center">
+        <AdSpace size="728x90" slot="explore-header-banner" />
+      </div>
 
       {/* Search + subject filter */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

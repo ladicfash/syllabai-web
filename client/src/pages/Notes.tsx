@@ -19,6 +19,7 @@ import { formatDistanceToNow } from "date-fns";
 import WhiteboardDialog from "@/components/whiteboard/WhiteboardDialog";
 import Whiteboard, { type WhiteboardSnapshot } from "@/components/whiteboard/Whiteboard";
 import { downloadNote } from "@/lib/noteDownload";
+import { AdSpace } from "@/components/AdSpace";
 
 // 30-colour ROYGBIV gradient palette for note cards
 const NOTE_COLORS: string[] = [
@@ -390,6 +391,10 @@ export default function Notes() {
         <Input placeholder="Search notes..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
+      {/* Ad space */}
+      <div className="flex justify-center">
+        <AdSpace size="728x90" slot="notes-banner" />
+      </div>
       {/* Loading */}
       {isLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
