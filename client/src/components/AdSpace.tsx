@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 export type AdSize = '300x250' | '728x90' | '160x600' | '320x50' | '300x600';
 
@@ -9,12 +9,14 @@ interface AdSpaceProps {
 }
 
 /**
- * AdSpace component for displaying ads
+ * AdSpace component for displaying Adsterra native ads
  * Supports standard IAB ad sizes
- * Configure with Google AdSense or other ad networks
+ * Configured with Adsterra publisher ID for monetization
  */
 export const AdSpace: React.FC<AdSpaceProps> = ({ size, slot, className = '' }) => {
   const [dimensions, setDimensions] = React.useState<{ width: number; height: number }>({ width: 300, height: 250 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scriptLoadedRef = useRef(false);
 
   React.useEffect(() => {
     const sizeMap: Record<AdSize, { width: number; height: number }> = {
@@ -27,8 +29,57 @@ export const AdSpace: React.FC<AdSpaceProps> = ({ size, slot, className = '' }) 
     setDimensions(sizeMap[size]);
   }, [size]);
 
+  useEffect(() => {
+    const pubId = import.meta.env.VITE_ADSTERRA_PUB_ID;
+    if (!pubId || !containerRef.current) return;
+
+    // Load Adsterra ad script once globally
+    if (!scriptLoadedRef.current) {
+      const script = document.createElement('script');
+      script.src = `https://www.adsterra.com/script/displayAds.js`;
+      script.async = true;
+      script.onload = () => {
+        scriptLoadedRef.current = true;
+        // Trigger ad refresh after script loads
+        if ((window as any).atOptions) {
+          (window as any).atOptions.publisher = pubId;
+          (window as any).atOptions.docUrl = window.location.href;
+        }
+      };
+      document.head.appendChild(script);
+    }
+
+    // Create ad container with Adsterra attributes
+    if (containerRef.current) {
+      containerRef.current.innerHTML = `
+        <ins class="adsbygoogle"
+          style="display:block"
+          data-ad-client="ca-pub-${pubId}"
+          data-ad-slot="${slot || 'default'}"
+          data-ad-format="auto"
+          data-full-width-responsive="true"></ins>
+      `;
+
+      // Trigger ad refresh if script is already loaded
+      if ((window as any).adsbygoogle) {
+        try {
+          ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+        } catch (e) {
+          console.error('Adsterra ad error:', e);
+        }
+      }
+    }
+
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    };
+  }, []);
+
   return (
     <div
+      ref={containerRef}
       className={`ad-space flex items-center justify-center bg-muted/30 border border-dashed border-muted-foreground/20 rounded-lg ${className}`}
       style={{
         width: `${dimensions.width}px`,
@@ -39,11 +90,7 @@ export const AdSpace: React.FC<AdSpaceProps> = ({ size, slot, className = '' }) 
       data-ad-size={size}
       data-ad-slot={slot}
     >
-      <div className="text-center text-xs text-muted-foreground">
-        <p className="font-medium">Ad Space</p>
-        <p>{size}</p>
-        {slot && <p className="text-[10px] mt-1">Slot: {slot}</p>}
-      </div>
+      {/* Adsterra ads will render here */}
     </div>
   );
 };

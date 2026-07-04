@@ -167,5 +167,5 @@
 - [x] Add horizontal ad banner to Explore page (728x90 below header)
 - [x] Add ad space to Notes page (right sidebar or bottom)
 - [ ] Add ad space to Library page (sidebar or between sections)
-- [ ] Create AdProvider context for ad network integration (Google AdSense, etc.)
-- [ ] Connect custom domain (syllibai.com or similar) in Management UI Settings → Domains
+- [x] Integrate Adsterra smartlink for ad monetization (VITE_ADSTERRA_SMARTLINK env var)
+- [x] Connect custom domain: syllibai.one (active)
