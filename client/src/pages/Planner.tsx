@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { AdSpace } from "@/components/AdSpace";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -148,6 +149,10 @@ export default function Planner() {
             ))}
           </div>
         )}
+      </div>
+      {/* Ad space - after filter */}
+      <div className="flex justify-center">
+        <AdSpace size="320x50" slot="planner-filter" />
       </div>
 
       {/* List View */}

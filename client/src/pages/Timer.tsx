@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { AdSpace } from "@/components/AdSpace";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -159,6 +160,10 @@ export default function Timer() {
           </div>
         </div>
       )}
+      {/* Ad space - after settings */}
+      <div className="flex justify-center">
+        <AdSpace size="300x250" slot="timer-sidebar" />
+      </div>
 
       {/* Session Type Selector */}
       <div className="flex gap-2 justify-center animate-fade-in">

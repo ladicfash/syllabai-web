@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { AdSpace } from "@/components/AdSpace";
 import { useState, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -186,6 +187,10 @@ export default function Library() {
         </div>
       </div>
 
+      {/* Ad space - sidebar */}
+      <div className="flex justify-center">
+        <AdSpace size="300x250" slot="library-sidebar" />
+      </div>
       {/* Upload Queue */}
       {uploadQueue.length > 0 && (
         <div className="study-card p-4 space-y-2 animate-slide-up">

@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { AdSpace } from "@/components/AdSpace";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -172,6 +173,10 @@ export default function Dashboard() {
       </div>
 
       {/* Habit loop */}
+      {/* Ad space - middle section */}
+      <div className="flex justify-center">
+        <AdSpace size="320x50" slot="dashboard-middle" />
+      </div>
       <div className="grid gap-4 md:grid-cols-3 animate-slide-up" style={{ animationDelay: "0.08s" }}>
         <div className="rounded-3xl border bg-card p-5 shadow-sm">
           <p className="text-sm font-semibold flex items-center gap-2"><Flame className="w-4 h-4 text-amber-500" /> Review streak</p>

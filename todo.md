@@ -166,6 +166,6 @@
 - [x] Add sidebar ad space to Dashboard layout (right sidebar, 300x250 or 160x600)
 - [x] Add horizontal ad banner to Explore page (728x90 below header)
 - [x] Add ad space to Notes page (right sidebar or bottom)
-- [ ] Add ad space to Library page (sidebar or between sections)
+- [x] Add 5 more subtle ad spaces: Library (300x250), Dashboard middle (320x50), CourseGraph (320x50), Planner (320x50), Timer (300x250)
 - [x] Integrate Adsterra smartlink for ad monetization (VITE_ADSTERRA_SMARTLINK env var)
 - [x] Connect custom domain: syllibai.one (active)

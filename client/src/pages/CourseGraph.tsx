@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { AdSpace } from "@/components/AdSpace";
 import { useLocation } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import StudyLayout from '@/components/StudyLayout';
@@ -85,6 +86,10 @@ export const CourseGraph: React.FC = () => {
             ))}
           </div>
         )}
+        {/* Ad space - course selector */}
+        <div className="flex justify-center">
+          <AdSpace size="320x50" slot="coursegraph-selector" />
+        </div>
 
         {/* Loading state */}
         {isLoading && (
