@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { generatePreview } from "@/lib/noteDownload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -99,7 +100,8 @@ export function NoteCardEnhanced({
     if (typeof note.content === "string" && note.content.startsWith("<!--syllabai-whiteboard:")) {
       return `Whiteboard · ${countWhiteboardObjects(note.content)} objects`;
     }
-    return (note.preview || note.content).substring(0, 150).replace(/\n/g, " ");
+    const raw = note.preview || note.content || "";
+    return generatePreview(raw, 150);
   };
 
   const formatBadge = note.format || "markdown";
@@ -214,10 +216,10 @@ export function NoteCardEnhanced({
                       <Download className="w-3.5 h-3.5 mr-2" /> Download as Markdown
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onDownload(note, "json")}>
-                    <DropdownMenuItem onClick={() => onDownload(note, "html")}>
-                      <FileText className="w-3.5 h-3.5 mr-2" /> HTML
-                    </DropdownMenuItem>
                       <FileJson className="w-3.5 h-3.5 mr-2" /> Download as JSON
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDownload(note, "html")}>
+                      <FileText className="w-3.5 h-3.5 mr-2" /> Download as HTML
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onDownload(note, "txt")}>
                       <FileText className="w-3.5 h-3.5 mr-2" /> Download as Text

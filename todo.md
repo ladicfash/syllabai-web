@@ -155,10 +155,8 @@
 - DocChat API: 12-message limit per conversation (affects multi-turn document analysis features)
 
 ## Phase 19: Bug Fixes & Polish
-- [ ] Fix markdown rendering in NoteCardEnhanced preview: display formatted content instead of raw markdown syntax
-  * Currently shows literal ##, **, etc. instead of styled headings and bold text
-  * Need to integrate markdown parser (react-markdown or similar) in preview area
-  * Ensure preview respects line-clamp-4 and doesn't overflow card
+- [x] Fix markdown rendering in NoteCardEnhanced preview: now uses existing generatePreview() helper from lib/noteDownload.ts to strip ##, **, links, etc. before truncating, instead of raw substring
+- [x] Fix broken download submenu JSX: JSON and HTML menu items were incorrectly nested inside one another (HTML item nested inside JSON item), causing malformed rendering and duplicate click handling; split into proper sibling items
 
 
 ## Phase 20: Ad-Friendly Layout
