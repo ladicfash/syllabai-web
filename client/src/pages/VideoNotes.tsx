@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { MarkdownView } from "@/components/MarkdownView";
 import { EmptyState } from "@/components/study/EmptyState";
+import { AdSpace } from "@/components/AdSpace";
 
 const MAX_VIDEOS = 20;
 const MAX_FILE_SIZE_MB = 200;
@@ -658,6 +659,11 @@ export default function VideoNotes() {
           </div>
         </div>
       )}
+
+      {/* Ad space - between capture controls and saved videos */}
+      <div className="flex justify-center">
+        <AdSpace format="banner-468x60" />
+      </div>
 
       {/* Saved Videos List */}
       <div className="space-y-3 animate-fade-in">
