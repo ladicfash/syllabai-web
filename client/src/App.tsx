@@ -23,6 +23,7 @@ import CollabSpace from "./pages/CollabSpace";
 import Settings from "./pages/Settings";
 import { CourseGraph } from "./pages/CourseGraph";
 import CourseGraphOnboarding from "./pages/CourseGraphOnboarding";
+import StudyRooms from "./pages/StudyRooms";
 import StudyLayout from "./components/StudyLayout";
 import LogoIntro from "./components/LogoIntro";
 import TermsModal from "./components/TermsModal";
@@ -238,6 +239,12 @@ function AppRoutes() {
         </Route>
         <Route path="/video-notes">
           {loading ? null : isAuthenticated ? <StudyLayout><VideoNotes /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/study-rooms/:roomCode">
+          {loading ? null : isAuthenticated ? <StudyLayout><StudyRooms /></StudyLayout> : <Landing />}
+        </Route>
+        <Route path="/study-rooms">
+          {loading ? null : isAuthenticated ? <StudyLayout><StudyRooms /></StudyLayout> : <Landing />}
         </Route>
 
         {/* Collab Space — public but gated */}

@@ -14,7 +14,7 @@ import {
   LayoutDashboard, BookOpen, Brain, Clock, Calendar,
   Mic, Compass, Timer, ListTodo, Users, Settings, Video,
   Database, Wand2, StickyNote, FlaskConical, Sun, Moon,
-  Sparkles, Zap,
+  Sparkles, Zap, PhoneCall,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -28,6 +28,7 @@ type NavEntry = {
 
 const navEntries: NavEntry[] = [
   { path: "/dashboard",    label: "Dashboard",          icon: LayoutDashboard, group: "Navigate" },
+  { path: "/study-rooms",  label: "Study Rooms",        icon: PhoneCall,       group: "Navigate", keywords: ["video call", "peer study", "group call"] },
   { path: "/explore",      label: "Explore",            icon: Compass,         group: "Navigate" },
   { path: "/collab",       label: "Collab Space",       icon: Users,           group: "Navigate" },
   { path: "/library",      label: "Library",            icon: BookOpen,        group: "Navigate" },

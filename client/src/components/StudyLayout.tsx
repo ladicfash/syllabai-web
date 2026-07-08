@@ -8,7 +8,7 @@ import {
   LayoutDashboard, BookOpen, Brain, Clock, Calendar,
   Mic, ChevronLeft, ChevronRight, Sun, Moon,
   LogOut, Menu, X, StickyNote, Zap, FlaskConical,
-  Compass, Timer, ListTodo, Users, Settings, Video, Database, Wand2, Search, Network
+  Compass, Timer, ListTodo, Users, Settings, Video, Database, Wand2, Search, Network, PhoneCall
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
@@ -27,6 +27,7 @@ const getNavSections = (t: any) => [
   {
     label: "Study",
     items: [
+      { path: "/study-rooms",  icon: PhoneCall,   label: "Study Rooms", isNew: true },
       { path: "/course-graph", icon: Network,     label: t('nav.courseGraph') },
       { path: "/library",     icon: BookOpen,    label: "Library" },
       { path: "/source-hub",  icon: Database,    label: "Source Hub" },
@@ -127,7 +128,10 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
                           {!collapsed && item.path === "/spaced-rep" && (dueCards?.length ?? 0) > 0 && (
                             <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground flex-shrink-0">{dueCards?.length}</span>
                           )}
-                          {!collapsed && active && item.path !== "/spaced-rep" && (
+                          {!collapsed && (item as any).isNew && (
+                            <span className="ml-auto rounded-full bg-primary/15 text-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide flex-shrink-0">New</span>
+                          )}
+                          {!collapsed && active && item.path !== "/spaced-rep" && !(item as any).isNew && (
                             <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                           )}
                         </div>

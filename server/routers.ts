@@ -8,6 +8,7 @@ import { transcribeAudio } from "./_core/voiceTranscription";
 import { storagePut, storageGetSignedUrl } from "./storage";
 import { getDb } from "./db";
 import { courseGraphRouter } from "./routers/courseGraph";
+import { studyRoomsRouter } from "./routers/studyRooms";
 import {
   upsertUser, getUserByOpenId,
   createDocument, getDocumentsByUser, getDocumentById, deleteDocument, updateDocumentText,
@@ -243,6 +244,7 @@ function sm2(card: { interval: number; repetitions: number; easeFactor: number }
 export const appRouter = router({
   system: systemRouter,
   courseGraph: courseGraphRouter,
+  studyRooms: studyRoomsRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

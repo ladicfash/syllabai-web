@@ -151,9 +151,6 @@
 - [x] Notes redesign complete: Google Drive-style cards, format/folder badges, multi-format downloads
 
 
-## Known Constraints
-- DocChat API: 12-message limit per conversation (affects multi-turn document analysis features)
-
 ## Phase 19: Bug Fixes & Polish
 - [x] Fix markdown rendering in NoteCardEnhanced preview: now uses existing generatePreview() helper from lib/noteDownload.ts to strip ##, **, links, etc. before truncating, instead of raw substring
 - [x] Fix broken download submenu JSX: JSON and HTML menu items were incorrectly nested inside one another (HTML item nested inside JSON item), causing malformed rendering and duplicate click handling; split into proper sibling items
@@ -177,3 +174,18 @@
 - [x] Added Smartlink as a clearly labeled "Sponsored offer" link in Settings (not disguised as a functional button)
 - [x] Deliberately did NOT wire Popunder or Social Bar — most disruptive ad formats, dropped per product decision
 - [x] Verified with tsc --noEmit, vitest (26/26), and production build across 3 independent runs
+
+## Phase 22: Study Rooms (Peer Video Calls)
+- [x] Added studyRooms DB table (hostUserId, roomCode, topic, durationMinutes) + migration
+- [x] Server router (server/routers/studyRooms.ts): create, listMine, getByCode (public, for join links)
+- [x] Client page (StudyRooms.tsx): create/list rooms + embedded call view
+- [x] Video calling via embedded Jitsi Meet (meet.jit.si), free/open-source, no per-minute fees
+- [x] Hard 30-minute cutoff enforced client-side (countdown UI + auto hangup) and capped server-side
+- [x] Shareable invite link per room (copy-to-clipboard) so peers can join without hosting
+- [x] Added to sidebar nav (Study section, top item, "New" badge) and command palette (⌘K)
+- [x] Routes: /study-rooms (list) and /study-rooms/:roomCode (call)
+- [x] Backend tests: create/listMine/getByCode, including auth requirement (5 tests)
+- [x] Verified with tsc --noEmit, vitest (31/31), and production build across 3 independent runs
+
+## Known Constraints
+- DocChat API: 12-message limit per conversation (affects multi-turn document analysis features)

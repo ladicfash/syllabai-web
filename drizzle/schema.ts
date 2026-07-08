@@ -398,6 +398,15 @@ export const courseGraphExports = mysqlTable("courseGraphExports", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const studyRooms = mysqlTable("studyRooms", {
+  id: int("id").autoincrement().primaryKey(),
+  hostUserId: int("hostUserId").notNull(),
+  roomCode: varchar("roomCode", { length: 32 }).notNull().unique(),
+  topic: varchar("topic", { length: 256 }).notNull(),
+  durationMinutes: int("durationMinutes").default(30).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 // Types
 export type Course = typeof courses.$inferSelect;
 export type InsertCourse = typeof courses.$inferInsert;
@@ -411,3 +420,5 @@ export type TopicDependency = typeof topicDependencies.$inferSelect;
 export type InsertTopicDependency = typeof topicDependencies.$inferInsert;
 export type CourseGraphExport = typeof courseGraphExports.$inferSelect;
 export type InsertCourseGraphExport = typeof courseGraphExports.$inferInsert;
+export type StudyRoom = typeof studyRooms.$inferSelect;
+export type InsertStudyRoom = typeof studyRooms.$inferInsert;
