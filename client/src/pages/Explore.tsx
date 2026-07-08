@@ -194,7 +194,7 @@ export default function Explore() {
       {!isAuthenticated && <AccessGateBanner />}
       {/* Ad banner below header */}
       <div className="mb-6 flex justify-center">
-        <AdSpace size="728x90" slot="explore-header-banner" />
+        <AdSpace format="banner-468x60" />
       </div>
 
       {/* Search + subject filter */}

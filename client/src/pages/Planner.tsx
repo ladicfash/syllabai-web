@@ -152,7 +152,7 @@ export default function Planner() {
       </div>
       {/* Ad space - after filter */}
       <div className="flex justify-center">
-        <AdSpace size="320x50" slot="planner-filter" />
+        <AdSpace format="banner-468x60" />
       </div>
 
       {/* List View */}

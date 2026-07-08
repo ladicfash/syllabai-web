@@ -177,7 +177,7 @@ export default function Dashboard() {
       {/* Habit loop */}
       {/* Ad space - middle section */}
       <div className="flex justify-center">
-        <AdSpace size="320x50" slot="dashboard-middle" />
+        <AdSpace format="banner-468x60" />
       </div>
       <div className="grid gap-4 md:grid-cols-3 animate-slide-up" style={{ animationDelay: "0.08s" }}>
         <div className="rounded-3xl border bg-card p-5 shadow-sm">

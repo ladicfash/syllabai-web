@@ -21,6 +21,7 @@ import {
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { ADSTERRA_SMARTLINK_URL } from "@/lib/adsterra";
 
 interface Recipient {
   name: string;
@@ -569,6 +570,20 @@ export default function Settings() {
             </AlertDialogContent>
           </AlertDialog>
         </div>
+      </section>
+
+      {/* ── Sponsored ─────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <Separator />
+        <a
+          href={ADSTERRA_SMARTLINK_URL}
+          target="_blank"
+          rel="noopener noreferrer sponsored"
+          className="flex items-center justify-between rounded-lg border border-border/60 bg-card/40 px-4 py-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+        >
+          <span>Sponsored offer</span>
+          <span className="underline underline-offset-2">View</span>
+        </a>
       </section>
 
     </div>

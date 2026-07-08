@@ -162,7 +162,7 @@ export default function Timer() {
       )}
       {/* Ad space - after settings */}
       <div className="flex justify-center">
-        <AdSpace size="300x250" slot="timer-sidebar" />
+        <AdSpace format="banner-160x300" />
       </div>
 
       {/* Session Type Selector */}

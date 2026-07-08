@@ -167,3 +167,13 @@
 - [x] Add 5 more subtle ad spaces: Library (300x250), Dashboard middle (320x50), CourseGraph (320x50), Planner (320x50), Timer (300x250)
 - [x] Integrate Adsterra smartlink for ad monetization (VITE_ADSTERRA_SMARTLINK env var)
 - [x] Connect custom domain: syllibai.one (active)
+
+## Phase 21: Real Adsterra Ad Integration
+- [x] Fixed AdSpace.tsx — it was previously rendering fake Google AdSense markup (adsbygoogle/ca-pub-) pointed at a non-existent Adsterra script URL and never actually served an ad
+- [x] Wired real Adsterra ad unit codes: Banner 468x60, Banner 160x300, Native Banner, Smartlink (from syllibai.one Adsterra dashboard)
+- [x] Banner ads render inside a sandboxed iframe (srcDoc) since Adsterra's invoke.js uses document.write, which would otherwise wipe the React tree
+- [x] Native Banner injects the real script + fixed container id, one instance at a time (SPA-safe)
+- [x] Updated all 7 existing ad placements (Dashboard, CourseGraph, Explore, Library, Notes, Planner, Timer) to the real ad sizes actually available in the account
+- [x] Added Smartlink as a clearly labeled "Sponsored offer" link in Settings (not disguised as a functional button)
+- [x] Deliberately did NOT wire Popunder or Social Bar — most disruptive ad formats, dropped per product decision
+- [x] Verified with tsc --noEmit, vitest (26/26), and production build across 3 independent runs

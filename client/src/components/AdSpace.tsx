@@ -1,98 +1,118 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef, useId } from "react";
+import { cn } from "@/lib/utils";
+import {
+  ADSTERRA_BANNER_468x60,
+  ADSTERRA_BANNER_160x300,
+  ADSTERRA_NATIVE_BANNER,
+} from "@/lib/adsterra";
 
-export type AdSize = '300x250' | '728x90' | '160x600' | '320x50' | '300x600';
+export type AdFormat = "banner-468x60" | "banner-160x300" | "native";
 
 interface AdSpaceProps {
-  size: AdSize;
-  slot?: string;
+  format: AdFormat;
   className?: string;
 }
 
 /**
- * AdSpace component for displaying Adsterra native ads
- * Supports standard IAB ad sizes
- * Configured with Adsterra publisher ID for monetization
+ * Renders an Adsterra "atOptions" banner ad inside a sandboxed iframe.
+ * Adsterra's invoke.js relies on document.write, which will wipe out the
+ * React tree if run in the main document — an iframe with srcDoc isolates it.
  */
-export const AdSpace: React.FC<AdSpaceProps> = ({ size, slot, className = '' }) => {
-  const [dimensions, setDimensions] = React.useState<{ width: number; height: number }>({ width: 300, height: 250 });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const scriptLoadedRef = useRef(false);
+function AdBanner({ adKey, width, height }: { adKey: string; width: number; height: number }) {
+  const srcDoc = `<!doctype html><html><head><style>html,body{margin:0;padding:0;overflow:hidden;background:transparent;}</style></head><body>
+<script>
+  atOptions = {
+    'key': '${adKey}',
+    'format': 'iframe',
+    'height': ${height},
+    'width': ${width},
+    'params': {}
+  };
+</script>
+<script src="https://eliminatedfertilizer.com/${adKey}/invoke.js"></script>
+</body></html>`;
 
-  React.useEffect(() => {
-    const sizeMap: Record<AdSize, { width: number; height: number }> = {
-      '300x250': { width: 300, height: 250 }, // Medium Rectangle
-      '728x90': { width: 728, height: 90 },   // Leaderboard
-      '160x600': { width: 160, height: 600 }, // Wide Skyscraper
-      '320x50': { width: 320, height: 50 },   // Mobile Banner
-      '300x600': { width: 300, height: 600 }, // Half Page
-    };
-    setDimensions(sizeMap[size]);
-  }, [size]);
+  return (
+    <iframe
+      title="Advertisement"
+      srcDoc={srcDoc}
+      width={width}
+      height={height}
+      style={{ border: "none", display: "block" }}
+      scrolling="no"
+    />
+  );
+}
+
+/** Renders the Adsterra Native Banner, which injects itself into a fixed container id. */
+function AdNative() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const uniqueId = useId().replace(/:/g, "");
+  // Adsterra's native banner script is tied to one fixed container id from the
+  // dashboard. Only one instance can safely exist in the DOM at a time — fine
+  // here since this is a single-page app and only one route is mounted at once.
+  const containerId = ADSTERRA_NATIVE_BANNER.containerId;
 
   useEffect(() => {
-    const pubId = import.meta.env.VITE_ADSTERRA_PUB_ID;
-    if (!pubId || !containerRef.current) return;
+    const el = containerRef.current;
+    if (!el) return;
+    el.innerHTML = "";
 
-    // Load Adsterra ad script once globally
-    if (!scriptLoadedRef.current) {
-      const script = document.createElement('script');
-      script.src = `https://www.adsterra.com/script/displayAds.js`;
-      script.async = true;
-      script.onload = () => {
-        scriptLoadedRef.current = true;
-        // Trigger ad refresh after script loads
-        if ((window as any).atOptions) {
-          (window as any).atOptions.publisher = pubId;
-          (window as any).atOptions.docUrl = window.location.href;
-        }
-      };
-      document.head.appendChild(script);
-    }
+    const container = document.createElement("div");
+    container.id = containerId;
+    el.appendChild(container);
 
-    // Create ad container with Adsterra attributes
-    if (containerRef.current) {
-      containerRef.current.innerHTML = `
-        <ins class="adsbygoogle"
-          style="display:block"
-          data-ad-client="ca-pub-${pubId}"
-          data-ad-slot="${slot || 'default'}"
-          data-ad-format="auto"
-          data-full-width-responsive="true"></ins>
-      `;
-
-      // Trigger ad refresh if script is already loaded
-      if ((window as any).adsbygoogle) {
-        try {
-          ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
-        } catch (e) {
-          console.error('Adsterra ad error:', e);
-        }
-      }
-    }
+    const script = document.createElement("script");
+    script.async = true;
+    script.setAttribute("data-cfasync", "false");
+    script.src = ADSTERRA_NATIVE_BANNER.scriptSrc;
+    el.appendChild(script);
 
     return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
-      }
+      el.innerHTML = "";
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uniqueId]);
+
+  return <div ref={containerRef} className="w-full min-h-[100px]" />;
+}
+
+/**
+ * AdSpace: styled ad placement using real Adsterra ad units.
+ * Wrapped in a subtle themed card so it reads as intentional UI, not a broken box.
+ */
+export function AdSpace({ format, className = "" }: AdSpaceProps) {
+  const content =
+    format === "banner-468x60" ? (
+      <AdBanner
+        adKey={ADSTERRA_BANNER_468x60.key}
+        width={ADSTERRA_BANNER_468x60.width}
+        height={ADSTERRA_BANNER_468x60.height}
+      />
+    ) : format === "banner-160x300" ? (
+      <AdBanner
+        adKey={ADSTERRA_BANNER_160x300.key}
+        width={ADSTERRA_BANNER_160x300.width}
+        height={ADSTERRA_BANNER_160x300.height}
+      />
+    ) : (
+      <AdNative />
+    );
 
   return (
     <div
-      ref={containerRef}
-      className={`ad-space flex items-center justify-center bg-muted/30 border border-dashed border-muted-foreground/20 rounded-lg ${className}`}
-      style={{
-        width: `${dimensions.width}px`,
-        height: `${dimensions.height}px`,
-        minWidth: `${dimensions.width}px`,
-        minHeight: `${dimensions.height}px`,
-      }}
-      data-ad-size={size}
-      data-ad-slot={slot}
+      className={cn(
+        "flex flex-col items-center gap-1 rounded-lg border border-border/60 bg-card/40 p-2 overflow-hidden",
+        className
+      )}
+      data-ad-format={format}
     >
-      {/* Adsterra ads will render here */}
+      <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50 self-start px-0.5">
+        Sponsored
+      </span>
+      <div className="flex items-center justify-center w-full">{content}</div>
     </div>
   );
-};
+}
 
 export default AdSpace;

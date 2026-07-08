@@ -189,7 +189,7 @@ export default function Library() {
 
       {/* Ad space - sidebar */}
       <div className="flex justify-center">
-        <AdSpace size="300x250" slot="library-sidebar" />
+        <AdSpace format="banner-160x300" />
       </div>
       {/* Upload Queue */}
       {uploadQueue.length > 0 && (

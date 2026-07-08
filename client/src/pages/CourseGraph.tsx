@@ -88,7 +88,7 @@ export const CourseGraph: React.FC = () => {
         )}
         {/* Ad space - course selector */}
         <div className="flex justify-center">
-          <AdSpace size="320x50" slot="coursegraph-selector" />
+          <AdSpace format="banner-468x60" />
         </div>
 
         {/* Loading state */}

@@ -393,7 +393,7 @@ export default function Notes() {
 
       {/* Ad space */}
       <div className="flex justify-center">
-        <AdSpace size="728x90" slot="notes-banner" />
+        <AdSpace format="native" className="w-full max-w-xl" />
       </div>
       {/* Loading */}
       {isLoading && (
