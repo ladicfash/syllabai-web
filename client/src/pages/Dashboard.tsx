@@ -14,6 +14,7 @@ import {
 import { formatDistanceToNow, isToday, isThisWeek } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { useDisplayName } from "@/hooks/useDisplayName";
 
 const quickActions = [
   { label: "Upload Document", icon: Upload, path: "/library", accent: "from-primary/20 to-primary/5", iconColor: "text-primary", border: "border-primary/20" },
@@ -76,7 +77,8 @@ export default function Dashboard() {
   const dailyGoalMinutes = 60;
   const dailyProgress = Math.min(100, Math.round((todayMinutes / dailyGoalMinutes) * 100));
 
-  const firstName = user?.name?.split(" ")[0] ?? "Student";
+  const displayName = useDisplayName();
+  const firstName = displayName?.split(" ")[0] || "Student";
   const recentDoc = docs?.[0];
   const dueCount = dueCards?.length ?? 0;
 

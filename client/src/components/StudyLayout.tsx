@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "react-i18next";
+import { useDisplayName } from "@/hooks/useDisplayName";
 
 const getNavSections = (t: any) => [
   {
@@ -71,11 +72,12 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { data: dueCards } = trpc.decks.dueCards.useQuery(undefined, { enabled: !!user, staleTime: 60_000 });
+  const displayName = useDisplayName();
 
   useEffect(() => setMobileOpen(false), [location]);
 
-  const initials = user?.name
-    ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+  const initials = displayName
+    ? displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "S";
 
   const isActive = (path: string) =>
@@ -210,7 +212,7 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
           {!collapsed && (
             <>
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold text-white/90 truncate">{user?.name ?? "Student"}</p>
+                <p className="text-[12px] font-semibold text-white/90 truncate">{displayName || "Student"}</p>
                 <p className="text-[10px] text-white/35 truncate">{user?.email ?? ""}</p>
               </div>
               <Tooltip delayDuration={0}>

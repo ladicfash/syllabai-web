@@ -4,7 +4,13 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ── Design Tokens ────────────────────────────────────────────────────────── */
-@theme inline {
+/* NOTE: must NOT use `@theme inline` here — inline mode bakes literal color
+   values into every generated utility class (e.g. .bg-primary{background-color:#2177ff})
+   instead of referencing the CSS variable. That breaks runtime theme switching
+   (.dark/.light class toggling) and the accent-color override entirely, since
+   utilities like bg-primary/text-foreground/bg-background would never look at
+   --color-primary/--color-foreground/--color-background at runtime. */
+@theme {
   --radius-sm: 0.375rem;
   --radius-md: 0.625rem;
   --radius-lg: 0.875rem;
