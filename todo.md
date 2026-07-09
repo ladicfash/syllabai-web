@@ -192,3 +192,13 @@
 
 ## Known Constraints
 - DocChat API: 12-message limit per conversation (affects multi-turn document analysis features)
+
+
+## Phase 23: OAuth Fix & Share Features
+- [ ] Fix OAuth login URL construction (proper state encoding, redirectUri for mobile/desktop)
+- [ ] Add share button to Notes page (globe icon, visibility settings: Public/Link-only/Private)
+- [ ] Add share button to VideoNotes page
+- [ ] Create shared_content table for tracking public/link-only notes
+- [ ] Build Collab Space page to display shared content
+- [ ] Add "Shared with me" section in Notes
+- [ ] Test OAuth on mobile and desktop
