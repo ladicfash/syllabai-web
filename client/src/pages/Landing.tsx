@@ -475,7 +475,7 @@ export default function Landing() {
               <h3 className="font-semibold text-sm mb-4">Company</h3>
               <ul className="space-y-2 text-xs text-muted-foreground">
                 <li><a href="/about" className="hover:text-foreground transition">About</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Blog</a></li>
+                <li><a href="#" className="hover:text-foreground transition"></a></li>
                 <li><a href="#" className="hover:text-foreground transition"></a></li>
               </ul>
             </div>
