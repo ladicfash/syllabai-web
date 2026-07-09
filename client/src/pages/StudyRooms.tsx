@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { Video, Plus, Copy, Users, ArrowLeft, Clock, Loader2 } from "lucide-react";
+import { Video, Plus, Copy, Users, ArrowLeft, Clock, Loader2, ScreenShare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CALL_DURATION_MINUTES = 30;
@@ -64,6 +64,10 @@ function CallRoom({ roomCode, topic }: { roomCode: string; topic: string }) {
     setEnded(true);
   }, []);
 
+  const toggleScreenShare = useCallback(() => {
+    apiRef.current?.executeCommand?.("toggleShareScreen");
+  }, []);
+
   useEffect(() => {
     if (!jitsiReady || !containerRef.current || apiRef.current) return;
 
@@ -81,6 +85,10 @@ function CallRoom({ roomCode, topic }: { roomCode: string; topic: string }) {
         SHOW_JITSI_WATERMARK: false,
         SHOW_WATERMARK_FOR_GUESTS: false,
         MOBILE_APP_PROMO: false,
+        TOOLBAR_BUTTONS: [
+          "microphone", "camera", "desktop", "fullscreen", "chat",
+          "settings", "raisehand", "tileview", "hangup",
+        ],
       },
     });
 
@@ -139,6 +147,9 @@ function CallRoom({ roomCode, topic }: { roomCode: string; topic: string }) {
           <p className="text-sm font-medium truncate">{topic}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={toggleScreenShare}>
+            <ScreenShare className="w-3.5 h-3.5" /> Share screen
+          </Button>
           <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={copyLink}>
             <Copy className="w-3.5 h-3.5" /> Copy invite
           </Button>
@@ -194,7 +205,7 @@ function RoomList() {
           <Video className="w-5 h-5 text-primary" /> Study Rooms
         </h1>
         <p className="text-sm text-muted-foreground">
-          Start a free video call with your study group. Sessions are capped at {CALL_DURATION_MINUTES} minutes.
+          Start a free video call with your study group — screen sharing included. Sessions are capped at {CALL_DURATION_MINUTES} minutes.
         </p>
       </div>
 
