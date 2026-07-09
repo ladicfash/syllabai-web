@@ -537,7 +537,7 @@ export default function Settings() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <ShieldAlert className="w-4 h-4 text-muted-foreground" />
-          <h2 onClick={() => { const newCount = accountClickCount + 1; setAccountClickCount(newCount); if (newCount === 3) { setShowSnakeGame(true); setAccountClickCount(0); } }} className="cursor-pointer hover:text-foreground transition" className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Account (click 3x for easter egg)</h2>
+          <h2 onClick={() => { const newCount = accountClickCount + 1; setAccountClickCount(newCount); if (newCount === 3) { setShowSnakeGame(true); setAccountClickCount(0); } }} className="text-sm font-semibold uppercase tracking-widest text-muted-foreground cursor-pointer hover:text-foreground transition">Account</h2>
         </div>
         <Separator />
         <div className="rounded-lg border border-border bg-card/50 p-4 space-y-3 mb-4">
@@ -618,6 +618,7 @@ export default function Settings() {
         </a>
       </section>
 
+      {showSnakeGame && <SnakeGame onClose={() => setShowSnakeGame(false)} />}
     </div>
   );
 }
