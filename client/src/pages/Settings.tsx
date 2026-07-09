@@ -11,7 +11,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import {
   Bell, Share2, UserX, Save, Plus, Trash2,
   Mail, User, Loader2, ShieldAlert, Palette, Info,
-  Smartphone, CheckCircle2, XCircle,
+  Smartphone, CheckCircle2, XCircle, Download,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -22,6 +22,8 @@ import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { ADSTERRA_SMARTLINK_URL } from "@/lib/adsterra";
+import { SnakeGame } from "@/components/SnakeGame";
+import { exportUserDataAsCSV } from "@/lib/dataExport";
 
 interface Recipient {
   name: string;
@@ -74,6 +76,9 @@ export default function Settings() {
   const [pushPermission, setPushPermission] = useState<NotificationPermission>("default");
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [showSnakeGame, setShowSnakeGame] = useState(false);
+  const [accountClickCount, setAccountClickCount] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (!settings) return;
@@ -532,9 +537,36 @@ export default function Settings() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <ShieldAlert className="w-4 h-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Account</h2>
+          <h2 onClick={() => { const newCount = accountClickCount + 1; setAccountClickCount(newCount); if (newCount === 3) { setShowSnakeGame(true); setAccountClickCount(0); } }} className="cursor-pointer hover:text-foreground transition" className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Account (click 3x for easter egg)</h2>
         </div>
         <Separator />
+        <div className="rounded-lg border border-border bg-card/50 p-4 space-y-3 mb-4">
+          <div>
+            <p className="text-sm font-medium">Download Your Data</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Export all your notes, flashcards, study history, and profile data as CSV.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            className="gap-2"
+            onClick={async () => {
+              setIsExporting(true);
+              try {
+                await exportUserDataAsCSV();
+                toast.success("Data exported successfully!");
+              } catch (error) {
+                toast.error("Failed to export data");
+              } finally {
+                setIsExporting(false);
+              }
+            }}
+            disabled={isExporting}
+          >
+            <Download className="w-4 h-4" />
+            {isExporting ? "Exporting..." : "Download Data"}
+          </Button>
+        </div>
         <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 space-y-3">
           <div>
             <p className="text-sm font-medium text-destructive">Deactivate Account</p>
