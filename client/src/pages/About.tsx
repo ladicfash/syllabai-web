@@ -29,10 +29,10 @@ export default function About() {
           </div>
           <h2 className="text-4xl font-bold">I was drowning in tools, not learning</h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            I grew up using Chegg and other study apps, but something felt off. I wanted to use flashcards—they work—but the friction of creating them felt insurmountable. Between managing ADHD and juggling five different apps just to organize my homework, studying became a chore instead of a skill.
+            I grew up using Chegg and other study apps, but something felt off.             I wanted to use flashcards - they work - but the friction of creating them felt insurmountable. Between managing ADHD and juggling five different apps just to organize my homework, studying became a chore instead of a skill.
           </p>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            I'd find myself wanting to annotate my documents, talk through concepts, draw diagrams—but I'd have to switch between my phone, computer, and a notebook. My files were scattered across Google Drive, OneDrive, and my desktop. The fragmentation was exhausting.
+            I'd find myself wanting to annotate my documents, talk through concepts, draw diagrams - but I'd have to switch between my phone, computer, and a notebook. My files were scattered across Google Drive, OneDrive, and my desktop. The fragmentation was exhausting.
           </p>
         </section>
 
@@ -41,7 +41,7 @@ export default function About() {
           <div className="space-y-6">
             <h2 className="text-3xl font-bold">Hi, I'm Ladi</h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              I built syllabAI because I needed it. I realized that the problem wasn't that study tools didn't exist—it's that they were fragmented. You needed one app for flashcards, another for notes, another for scheduling, another for organizing files. That's not studying smarter; that's studying harder.
+              I built syllabAI because I needed it. I realized that the problem wasn't that study tools didn't exist - it's that they were fragmented. You needed one app for flashcards, another for notes, another for scheduling, another for organizing files. That's not studying smarter; that's studying harder.
             </p>
             <p className="text-lg text-muted-foreground leading-relaxed">
               So I decided to create one unified platform where everything you need to ace your exams lives in one place. No switching. No friction. Just learning.
@@ -50,7 +50,7 @@ export default function About() {
           <div className="relative">
             <div className="aspect-square rounded-2xl overflow-hidden border border-blue-500/30 shadow-2xl shadow-blue-500/20">
               <img
-                src="/manus-storage/pasted_file_XsiSh5_IMG_9022_a1b2c3d4.jpeg"
+                src="/manus-storage/IMG_9022_9be2aafa.jpg"
                 alt="Ladi, founder of syllabAI"
                 className="w-full h-full object-cover"
               />
@@ -112,7 +112,7 @@ export default function About() {
           </div>
           <h2 className="text-4xl font-bold">Study smarter, not harder</h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            Every student deserves tools that work with their brain, not against it. Whether you have ADHD, learn visually, or just want to ace your exams, syllabAI adapts to you. We're building the future of learning—one where studying is efficient, intuitive, and actually enjoyable.
+            Every student deserves tools that work with their brain, not against it. Whether you have ADHD, learn visually, or just want to ace your exams, syllabAI adapts to you. We're building the future of learning - one where studying is efficient, intuitive, and actually enjoyable.
           </p>
           <p className="text-lg text-muted-foreground leading-relaxed">
             Our mission is simple: eliminate friction, maximize learning, and help every student unlock their potential.
