@@ -26,7 +26,6 @@ import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
-import { AdSpace } from "./AdSpace";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Page 1", path: "/" },

@@ -34,6 +34,7 @@ import { PageHero } from "@/components/study/PageHero";
 import { EmptyState } from "@/components/study/EmptyState";
 import { AiGenerationStepper } from "@/components/study/AiGenerationStepper";
 import { OutputAssetHeader } from "@/components/study/OutputAssetHeader";
+import { AdSpace } from "@/components/AdSpace";
 
 type TemplateId = "key_points" | "cornell" | "exam_review" | "practice_quiz" | "study_guide" | "glossary" | "concept_outline" | "weak_spots" | "mind_map" | "timeline" | "flowchart" | "code_tutorial";
 type Depth = "concise" | "standard" | "deep";
@@ -314,6 +315,11 @@ export default function StudyStudio() {
             </div>
           }
         />
+
+        {/* Ad space - below hero, above tool grid */}
+        <div className="flex justify-center">
+          <AdSpace format="banner-468x60" />
+        </div>
 
         <div className="grid gap-5 xl:grid-cols-[310px_minmax(0,1fr)_380px]">
           <aside className="space-y-4">

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
 import { EmptyState } from "@/components/study/EmptyState";
 import { Link } from "wouter";
+import { AdSpace } from "@/components/AdSpace";
 
 const QUALITY_BUTTONS = [
   { quality: 0, label: "Blackout", desc: "Complete blank", color: "border-red-400 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30" },
@@ -88,6 +89,11 @@ export default function SpacedRep() {
             <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Ad space - between stats and review session */}
+      <div className="flex justify-center">
+        <AdSpace format="banner-468x60" />
       </div>
 
       {/* Session Complete */}

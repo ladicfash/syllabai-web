@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { AdSpace } from "@/components/AdSpace";
 
 export default function Profile() {
   const [, params] = useRoute("/profile/:userId");
@@ -91,6 +92,11 @@ export default function Profile() {
           </div>
         </div>
       )}
+
+      {/* Ad space - below header, above tabs */}
+      <div className="flex justify-center mb-6">
+        <AdSpace format="banner-468x60" />
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-border">
