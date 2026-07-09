@@ -24,6 +24,8 @@ import Settings from "./pages/Settings";
 import { CourseGraph } from "./pages/CourseGraph";
 import CourseGraphOnboarding from "./pages/CourseGraphOnboarding";
 import StudyRooms from "./pages/StudyRooms";
+import TermsOfService from "./pages/TermsOfService";
+import About from "./pages/About";
 import StudyLayout from "./components/StudyLayout";
 import LogoIntro from "./components/LogoIntro";
 import TermsModal from "./components/TermsModal";
@@ -281,6 +283,16 @@ function AppRoutes() {
         {/* Settings — protected */}
         <Route path="/settings">
           {loading ? null : isAuthenticated ? <StudyLayout><Settings /></StudyLayout> : <Landing />}
+        </Route>
+
+        {/* Terms of Service */}
+        <Route path="/terms">
+          <TermsOfService />
+        </Route>
+
+        {/* About */}
+        <Route path="/about">
+          <About />
         </Route>
 
         {/* Root path — serves Landing for guests, redirects authenticated users to /dashboard */}

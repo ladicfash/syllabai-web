@@ -474,7 +474,7 @@ export default function Landing() {
             <div>
               <h3 className="font-semibold text-sm mb-4">Company</h3>
               <ul className="space-y-2 text-xs text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition">About</a></li>
+                <li><a href="/about" className="hover:text-foreground transition">About</a></li>
                 <li><a href="#" className="hover:text-foreground transition">Blog</a></li>
                 <li><a href="#" className="hover:text-foreground transition"></a></li>
               </ul>
@@ -483,7 +483,7 @@ export default function Landing() {
               <h3 className="font-semibold text-sm mb-4">Legal</h3>
               <ul className="space-y-2 text-xs text-muted-foreground">
                 <li><a href="https://trust.manus.im/" className="hover:text-foreground transition">Privacy</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Terms</a></li>
+                <li><a href="/terms" className="hover:text-foreground transition">Terms</a></li>
                 <li><a href="https://trust.manus.im/" className="hover:text-foreground transition">GDPR</a></li>
               </ul>
             </div>
