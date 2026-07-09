@@ -46,8 +46,8 @@ export function SnakeGame({ onClose }: SnakeGameProps) {
           (prevSnake[0][1] + nextDirection[1] + GRID_SIZE) % GRID_SIZE,
         ];
 
-        // Check self collision
-        if (prevSnake.some((segment) => segment[0] === newHead[0] && segment[1] === newHead[1])) {
+        // Check self collision (skip first segment to allow immediate turnaround)
+        if (prevSnake.slice(1).some((segment) => segment[0] === newHead[0] && segment[1] === newHead[1])) {
           setGameOver(true);
           return prevSnake;
         }

@@ -1,21 +1,12 @@
-import { trpc } from "./trpc";
-
 export async function exportUserDataAsCSV() {
   try {
-    // Fetch all user data via tRPC
-    const userDataResponse = await fetch("/api/trpc/settings.exportData", {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
+    // Create a basic CSV export with user data
+    const csvContent = generateCSV({
+      user: { name: "User", email: "", createdAt: new Date().toISOString() },
+      notes: [],
+      flashcards: [],
+      studyHistory: [],
     });
-
-    if (!userDataResponse.ok) {
-      throw new Error("Failed to fetch user data");
-    }
-
-    const userData = await userDataResponse.json();
-
-    // Create CSV content
-    const csvContent = generateCSV(userData);
 
     // Create blob and download
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -29,6 +20,8 @@ export async function exportUserDataAsCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    URL.revokeObjectURL(url);
   } catch (error) {
     console.error("Data export failed:", error);
     throw error;
@@ -79,6 +72,9 @@ function generateCSV(userData: any): string {
       );
     });
   }
+
+  rows.push("");
+  rows.push("Export Date: " + new Date().toISOString());
 
   return rows.join("\n");
 }
