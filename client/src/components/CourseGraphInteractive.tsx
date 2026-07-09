@@ -1,12 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import cytoscape from "cytoscape";
 // @ts-ignore
 import cose from "cytoscape-cose-bilkent";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { Lock } from "lucide-react";
 
 cytoscape.use(cose as any);
+
+// A topic is locked (prerequisite not yet met) once its mastery score reaches this value.
+const MASTERY_LOCK_THRESHOLD = 80;
 
 interface Topic {
   id: string;
@@ -14,6 +19,8 @@ interface Topic {
   description: string;
   completed?: boolean;
   inProgress?: boolean;
+  parentTopicId?: string | null;
+  masteryScore?: number;
 }
 
 interface CourseGraphInteractiveProps {
@@ -34,8 +41,36 @@ export function CourseGraphInteractive({
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [hoveredTopic, setHoveredTopic] = useState<string | null>(null);
 
+  // Kept in refs so the graph-building effect below doesn't need onTopicClick as a
+  // dependency — an inline callback from the parent gets a new identity on every
+  // render, which previously caused the whole cytoscape instance to be torn down
+  // and rebuilt (losing zoom/pan/layout) every time a topic was clicked.
+  const onTopicClickRef = useRef(onTopicClick);
+  useEffect(() => {
+    onTopicClickRef.current = onTopicClick;
+  }, [onTopicClick]);
+
+  const lockedCount = useMemo(() => {
+    const topicById = new Map(topics.map((t) => [t.id, t]));
+    return topics.filter((topic) => {
+      if (!topic.parentTopicId) return false;
+      const parent = topicById.get(topic.parentTopicId);
+      return !!parent && (parent.masteryScore ?? 0) < MASTERY_LOCK_THRESHOLD;
+    }).length;
+  }, [topics]);
+
   useEffect(() => {
     if (!containerRef.current || topics.length === 0) return;
+
+    const topicById = new Map(topics.map((t) => [t.id, t]));
+    // A subtopic is locked until its parent topic's mastery reaches the threshold.
+    // Root topics (no parent, or a parent outside this course's topic set) are never locked.
+    const isLocked = (topic: Topic) => {
+      if (!topic.parentTopicId) return false;
+      const parent = topicById.get(topic.parentTopicId);
+      if (!parent) return false;
+      return (parent.masteryScore ?? 0) < MASTERY_LOCK_THRESHOLD;
+    };
 
     // Create nodes: central course node + topic nodes
     const nodes = [
@@ -49,22 +84,28 @@ export function CourseGraphInteractive({
       ...topics.map((topic) => ({
         data: {
           id: topic.id,
-          label: topic.name,
+          label: isLocked(topic) ? `🔒 ${topic.name}` : topic.name,
           description: topic.description,
           type: "topic",
           completed: topic.completed,
           inProgress: topic.inProgress,
+          locked: isLocked(topic) ? true : undefined,
         },
       })),
     ];
 
-    // Create edges: course -> each topic
-    const edges = topics.map((topic) => ({
-      data: {
-        source: courseId,
-        target: topic.id,
-      },
-    }));
+    // Create edges: subtopics connect to their parent topic (real prerequisite
+    // hierarchy); root topics (no parent in this course) connect to the course node.
+    const edges = topics.map((topic) => {
+      const parentExists = topic.parentTopicId && topicById.has(topic.parentTopicId);
+      return {
+        data: {
+          source: parentExists ? topic.parentTopicId! : courseId,
+          target: topic.id,
+          locked: isLocked(topic) ? true : undefined,
+        },
+      };
+    });
 
     // Initialize Cytoscape
     const cy = cytoscape({
@@ -123,6 +164,16 @@ export function CourseGraphInteractive({
           } as any,
         },
         {
+          selector: "node[type='topic'][?locked]",
+          style: {
+            "background-color": "oklch(0.32 0.02 240)",
+            "border-color": "oklch(0.4 0.02 240)",
+            "border-style": "dashed",
+            "text-opacity": 0.7,
+            opacity: 0.55,
+          } as any,
+        },
+        {
           selector: "node:hover",
           style: {
             "border-width": 3,
@@ -137,6 +188,14 @@ export function CourseGraphInteractive({
             "target-arrow-shape": "triangle",
             "curve-style": "bezier",
           },
+        },
+        {
+          selector: "edge[?locked]",
+          style: {
+            "line-color": "rgba(150, 150, 150, 0.25)",
+            "target-arrow-color": "rgba(150, 150, 150, 0.25)",
+            "line-style": "dashed",
+          } as any,
         },
       ],
       layout: {
@@ -167,11 +226,17 @@ export function CourseGraphInteractive({
     cy.on("tap", "node", (evt) => {
       const node = evt.target;
       if (node.data("type") === "topic") {
-        const topic = topics.find((t) => t.id === node.id());
-        if (topic) {
-          setSelectedTopic(topic);
-          onTopicClick?.(topic.id);
+        const topic = topicById.get(node.id());
+        if (!topic) return;
+        if (node.data("locked")) {
+          const parent = topic.parentTopicId ? topicById.get(topic.parentTopicId) : undefined;
+          toast.info(
+            parent ? `Complete "${parent.name}" first to unlock this topic.` : "This topic is locked."
+          );
+          return;
         }
+        setSelectedTopic(topic);
+        onTopicClickRef.current?.(topic.id);
       }
     });
 
@@ -197,7 +262,7 @@ export function CourseGraphInteractive({
     return () => {
       cy.destroy();
     };
-  }, [courseId, courseName, topics, onTopicClick]);
+  }, [courseId, courseName, topics]);
 
   return (
     <div className="w-full h-full flex flex-col gap-4">
@@ -257,8 +322,13 @@ export function CourseGraphInteractive({
       )}
 
       {/* Instructions */}
-      <div className="text-xs text-slate-500 px-2">
-        Drag nodes • Scroll to zoom • Click to select • Hover for details
+      <div className="text-xs text-slate-500 px-2 flex items-center gap-1.5 flex-wrap">
+        <span>Drag nodes • Scroll to zoom • Click to select • Hover for details</span>
+        {lockedCount > 0 && (
+          <span className="inline-flex items-center gap-1 text-slate-400">
+            <Lock className="w-3 h-3" /> {lockedCount} topic{lockedCount !== 1 ? "s" : ""} locked until their prerequisite is mastered
+          </span>
+        )}
       </div>
     </div>
   );

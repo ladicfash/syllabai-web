@@ -27,8 +27,8 @@ const getNavSections = (t: any) => [
   {
     label: "Study",
     items: [
-      { path: "/study-rooms",  icon: PhoneCall,   label: "Study Rooms", isNew: true },
-      { path: "/course-graph", icon: Network,     label: t('nav.courseGraph') },
+      { path: "/study-rooms",  icon: PhoneCall,   label: "Study Rooms", badge: "New" },
+      { path: "/course-graph", icon: Network,     label: t('nav.courseGraph'), badge: "Beta" },
       { path: "/library",     icon: BookOpen,    label: "Library" },
       { path: "/source-hub",  icon: Database,    label: "Source Hub" },
       { path: "/study-tools", icon: Wand2,       label: t('nav.studyStudio') },
@@ -128,10 +128,10 @@ export default function StudyLayout({ children }: StudyLayoutProps) {
                           {!collapsed && item.path === "/spaced-rep" && (dueCards?.length ?? 0) > 0 && (
                             <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground flex-shrink-0">{dueCards?.length}</span>
                           )}
-                          {!collapsed && (item as any).isNew && (
-                            <span className="ml-auto rounded-full bg-primary/15 text-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide flex-shrink-0">New</span>
+                          {!collapsed && (item as any).badge && (
+                            <span className="ml-auto rounded-full bg-primary/15 text-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide flex-shrink-0">{(item as any).badge}</span>
                           )}
-                          {!collapsed && active && item.path !== "/spaced-rep" && !(item as any).isNew && (
+                          {!collapsed && active && item.path !== "/spaced-rep" && !(item as any).badge && (
                             <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                           )}
                         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { AdSpace } from "@/components/AdSpace";
 import { useLocation } from 'wouter';
 import { trpc } from '@/lib/trpc';
@@ -14,6 +14,8 @@ interface Topic {
   description: string;
   completed?: boolean;
   inProgress?: boolean;
+  parentTopicId?: string | null;
+  masteryScore?: number;
 }
 
 export const CourseGraph: React.FC = () => {
@@ -45,8 +47,17 @@ export const CourseGraph: React.FC = () => {
       description: t.description || '',
       completed: t.masteryScore && t.masteryScore >= 80,
       inProgress: t.masteryScore && t.masteryScore >= 30 && t.masteryScore < 80,
+      parentTopicId: t.parentTopicId ? String(t.parentTopicId) : null,
+      masteryScore: t.masteryScore ?? 0,
     }));
   }, [dbTopics]);
+
+  const handleTopicClick = useCallback((topicId: string) => {
+    setSelectedTopic((prev) => {
+      const topic = topics.find((t) => t.id === topicId);
+      return topic ?? prev;
+    });
+  }, [topics]);
 
   const selectedCourse = courses.find((c: any) => c.id === selectedCourseId);
   const isLoading = coursesLoading || topicsLoading;
@@ -121,10 +132,7 @@ export const CourseGraph: React.FC = () => {
               courseId={String(selectedCourse.id)}
               courseName={selectedCourse.name}
               topics={topics}
-              onTopicClick={(topicId) => {
-                const topic = topics.find((t) => t.id === topicId);
-                if (topic) setSelectedTopic(topic);
-              }}
+              onTopicClick={handleTopicClick}
             />
           </div>
         )}
@@ -149,10 +157,22 @@ export const CourseGraph: React.FC = () => {
                 <h3 className="text-lg font-semibold text-white">{selectedTopic.name}</h3>
                 <p className="text-slate-400 text-sm mt-2">{selectedTopic.description}</p>
                 <div className="flex gap-2 mt-4">
-                  <Button size="sm" variant="outline" onClick={() => navigate('/study-tools')}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate(
+                      `/study-tools?tab=flashcards&topicId=${selectedTopic.id}&topicName=${encodeURIComponent(selectedTopic.name)}&topicDesc=${encodeURIComponent(selectedTopic.description)}`
+                    )}
+                  >
                     Study Materials
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => navigate('/spaced-rep')}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate(
+                      `/simulations?topicId=${selectedTopic.id}&topicName=${encodeURIComponent(selectedTopic.name)}&topicDesc=${encodeURIComponent(selectedTopic.description)}`
+                    )}
+                  >
                     Practice Quiz
                   </Button>
                 </div>

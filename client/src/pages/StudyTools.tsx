@@ -225,6 +225,10 @@ export default function StudyTools() {
   const params = new URLSearchParams(search);
   const preselectedDocId = params.get("doc") ? parseInt(params.get("doc")!) : undefined;
   const preselectedTab = params.get("tab") || "flashcards";
+  const topicId = params.get("topicId") || undefined;
+  const topicName = params.get("topicName") || undefined;
+  const topicDesc = params.get("topicDesc") || "";
+  const [topicMode, setTopicMode] = useState(!!topicId && !!topicName);
 
   const [selectedDocId, setSelectedDocId] = useState<number | undefined>(preselectedDocId);
   const [selectedDocIds, setSelectedDocIds] = useState<number[]>(preselectedDocId ? [preselectedDocId] : []);
@@ -291,6 +295,21 @@ export default function StudyTools() {
   };
 
   const runAI = async (tab: string) => {
+    if (tab === "flashcards" && topicMode && topicName) {
+      try {
+        await flashcardsMut.mutateAsync({
+          text: `${topicName}\n\n${topicDesc}`.trim(),
+          title: `Flashcards — ${topicName}`,
+          difficulty,
+          style: cardStyle,
+          count: cardCount,
+        });
+        toast.success("Flashcards generated!");
+      } catch (err: any) {
+        toast.error(err.message ?? "AI generation failed");
+      }
+      return;
+    }
     if ((tab === "flashcards" || tab === "studyplan") && activeDocumentIds.length > 0) {
       if (!hasSelectedText) {
         toast.error("Please select at least one document with extracted text");
@@ -452,6 +471,15 @@ export default function StudyTools() {
 
         {/* ── Flashcards Tab ── */}
         <TabsContent value="flashcards" className="mt-6 space-y-4">
+          {topicMode && topicName && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-sm">
+                <span className="font-semibold">Studying topic:</span> {topicName}
+                {topicDesc && <span className="text-muted-foreground"> — {topicDesc}</span>}
+              </div>
+              <Button size="sm" variant="ghost" onClick={() => setTopicMode(false)}>Use a document instead</Button>
+            </div>
+          )}
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <h2 className="font-semibold">AI Flashcard Generator</h2>
@@ -480,7 +508,7 @@ export default function StudyTools() {
                   {[8, 12, 16, 20, 30].map((n) => <SelectItem key={n} value={String(n)}>{n} cards</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Button onClick={() => runAI("flashcards")} disabled={activeDocumentIds.length === 0 || isLoading("flashcards")} className="gap-2">
+              <Button onClick={() => runAI("flashcards")} disabled={(!topicMode && activeDocumentIds.length === 0) || isLoading("flashcards")} className="gap-2">
                 {isLoading("flashcards") ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 Generate
               </Button>

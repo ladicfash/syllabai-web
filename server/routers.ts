@@ -590,18 +590,19 @@ export const appRouter = router({
       documentId: z.number().optional(),
       documentIds: z.array(z.number()).max(8).optional(),
       text: z.string().max(12000).optional(),
+      title: z.string().max(256).optional(),
       difficulty: z.enum(["beginner", "intermediate", "advanced"]).default("intermediate"),
       style: z.enum(["recall", "application", "exam"]).default("application"),
       count: z.number().min(5).max(30).default(12),
     })).mutation(async ({ ctx, input }) => {
       let text = input.text;
       let docId = input.documentId && input.documentId > 0 ? input.documentId : undefined;
-      let deckTitle = "Generated Flashcards";
+      let deckTitle = input.title?.trim() || "Generated Flashcards";
       if (!text && input.documentIds?.length) {
         const combined = await getCombinedDocumentText(ctx.user.id, input.documentIds, 12000);
         text = combined.text;
         docId = combined.docs.length === 1 ? combined.docs[0].id : undefined;
-        deckTitle = combined.docs.length > 1 ? `Combined Flashcards (${combined.docs.length} docs)` : `Flashcards — ${combined.docs[0].originalName}`;
+        deckTitle = input.title?.trim() || (combined.docs.length > 1 ? `Combined Flashcards (${combined.docs.length} docs)` : `Flashcards — ${combined.docs[0].originalName}`);
       }
       if (!text?.trim()) throw new Error("No source text provided for flashcard generation");
       const raw = await callAI(
@@ -1017,19 +1018,27 @@ flowchart TD
     quizMeReports: protectedProcedure.query(({ ctx }) => getQuizMeReportsByUser(ctx.user.id, 20)),
 
     generateQuizMe: protectedProcedure.input(z.object({
-      documentId: z.number(),
+      documentId: z.number().optional(),
+      text: z.string().max(8000).optional(),
+      title: z.string().max(256).optional(),
       questionCount: z.number().min(3).max(25).default(10),
       difficulty: z.enum(["beginner", "intermediate", "advanced"]).default("intermediate"),
     })).mutation(async ({ ctx, input }) => {
-      const doc = await getDocumentById(input.documentId, ctx.user.id);
-      if (!doc?.extractedText) throw new Error("Select a document with extracted text first");
+      let sourceName = input.title?.trim() || "Quiz Me";
+      let docText = input.text?.trim();
+      if (input.documentId) {
+        const doc = await getDocumentById(input.documentId, ctx.user.id);
+        if (!doc?.extractedText) throw new Error("Select a document with extracted text first");
+        sourceName = input.title?.trim() || doc.originalName;
+        docText = doc.extractedText.slice(0, 5000);
+      }
+      if (!docText) throw new Error("No source text provided for quiz generation");
       // Generate in batches of 5 to avoid truncation
       const batchSize = 5;
       const totalCount = Math.min(input.questionCount, 25);
       const batches = Math.ceil(totalCount / batchSize);
       const allQuestions: any[] = [];
-      let quizTitle = `Quiz Me — ${doc.originalName}`;
-      const docText = doc.extractedText.slice(0, 5000);
+      let quizTitle = `Quiz Me — ${sourceName}`;
       const questionSchema = {
         type: "object",
         properties: {
@@ -1062,7 +1071,7 @@ flowchart TD
         const startIdx = b * batchSize + 1;
         const raw = await callAI(
           `You create original document-grounded quizzes. Make mixed multiple-choice and short-answer questions. Never copy proprietary exams. Return JSON only. Keep explanations under 60 words. Keep source snippets under 30 words. Generate exactly ${batchCount} questions.`,
-          `Create exactly ${batchCount} questions (numbered ${startIdx} to ${startIdx + batchCount - 1}) at ${input.difficulty} difficulty. Use 70% MCQ and 30% short answer. For MCQ: 4 choices, set correctChoiceIndex. For short answer: choices=[], correctChoiceIndex=-1.\n\nDocument: ${doc.originalName}\n\n${docText}`,
+          `Create exactly ${batchCount} questions (numbered ${startIdx} to ${startIdx + batchCount - 1}) at ${input.difficulty} difficulty. Use 70% MCQ and 30% short answer. For MCQ: 4 choices, set correctChoiceIndex. For short answer: choices=[], correctChoiceIndex=-1.\n\nSource: ${sourceName}\n\n${docText}`,
           questionSchema,
           2000
         );
@@ -1079,7 +1088,7 @@ flowchart TD
       }
       if (allQuestions.length === 0) throw new Error("Quiz generation failed — no questions returned. Please try again.");
       const parsed = { title: quizTitle, questions: allQuestions };
-      return { title: parsed.title || `Quiz Me — ${doc.originalName}`, documentName: doc.originalName, questions: (parsed.questions ?? []).slice(0, input.questionCount) };
+      return { title: parsed.title || `Quiz Me — ${sourceName}`, documentName: sourceName, questions: (parsed.questions ?? []).slice(0, input.questionCount) };
     }),
 
     submitQuizMe: protectedProcedure.input(z.object({

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,6 +60,13 @@ const QUICK_RESPONSES = [
 const cleanFlags = (): QuizFlags => ({ fullscreenExits: 0, tabHidden: 0, windowBlur: 0, copyAttempts: 0 });
 
 export default function Simulations() {
+  const search = useSearch();
+  const topicParams = new URLSearchParams(search);
+  const topicId = topicParams.get("topicId") || undefined;
+  const topicName = topicParams.get("topicName") || undefined;
+  const topicDesc = topicParams.get("topicDesc") || "";
+  const [topicMode, setTopicMode] = useState(!!topicId && !!topicName);
+
   const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>("intermediate");
   const [mode, setMode] = useState<Mode>("branching");
@@ -69,7 +77,7 @@ export default function Simulations() {
   const [scenario, setScenario] = useState("");
   const [score, setScore] = useState({ decisions: 0, feedback: 0 });
 
-  const [quizState, setQuizState] = useState<QuizState>("idle");
+  const [quizState, setQuizState] = useState<QuizState>(topicMode ? "setup" : "idle");
   const [quizDocId, setQuizDocId] = useState<number | undefined>();
   const [quizCount, setQuizCount] = useState(10);
   const [quizTitle, setQuizTitle] = useState("Quiz Me");
@@ -220,6 +228,10 @@ export default function Simulations() {
   };
 
   const generateQuizMe = () => {
+    if (topicMode && topicName) {
+      generateQuiz.mutate({ text: `${topicName}\n\n${topicDesc}`.trim(), title: topicName, questionCount: quizCount, difficulty });
+      return;
+    }
     if (!quizDocId) return toast.error("Select a document first");
     generateQuiz.mutate({ documentId: quizDocId, questionCount: quizCount, difficulty });
   };
@@ -283,16 +295,27 @@ export default function Simulations() {
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="rounded-2xl border p-4 space-y-4">
-              <div className="grid gap-3 md:grid-cols-3">
-                <div className="md:col-span-3">
-                  <label className="text-sm font-medium">Source document</label>
-                  <Select value={quizDocId?.toString() ?? ""} onValueChange={(value) => setQuizDocId(Number(value))}>
-                    <SelectTrigger className="mt-1"><SelectValue placeholder="Choose a document with extracted text" /></SelectTrigger>
-                    <SelectContent>
-                      {docs.filter((doc) => !!doc.extractedText).map((doc) => <SelectItem key={doc.id} value={doc.id.toString()}>{doc.originalName}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+              {topicMode && topicName ? (
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="text-sm">
+                    <span className="font-semibold">Quiz topic:</span> {topicName}
+                    {topicDesc && <span className="text-muted-foreground"> — {topicDesc}</span>}
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => setTopicMode(false)}>Use a document instead</Button>
                 </div>
+              ) : null}
+              <div className="grid gap-3 md:grid-cols-3">
+                {!topicMode && (
+                  <div className="md:col-span-3">
+                    <label className="text-sm font-medium">Source document</label>
+                    <Select value={quizDocId?.toString() ?? ""} onValueChange={(value) => setQuizDocId(Number(value))}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder="Choose a document with extracted text" /></SelectTrigger>
+                      <SelectContent>
+                        {docs.filter((doc) => !!doc.extractedText).map((doc) => <SelectItem key={doc.id} value={doc.id.toString()}>{doc.originalName}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium">Questions</label>
                   <Select value={String(quizCount)} onValueChange={(value) => setQuizCount(Number(value))}>
@@ -308,14 +331,14 @@ export default function Simulations() {
                   </Select>
                 </div>
                 <div className="flex items-end">
-                  <Button onClick={generateQuizMe} disabled={!quizDocId || generateQuiz.isPending} className="w-full gap-2">
+                  <Button onClick={generateQuizMe} disabled={(!topicMode && !quizDocId) || generateQuiz.isPending} className="w-full gap-2">
                     {generateQuiz.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Generate
                   </Button>
                 </div>
               </div>
               {questions.length > 0 && (
                 <div className="rounded-2xl border bg-primary/5 p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div><p className="font-semibold">{quizTitle}</p><p className="text-sm text-muted-foreground">{questions.length} questions ready · {selectedDoc?.originalName}</p></div>
+                  <div><p className="font-semibold">{quizTitle}</p><p className="text-sm text-muted-foreground">{questions.length} questions ready · {topicMode ? topicName : selectedDoc?.originalName}</p></div>
                   <Button onClick={beginFocusQuiz} className="gap-2"><Maximize2 className="w-4 h-4" /> Enter Focus Lock & Begin</Button>
                 </div>
               )}
