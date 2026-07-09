@@ -187,5 +187,8 @@
 - [x] Backend tests: create/listMine/getByCode, including auth requirement (5 tests)
 - [x] Verified with tsc --noEmit, vitest (31/31), and production build across 3 independent runs
 
+## Backlog / Not Started
+- [ ] Explore Supabase migration (Postgres DB + Auth + Storage) on a separate branch, keeping Manus for AI calls only. No live problem driving this — pure exploration, paused pending Supabase project credentials/connector.
+
 ## Known Constraints
 - DocChat API: 12-message limit per conversation (affects multi-turn document analysis features)
