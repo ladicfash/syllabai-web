@@ -8,11 +8,9 @@ export default function About() {
       {/* Header */}
       <div className="border-b border-border/50 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Link href="/">
-            <a className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
-              <ChevronRight className="w-4 h-4 rotate-180" />
-              Back to Home
-            </a>
+          <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
+            <ChevronRight className="w-4 h-4 rotate-180" />
+            Back to Home
           </Link>
           <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent mb-4">
             About syllabAI
@@ -129,12 +127,10 @@ export default function About() {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Join thousands of students who are already using syllabAI to transform their study habits and ace their exams.
             </p>
-            <Link href="/onboarding">
-              <Button size="lg" className="gap-2">
-                Try us out
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </Link>
+            <Button size="lg" className="gap-2" onClick={() => window.location.href = '/onboarding'}>
+              Try us out
+              <ChevronRight className="w-4 h-4" />
+            </Button>
           </div>
         </section>
       </div>
