@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Plus, Pin, PinOff, Trash2, Share2, Edit3, Check, X, Search,
   FolderPlus, Folder, FolderOpen, ChevronDown, ChevronRight, FolderInput, Palette,
-  Brush, Grid3x3, List,
+  Brush, Grid3x3, List, SortAsc,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SharePopup } from "@/components/SharePopup";
 import { EmptyState } from "@/components/study/EmptyState";
 import { NoteCardEnhanced } from "@/components/study/NoteCardEnhanced";
@@ -237,6 +243,9 @@ export default function Notes() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const [pendingDeleteFolderId, setPendingDeleteFolderId] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "title" | "color">("newest");
+  const [massDeleteOpen, setMassDeleteOpen] = useState(false);
+  const massDeletingRef = useRef(false);
 
   const createNote = trpc.notes.create.useMutation({
     onSuccess: () => {
@@ -255,11 +264,32 @@ export default function Notes() {
   });
 
   const deleteNote = trpc.notes.delete.useMutation({
-    onSuccess: () => { utils.notes.list.invalidate(); toast.success("Note deleted"); setPendingDeleteId(null); },
+    onSuccess: () => {
+      utils.notes.list.invalidate();
+      if (!massDeletingRef.current) toast.success("Note deleted");
+      setPendingDeleteId(null);
+    },
     onError: () => setPendingDeleteId(null),
   });
 
   const requestDeleteNote = (id: number) => setPendingDeleteId(id);
+
+  const [massDeleting, setMassDeleting] = useState(false);
+  const handleMassDelete = async () => {
+    setMassDeleting(true);
+    massDeletingRef.current = true;
+    try {
+      await Promise.all(Array.from(selectedNotes).map((id) => deleteNote.mutateAsync({ id })));
+      toast.success(`${selectedNotes.size} note${selectedNotes.size !== 1 ? "s" : ""} deleted`);
+      setSelectedNotes(new Set());
+    } catch {
+      toast.error("Some notes couldn't be deleted");
+    } finally {
+      massDeletingRef.current = false;
+      setMassDeleting(false);
+      setMassDeleteOpen(false);
+    }
+  };
 
   const shareNotes = trpc.notes.share.useMutation({
     onSuccess: (data) => {
@@ -345,7 +375,15 @@ export default function Notes() {
   const filtered = notes.filter(n =>
     n.title.toLowerCase().includes(search.toLowerCase()) ||
     n.content.toLowerCase().includes(search.toLowerCase())
-  );
+  ).sort((a, b) => {
+    switch (sortBy) {
+      case "oldest": return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case "title": return a.title.localeCompare(b.title);
+      case "color": return a.color.localeCompare(b.color);
+      case "newest":
+      default: return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+  });
 
   // Sort folders: pinned first
   const sortedFolders = [...folders].sort((a, b) => {
@@ -380,9 +418,14 @@ export default function Notes() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {selectedNotes.size > 0 && (
-            <Button variant="outline" size="sm" onClick={() => setShowShare(true)} className="gap-1.5">
-              <Share2 className="w-3.5 h-3.5" /> Share ({selectedNotes.size})
-            </Button>
+            <>
+              <Button variant="outline" size="sm" onClick={() => setShowShare(true)} className="gap-1.5">
+                <Share2 className="w-3.5 h-3.5" /> Share ({selectedNotes.size})
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setMassDeleteOpen(true)} className="gap-1.5">
+                <Trash2 className="w-3.5 h-3.5" /> Delete ({selectedNotes.size})
+              </Button>
+            </>
           )}
           <Button variant="outline" size="sm" onClick={() => setShowAddFolder(true)} className="gap-1.5">
             <FolderPlus className="w-4 h-4" /> New Folder
@@ -422,6 +465,19 @@ export default function Notes() {
             <List className="w-4 h-4" />
           </Button>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <SortAsc className="w-4 h-4" /> Sort
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setSortBy("newest")}>{sortBy === "newest" && "✓ "}Newest first</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSortBy("oldest")}>{sortBy === "oldest" && "✓ "}Oldest first</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSortBy("title")}>{sortBy === "title" && "✓ "}Title (A-Z)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSortBy("color")}>{sortBy === "color" && "✓ "}By color</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Ad space */}
@@ -748,6 +804,16 @@ export default function Notes() {
         isLoading={deleteFolder.isPending}
         onCancel={() => setPendingDeleteFolderId(null)}
         onConfirm={() => { if (pendingDeleteFolderId !== null) deleteFolder.mutate({ id: pendingDeleteFolderId }); }}
+      />
+
+      {/* Mass Delete Confirmation */}
+      <DeleteConfirmDialog
+        open={massDeleteOpen}
+        title={`Delete ${selectedNotes.size} note${selectedNotes.size !== 1 ? "s" : ""}?`}
+        description="This will permanently delete the selected notes. This cannot be undone."
+        isLoading={massDeleting}
+        onCancel={() => setMassDeleteOpen(false)}
+        onConfirm={handleMassDelete}
       />
     </div>
   );
