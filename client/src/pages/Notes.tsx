@@ -14,6 +14,7 @@ import {
 import { SharePopup } from "@/components/SharePopup";
 import { EmptyState } from "@/components/study/EmptyState";
 import { NoteCardEnhanced } from "@/components/study/NoteCardEnhanced";
+import { NotesGrid } from "@/components/study/NotesGrid";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import WhiteboardDialog from "@/components/whiteboard/WhiteboardDialog";
@@ -403,6 +404,9 @@ export default function Notes() {
       )}
 
       {/* Folders */}
+      {!isLoading && sortedFolders.length === 0 && (
+        <EmptyState icon={FolderPlus} title="No folders yet" description="Create a folder to organize your notes" />
+      )}
       {!isLoading && sortedFolders.map(folder => (
         <FolderSection
           key={folder.id}
