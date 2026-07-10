@@ -29,6 +29,7 @@ import {
   createVoiceNote, getVoiceNotesByUser, updateVoiceNoteTranscript, deleteVoiceNote,
   createVideoNote, getVideoNotesByUser, countVideoNotesByUser, updateVideoNoteTranscript, deleteVideoNote,
   createNoteFolder, getNoteFoldersByUser, updateNoteFolder, deleteNoteFolder, moveNoteToFolder,
+  createDocumentTag, getDocumentTagsByUser, deleteDocumentTag, assignTagToDocument, removeTagFromDocument, getTagsByDocument,
 } from "./db";
 import { nanoid } from "nanoid";
 import { docxToText, docxToHtml, textToDocx, imageToPdf, textToPdf } from "./conversion";
@@ -451,6 +452,44 @@ export const appRouter = router({
         size: outputBuffer.length,
       };
     }),
+  }),
+
+  // ── Document Tags ─────────────────────────────────────────────────────────
+  documentTags: router({
+    list: protectedProcedure.query(({ ctx }) => getDocumentTagsByUser(ctx.user.id)),
+
+    create: protectedProcedure.input(z.object({
+      name: z.string().min(1).max(128),
+      color: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const tagId = await createDocumentTag(ctx.user.id, input.name, input.color);
+      return { id: tagId, name: input.name, color: input.color ?? "#3b9edd" };
+    }),
+
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      await deleteDocumentTag(input.id, ctx.user.id);
+      return { success: true };
+    }),
+
+    assign: protectedProcedure.input(z.object({
+      documentId: z.number(),
+      tagId: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      await assignTagToDocument(input.documentId, input.tagId);
+      return { success: true };
+    }),
+
+    unassign: protectedProcedure.input(z.object({
+      documentId: z.number(),
+      tagId: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      await removeTagFromDocument(input.documentId, input.tagId);
+      return { success: true };
+    }),
+
+    getByDocument: protectedProcedure.input(z.object({ documentId: z.number() })).query(async ({ input }) =>
+      getTagsByDocument(input.documentId)
+    ),
   }),
 
   // ── Source Hub: public/open academic + legal databases ───────────────────

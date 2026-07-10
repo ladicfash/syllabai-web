@@ -1,9 +1,9 @@
-import { eq, desc, and, gte, lte } from "drizzle-orm";
+import { and, desc, eq, inArray, sql, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   users, documents, sourceItems, studyOutputs, studyActivity, flashcardDecks, flashcards, notes, tasks, taskSubtasks,
   timerSessions, aiOutputs, quizSessions, quizMeReports, shareTokens, userSettings,
-  voiceNotes, videoNotes, noteFolders,
+  voiceNotes, videoNotes, noteFolders, documentTags, documentTagAssignments,
   type InsertUser, type Document, type InsertDocument, type InsertSourceItem, type InsertStudyOutput, type InsertQuizMeReport,
 } from "../drizzle/schema";
 
@@ -679,4 +679,45 @@ export async function moveNoteToFolder(noteId: number, userId: number, folderId:
   const db = await getDb();
   if (!db) return;
   await db.update(notes).set({ folderId }).where(and(eq(notes.id, noteId), eq(notes.userId, userId)));
+}
+
+// ── Document Tags ──────────────────────────────────────────────────────────
+export async function createDocumentTag(userId: number, name: string, color?: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(documentTags).values({ userId, name, color: color ?? "#3b9edd" });
+  return (result as any)[0]?.insertId ?? null;
+}
+
+export async function getDocumentTagsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(documentTags).where(eq(documentTags.userId, userId)).orderBy(documentTags.createdAt);
+}
+
+export async function deleteDocumentTag(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  // Remove all assignments first
+  await db.delete(documentTagAssignments).where(eq(documentTagAssignments.tagId, id));
+  await db.delete(documentTags).where(and(eq(documentTags.id, id), eq(documentTags.userId, userId)));
+}
+
+export async function assignTagToDocument(documentId: number, tagId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(documentTagAssignments).values({ documentId, tagId });
+  return (result as any)[0]?.insertId ?? null;
+}
+
+export async function removeTagFromDocument(documentId: number, tagId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(documentTagAssignments).where(and(eq(documentTagAssignments.documentId, documentId), eq(documentTagAssignments.tagId, tagId)));
+}
+
+export async function getTagsByDocument(documentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ id: documentTags.id, name: documentTags.name, color: documentTags.color }).from(documentTagAssignments).innerJoin(documentTags, eq(documentTagAssignments.tagId, documentTags.id)).where(eq(documentTagAssignments.documentId, documentId));
 }

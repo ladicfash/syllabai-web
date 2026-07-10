@@ -407,6 +407,22 @@ export const studyRooms = mysqlTable("studyRooms", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+// Document Tags for Library
+export const documentTags = mysqlTable("document_tags", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 128 }).notNull(),
+  color: varchar("color", { length: 32 }).default("#3b9edd").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const documentTagAssignments = mysqlTable("document_tag_assignments", {
+  id: int("id").autoincrement().primaryKey(),
+  documentId: int("documentId").notNull(),
+  tagId: int("tagId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 // Types
 export type Course = typeof courses.$inferSelect;
 export type InsertCourse = typeof courses.$inferInsert;
@@ -422,3 +438,7 @@ export type CourseGraphExport = typeof courseGraphExports.$inferSelect;
 export type InsertCourseGraphExport = typeof courseGraphExports.$inferInsert;
 export type StudyRoom = typeof studyRooms.$inferSelect;
 export type InsertStudyRoom = typeof studyRooms.$inferInsert;
+export type DocumentTag = typeof documentTags.$inferSelect;
+export type InsertDocumentTag = typeof documentTags.$inferInsert;
+export type DocumentTagAssignment = typeof documentTagAssignments.$inferSelect;
+export type InsertDocumentTagAssignment = typeof documentTagAssignments.$inferInsert;
