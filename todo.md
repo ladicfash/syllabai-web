@@ -202,3 +202,12 @@
 - [ ] Build Collab Space page to display shared content
 - [ ] Add "Shared with me" section in Notes
 - [ ] Test OAuth on mobile and desktop
+
+
+## Phase 24: Notes Search & Organization Features
+- [ ] Enhanced search (title + content filtering)
+- [ ] Sorting options (date, title, color, folder)
+- [ ] Quick filters (pinned, by folder, by color)
+- [ ] Mass delete with checkboxes
+- [ ] Recently deleted/trash section with restore
+- [ ] Maintain sticky note aesthetic throughout
