@@ -584,17 +584,7 @@ export async function getVideoNotesByUser(userId: number) {
   const db = await getDb();
   if (!db) return [];
   try {
-    return await db.select({
-      id: videoNotes.id,
-      userId: videoNotes.userId,
-      title: videoNotes.title,
-      s3Key: videoNotes.s3Key,
-      s3Url: videoNotes.s3Url,
-      duration: videoNotes.duration,
-      videoMimeType: videoNotes.videoMimeType,
-      transcript: videoNotes.transcript,
-      createdAt: videoNotes.createdAt,
-    }).from(videoNotes).where(eq(videoNotes.userId, userId)).orderBy(desc(videoNotes.createdAt));
+    return await db.select().from(videoNotes).where(eq(videoNotes.userId, userId)).orderBy(desc(videoNotes.createdAt));
   } catch (err) {
     console.warn('[DB] video_notes table query failed:', err);
     return [];
