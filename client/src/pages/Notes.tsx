@@ -6,15 +6,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import {
-  Plus, Pin, PinOff, Trash2, Share2, Edit3, Check, X, Search,
+import { Plus, Pin, PinOff, Trash2, Share2, Edit3, Check, X, Search,
   FolderPlus, Folder, FolderOpen, ChevronDown, ChevronRight, FolderInput, Palette,
-  Brush,
+  Brush, Grid3x3, List,
 } from "lucide-react";
 import { SharePopup } from "@/components/SharePopup";
 import { EmptyState } from "@/components/study/EmptyState";
 import { NoteCardEnhanced } from "@/components/study/NoteCardEnhanced";
 import { NotesGrid } from "@/components/study/NotesGrid";
+import { NotesList } from "@/components/study/NotesList";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import WhiteboardDialog from "@/components/whiteboard/WhiteboardDialog";
@@ -233,6 +233,7 @@ export default function Notes() {
   const [showAddFolder, setShowAddFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderColor, setNewFolderColor] = useState(FOLDER_COLORS[0]);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const createNote = trpc.notes.create.useMutation({
     onSuccess: () => {
@@ -386,10 +387,32 @@ export default function Notes() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative animate-fade-in">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Search notes..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      {/* Search and view toggle */}
+      <div className="flex gap-2 items-center">
+        <div className="relative flex-1 animate-fade-in">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Search notes..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        <div className="flex gap-1 bg-muted rounded-lg p-1">
+          <Button
+            size="sm"
+            variant={viewMode === "grid" ? "default" : "ghost"}
+            className="h-8 w-8 p-0"
+            onClick={() => setViewMode("grid")}
+            title="Grid view"
+          >
+            <Grid3x3 className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant={viewMode === "list" ? "default" : "ghost"}
+            className="h-8 w-8 p-0"
+            onClick={() => setViewMode("list")}
+            title="List view"
+          >
+            <List className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Ad space */}
@@ -458,22 +481,51 @@ export default function Notes() {
               {pinnedNotes.length > 0 && (
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">All Notes</h2>
               )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {unpinnedNotes.map((note, i) => (
-                  <div key={note.id} className="animate-scale-in" style={{ animationDelay: `${i * 0.04}s` }}>
-                    <NoteCard
-                      note={note}
-                      onUpdate={(id: number, data: any) => updateNote.mutate({ id, ...data })}
-                      onDelete={(id: number) => deleteNote.mutate({ id })}
-                      folders={folders}
-                      onMove={(noteId: number, folderId: number | null) => moveNote.mutate({ noteId, folderId })}
-                      selected={selectedNotes.has(note.id)}
-                      onSelect={toggleSelect}
-                      onOpenWhiteboard={openWhiteboardForEdit}
-                    />
-                  </div>
-                ))}
-              </div>
+              {viewMode === "grid" ? (
+                <NotesGrid
+                  notes={unpinnedNotes.map(n => ({
+                    id: n.id,
+                    title: n.title,
+                    preview: n.content,
+                    color: n.color,
+                    isPinned: n.isPinned,
+                    createdAt: n.createdAt?.toISOString(),
+                    folder: folders.find(f => f.id === n.folderId)?.name,
+                  }))}
+                  onClick={(id) => {
+                    const note = unpinnedNotes.find(n => n.id === id);
+                    if (note) openWhiteboardForEdit({ noteId: id, snapshot: JSON.parse(note.content || '{}'), title: note.title, color: note.color, folderId: note.folderId });
+                  }}
+                  onPin={(id) => updateNote.mutate({ id, isPinned: !unpinnedNotes.find(n => n.id === id)?.isPinned })}
+                  onDelete={(id) => deleteNote.mutate({ id })}
+                  onDownload={(id) => {
+                    const note = unpinnedNotes.find(n => n.id === id);
+                    if (note) downloadNote(note.title, note.content);
+                  }}
+                />
+              ) : (
+                <NotesList
+                  notes={unpinnedNotes.map(n => ({
+                    id: n.id,
+                    title: n.title,
+                    preview: n.content,
+                    color: n.color,
+                    isPinned: n.isPinned,
+                    createdAt: n.createdAt?.toISOString(),
+                    folder: folders.find(f => f.id === n.folderId)?.name,
+                  }))}
+                  onClick={(id) => {
+                    const note = unpinnedNotes.find(n => n.id === id);
+                    if (note) openWhiteboardForEdit({ noteId: id, snapshot: JSON.parse(note.content || '{}'), title: note.title, color: note.color, folderId: note.folderId });
+                  }}
+                  onPin={(id) => updateNote.mutate({ id, isPinned: !unpinnedNotes.find(n => n.id === id)?.isPinned })}
+                  onDelete={(id) => deleteNote.mutate({ id })}
+                  onDownload={(id) => {
+                    const note = unpinnedNotes.find(n => n.id === id);
+                    if (note) downloadNote(note.title, note.content);
+                  }}
+                />
+              )}
             </div>
           )}
 
