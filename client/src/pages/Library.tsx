@@ -56,6 +56,9 @@ export default function Library() {
   const [convertTarget, setConvertTarget] = useState<"pdf" | "docx" | "txt">("pdf");
   const [convertLoading, setConvertLoading] = useState(false);
   const [ocrDocId, setOcrDocId] = useState<number | null>(null);
+  const [showTagDialog, setShowTagDialog] = useState<number | null>(null);
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagColor, setNewTagColor] = useState("#3b9edd");
 
   const utils = trpc.useUtils();
   const { data: docs, isLoading } = trpc.documents.list.useQuery();
@@ -96,6 +99,26 @@ export default function Library() {
       toast.success("Document deleted");
     },
   });
+
+  const { data: allTags = [] } = trpc.documentTags.list.useQuery();
+  const createTagMutation = trpc.documentTags.create.useMutation({
+    onSuccess: () => {
+      utils.documentTags.list.invalidate();
+      setNewTagName("");
+      setNewTagColor("#3b9edd");
+      toast.success("Tag created");
+    },
+  });
+  const assignTagMutation = trpc.documentTags.assign.useMutation({
+    onSuccess: () => {
+      utils.documentTags.list.invalidate();
+      toast.success("Tag assigned");
+    },
+  });
+  const { data: docTags = {} } = trpc.documentTags.getByDocument.useQuery(
+    { documentId: showTagDialog ?? 0 },
+    { enabled: !!showTagDialog }
+  );
 
   const processFiles = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -272,8 +295,31 @@ export default function Library() {
                   </p>
                 )}
 
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {allTags.map((tag: any) => (
+                    <Badge
+                      key={tag.id}
+                      variant="outline"
+                      className="text-xs cursor-pointer hover:opacity-75 transition-opacity"
+                      style={{ backgroundColor: tag.color + "20", borderColor: tag.color }}
+                      onClick={() => assignTagMutation.mutate({ documentId: doc.id, tagId: tag.id })}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-5 px-2 text-xs"
+                    onClick={() => setShowTagDialog(doc.id)}
+                  >
+                    + Tag
+                  </Button>
+                </div>
+
                 {/* Actions */}
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-wrap">
                   <Button
                     size="sm"
                     variant="outline"
@@ -322,6 +368,15 @@ export default function Library() {
                     onClick={() => { setConvertingDoc(doc); setConvertTarget("pdf"); }}
                   >
                     <ArrowRightLeft className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 w-8 p-0"
+                    title="Manage tags"
+                    onClick={() => setShowTagDialog(doc.id)}
+                  >
+                    <span className="text-xs">🏷️</span>
                   </Button>
                   <Button
                     size="sm"
@@ -487,6 +542,75 @@ export default function Library() {
                   <File className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <p>Preview not available for this file type</p>
                 </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tag Management Dialog */}
+      {showTagDialog && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowTagDialog(null)}>
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md animate-scale-in p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-semibold flex items-center gap-2"><span className="text-lg">🏷️</span> Manage Tags</h3>
+              <button onClick={() => setShowTagDialog(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Create New Tag */}
+            <div className="space-y-3 mb-5 pb-5 border-b">
+              <p className="text-sm font-medium text-muted-foreground">Create a new tag:</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Tag name"
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                  className="flex-1 h-8 text-sm"
+                />
+                <div className="flex items-center gap-1">
+                  <input
+                    type="color"
+                    value={newTagColor}
+                    onChange={(e) => setNewTagColor(e.target.value)}
+                    className="w-8 h-8 rounded cursor-pointer"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    if (newTagName.trim()) {
+                      createTagMutation.mutate({ name: newTagName, color: newTagColor });
+                    }
+                  }}
+                  disabled={!newTagName.trim()}
+                  className="h-8"
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
+
+            {/* Available Tags */}
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              <p className="text-sm font-medium text-muted-foreground">Click to assign/remove:</p>
+              {allTags.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">No tags yet. Create one above.</p>
+              ) : (
+                allTags.map((tag: any) => (
+                  <button
+                    key={tag.id}
+                    onClick={() => assignTagMutation.mutate({ documentId: showTagDialog, tagId: tag.id })}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors flex items-center gap-2"
+                  >
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: tag.color }}
+                    />
+                    <span className="text-sm">{tag.name}</span>
+                  </button>
+                ))
               )}
             </div>
           </div>

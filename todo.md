@@ -214,4 +214,4 @@
 
 ## Phase 25: Note Click Behavior & Tagging
 - [x] Fix note click to open in edit mode (not read-only)
-- [ ] Implement tagging system for Library
+- [x] Implement tagging system for Library (backend: schema, DB functions, tRPC procedures)
