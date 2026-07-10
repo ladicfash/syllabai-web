@@ -87,6 +87,7 @@
     "react-hook-form": "^7.64.0",
     "react-i18next": "^17.0.8",
     "react-markdown": "^10.1.0",
+    "react-pdf-viewer": "^0.1.0",
     "react-resizable-panels": "^3.0.6",
     "recharts": "^2.15.2",
     "rehype-highlight": "^7.0.2",
