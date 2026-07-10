@@ -494,7 +494,15 @@ export default function Notes() {
                   }))}
                   onClick={(id) => {
                     const note = unpinnedNotes.find(n => n.id === id);
-                    if (note) openWhiteboardForEdit({ noteId: id, snapshot: JSON.parse(note.content || '{}'), title: note.title, color: note.color, folderId: note.folderId });
+                    if (note) {
+                      try {
+                        const snapshot = JSON.parse(note.content || '{}');
+                        openWhiteboardForEdit({ noteId: id, snapshot, title: note.title, color: note.color, folderId: note.folderId });
+                      } catch {
+                        // Content is not JSON (markdown, text, etc), skip opening whiteboard
+                        toast.info('Note opened in read-only mode');
+                      }
+                    }
                   }}
                   onPin={(id) => updateNote.mutate({ id, isPinned: !unpinnedNotes.find(n => n.id === id)?.isPinned })}
                   onDelete={(id) => deleteNote.mutate({ id })}
@@ -516,7 +524,15 @@ export default function Notes() {
                   }))}
                   onClick={(id) => {
                     const note = unpinnedNotes.find(n => n.id === id);
-                    if (note) openWhiteboardForEdit({ noteId: id, snapshot: JSON.parse(note.content || '{}'), title: note.title, color: note.color, folderId: note.folderId });
+                    if (note) {
+                      try {
+                        const snapshot = JSON.parse(note.content || '{}');
+                        openWhiteboardForEdit({ noteId: id, snapshot, title: note.title, color: note.color, folderId: note.folderId });
+                      } catch {
+                        // Content is not JSON (markdown, text, etc), skip opening whiteboard
+                        toast.info('Note opened in read-only mode');
+                      }
+                    }
                   }}
                   onPin={(id) => updateNote.mutate({ id, isPinned: !unpinnedNotes.find(n => n.id === id)?.isPinned })}
                   onDelete={(id) => deleteNote.mutate({ id })}
