@@ -499,8 +499,8 @@ export default function Notes() {
                         const snapshot = JSON.parse(note.content || '{}');
                         openWhiteboardForEdit({ noteId: id, snapshot, title: note.title, color: note.color, folderId: note.folderId });
                       } catch {
-                        // Content is not JSON (markdown, text, etc), skip opening whiteboard
-                        toast.info('Note opened in read-only mode');
+                        // Content is not JSON (markdown, text, etc) - open in edit mode
+                        openWhiteboardForEdit({ noteId: id, snapshot: { content: note.content }, title: note.title, color: note.color, folderId: note.folderId });
                       }
                     }
                   }}
@@ -529,8 +529,8 @@ export default function Notes() {
                         const snapshot = JSON.parse(note.content || '{}');
                         openWhiteboardForEdit({ noteId: id, snapshot, title: note.title, color: note.color, folderId: note.folderId });
                       } catch {
-                        // Content is not JSON (markdown, text, etc), skip opening whiteboard
-                        toast.info('Note opened in read-only mode');
+                        // Content is not JSON (markdown, text, etc) - open in edit mode
+                        openWhiteboardForEdit({ noteId: id, snapshot: { content: note.content }, title: note.title, color: note.color, folderId: note.folderId });
                       }
                     }
                   }}

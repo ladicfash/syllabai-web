@@ -205,9 +205,13 @@
 
 
 ## Phase 24: Notes Search & Organization Features
-- [ ] Enhanced search (title + content filtering)
-- [ ] Sorting options (date, title, color, folder)
-- [ ] Quick filters (pinned, by folder, by color)
-- [ ] Mass delete with checkboxes
-- [ ] Recently deleted/trash section with restore
-- [ ] Maintain sticky note aesthetic throughout
+- [x] Enhanced search (title + content filtering)
+- [x] Sorting options (date, title, color, folder)
+- [x] Quick filters (pinned, by folder, by color)
+- [x] Mass delete with checkboxes
+- [x] Recently deleted/trash section with restore
+- [x] Maintain sticky note aesthetic throughout
+
+## Phase 25: Note Click Behavior & Tagging
+- [x] Fix note click to open in edit mode (not read-only)
+- [ ] Implement tagging system for Library
