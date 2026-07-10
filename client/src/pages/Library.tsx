@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { LibraryEmptyState } from "@/components/study/LibraryEmptyState";
+import { DocumentGridSkeleton } from "@/components/study/DocumentSkeleton";
 import {
   Upload, FileText, Image, File, X, Eye, Trash2, Brain, Search,
   Download, ChevronRight, AlertCircle, CheckCircle2, Loader2,
@@ -231,8 +233,12 @@ export default function Library() {
 
       {/* Document Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-40 rounded-xl" />)}
+        <DocumentGridSkeleton />
+      ) : filteredDocs.length === 0 && docs?.length === 0 ? (
+        <LibraryEmptyState type="documents" onUpload={() => fileInputRef.current?.click()} />
+      ) : filteredDocs.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No documents match your search</p>
         </div>
       ) : filteredDocs.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
