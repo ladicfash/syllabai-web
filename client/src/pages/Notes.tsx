@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/study/EmptyState";
 import { NoteCardEnhanced } from "@/components/study/NoteCardEnhanced";
 import { NotesGrid } from "@/components/study/NotesGrid";
 import { NotesList } from "@/components/study/NotesList";
+import { DeleteConfirmDialog } from "@/components/study/DeleteConfirmDialog";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import WhiteboardDialog from "@/components/whiteboard/WhiteboardDialog";
@@ -234,6 +235,8 @@ export default function Notes() {
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderColor, setNewFolderColor] = useState(FOLDER_COLORS[0]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [pendingDeleteFolderId, setPendingDeleteFolderId] = useState<number | null>(null);
 
   const createNote = trpc.notes.create.useMutation({
     onSuccess: () => {
@@ -252,8 +255,11 @@ export default function Notes() {
   });
 
   const deleteNote = trpc.notes.delete.useMutation({
-    onSuccess: () => { utils.notes.list.invalidate(); toast.success("Note deleted"); },
+    onSuccess: () => { utils.notes.list.invalidate(); toast.success("Note deleted"); setPendingDeleteId(null); },
+    onError: () => setPendingDeleteId(null),
   });
+
+  const requestDeleteNote = (id: number) => setPendingDeleteId(id);
 
   const shareNotes = trpc.notes.share.useMutation({
     onSuccess: (data) => {
@@ -285,8 +291,11 @@ export default function Notes() {
       utils.folders.list.invalidate();
       utils.notes.list.invalidate();
       toast.success("Folder deleted (notes kept)");
+      setPendingDeleteFolderId(null);
     },
+    onError: () => setPendingDeleteFolderId(null),
   });
+  const requestDeleteFolder = (id: number) => setPendingDeleteFolderId(id);
 
   const moveNote = trpc.folders.moveNote.useMutation({
     onSuccess: () => { utils.notes.list.invalidate(); toast.success("Note moved"); },
@@ -436,9 +445,9 @@ export default function Notes() {
           folder={folder}
           notes={notesByFolder[folder.id] ?? []}
           onUpdateFolder={(id: number, data: any) => updateFolder.mutate({ id, ...data })}
-          onDeleteFolder={(id: number) => deleteFolder.mutate({ id })}
+          onDeleteFolder={(id: number) => requestDeleteFolder(id)}
           onUpdateNote={(id: number, data: any) => updateNote.mutate({ id, ...data })}
-          onDeleteNote={(id: number) => deleteNote.mutate({ id })}
+          onDeleteNote={(id: number) => requestDeleteNote(id)}
           onMoveNote={(noteId: number, folderId: number | null) => moveNote.mutate({ noteId, folderId })}
           allFolders={folders}
           selectedNotes={selectedNotes}
@@ -462,7 +471,7 @@ export default function Notes() {
                     <NoteCard
                       note={note}
                       onUpdate={(id: number, data: any) => updateNote.mutate({ id, ...data })}
-                      onDelete={(id: number) => deleteNote.mutate({ id })}
+                      onDelete={(id: number) => requestDeleteNote(id)}
                       folders={folders}
                       onMove={(noteId: number, folderId: number | null) => moveNote.mutate({ noteId, folderId })}
                       selected={selectedNotes.has(note.id)}
@@ -505,7 +514,7 @@ export default function Notes() {
                     }
                   }}
                   onPin={(id) => updateNote.mutate({ id, isPinned: !unpinnedNotes.find(n => n.id === id)?.isPinned })}
-                  onDelete={(id) => deleteNote.mutate({ id })}
+                  onDelete={(id) => requestDeleteNote(id)}
                   onDownload={(id) => {
                     const note = unpinnedNotes.find(n => n.id === id);
                     if (note) downloadNote(note.title, note.content);
@@ -535,7 +544,7 @@ export default function Notes() {
                     }
                   }}
                   onPin={(id) => updateNote.mutate({ id, isPinned: !unpinnedNotes.find(n => n.id === id)?.isPinned })}
-                  onDelete={(id) => deleteNote.mutate({ id })}
+                  onDelete={(id) => requestDeleteNote(id)}
                   onDownload={(id) => {
                     const note = unpinnedNotes.find(n => n.id === id);
                     if (note) downloadNote(note.title, note.content);
@@ -720,6 +729,26 @@ export default function Notes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Note Confirmation */}
+      <DeleteConfirmDialog
+        open={pendingDeleteId !== null}
+        title="Delete note?"
+        description="This will permanently delete this note. This cannot be undone."
+        isLoading={deleteNote.isPending}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => { if (pendingDeleteId !== null) deleteNote.mutate({ id: pendingDeleteId }); }}
+      />
+
+      {/* Delete Folder Confirmation */}
+      <DeleteConfirmDialog
+        open={pendingDeleteFolderId !== null}
+        title="Delete folder?"
+        description="The folder will be removed, but notes inside it are kept and moved to Uncategorized."
+        isLoading={deleteFolder.isPending}
+        onCancel={() => setPendingDeleteFolderId(null)}
+        onConfirm={() => { if (pendingDeleteFolderId !== null) deleteFolder.mutate({ id: pendingDeleteFolderId }); }}
+      />
     </div>
   );
 }

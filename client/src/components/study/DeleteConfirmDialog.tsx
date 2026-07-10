@@ -34,7 +34,7 @@ export function DeleteConfirmDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete {itemCount ? `${itemCount} item${itemCount > 1 ? 's' : ''}` : 'item'}?</AlertDialogTitle>
           <AlertDialogDescription>
-            {description || 'This action cannot be undone. The item will be moved to trash and permanently deleted after 30 days.'}
+            {description || 'This action cannot be undone.'}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

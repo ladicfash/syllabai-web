@@ -698,26 +698,35 @@ export async function getDocumentTagsByUser(userId: number) {
 export async function deleteDocumentTag(id: number, userId: number) {
   const db = await getDb();
   if (!db) return;
-  // Remove all assignments first
+  // Only remove assignments for a tag the user actually owns.
+  const [owned] = await db.select({ id: documentTags.id }).from(documentTags).where(and(eq(documentTags.id, id), eq(documentTags.userId, userId)));
+  if (!owned) return;
   await db.delete(documentTagAssignments).where(eq(documentTagAssignments.tagId, id));
   await db.delete(documentTags).where(and(eq(documentTags.id, id), eq(documentTags.userId, userId)));
 }
 
-export async function assignTagToDocument(documentId: number, tagId: number) {
+export async function assignTagToDocument(documentId: number, tagId: number, userId: number) {
   const db = await getDb();
   if (!db) return null;
+  const [doc] = await db.select({ id: documents.id }).from(documents).where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
+  const [tag] = await db.select({ id: documentTags.id }).from(documentTags).where(and(eq(documentTags.id, tagId), eq(documentTags.userId, userId)));
+  if (!doc || !tag) throw new Error("Document or tag not found");
   const result = await db.insert(documentTagAssignments).values({ documentId, tagId });
   return (result as any)[0]?.insertId ?? null;
 }
 
-export async function removeTagFromDocument(documentId: number, tagId: number) {
+export async function removeTagFromDocument(documentId: number, tagId: number, userId: number) {
   const db = await getDb();
   if (!db) return;
+  const [doc] = await db.select({ id: documents.id }).from(documents).where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
+  if (!doc) return;
   await db.delete(documentTagAssignments).where(and(eq(documentTagAssignments.documentId, documentId), eq(documentTagAssignments.tagId, tagId)));
 }
 
-export async function getTagsByDocument(documentId: number) {
+export async function getTagsByDocument(documentId: number, userId: number) {
   const db = await getDb();
   if (!db) return [];
+  const [doc] = await db.select({ id: documents.id }).from(documents).where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
+  if (!doc) return [];
   return db.select({ id: documentTags.id, name: documentTags.name, color: documentTags.color }).from(documentTagAssignments).innerJoin(documentTags, eq(documentTagAssignments.tagId, documentTags.id)).where(eq(documentTagAssignments.documentId, documentId));
 }

@@ -475,7 +475,7 @@ export const appRouter = router({
       documentId: z.number(),
       tagId: z.number(),
     })).mutation(async ({ ctx, input }) => {
-      await assignTagToDocument(input.documentId, input.tagId);
+      await assignTagToDocument(input.documentId, input.tagId, ctx.user.id);
       return { success: true };
     }),
 
@@ -483,12 +483,12 @@ export const appRouter = router({
       documentId: z.number(),
       tagId: z.number(),
     })).mutation(async ({ ctx, input }) => {
-      await removeTagFromDocument(input.documentId, input.tagId);
+      await removeTagFromDocument(input.documentId, input.tagId, ctx.user.id);
       return { success: true };
     }),
 
-    getByDocument: protectedProcedure.input(z.object({ documentId: z.number() })).query(async ({ input }) =>
-      getTagsByDocument(input.documentId)
+    getByDocument: protectedProcedure.input(z.object({ documentId: z.number() })).query(async ({ ctx, input }) =>
+      getTagsByDocument(input.documentId, ctx.user.id)
     ),
   }),
 
