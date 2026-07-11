@@ -123,8 +123,8 @@ function FlashcardView({ cards, deckId, difficulty = "intermediate" }: { cards: 
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Card {index + 1} of {cards.length}</span>
           <div className="flex gap-3 text-xs">
-            <span className="text-emerald-600 font-medium">✓ {known.size} known</span>
-            <span className="text-amber-600 font-medium">↺ {needsWork.size} review</span>
+            <span className="text-emerald-600 font-medium inline-flex items-center gap-1"><CheckCheck className="w-3.5 h-3.5" /> {known.size} known</span>
+            <span className="text-amber-600 font-medium inline-flex items-center gap-1"><RotateCcw className="w-3 h-3" /> {needsWork.size} review</span>
           </div>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">

@@ -21,6 +21,8 @@ import {
   Sparkles,
   GraduationCap,
   AlertCircle,
+  File,
+  FileQuestion,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -258,10 +260,10 @@ function Step2Docs({ selectedDocIds, setSelectedDocIds }: Step2Props) {
   };
 
   const getIcon = (mime: string) => {
-    if (mime === 'application/pdf') return '📄';
-    if (mime.includes('word')) return '📝';
-    if (mime === 'text/plain') return '📃';
-    return '📁';
+    if (mime === 'application/pdf') return FileText;
+    if (mime.includes('word')) return FileText;
+    if (mime === 'text/plain') return File;
+    return FileQuestion;
   };
 
   return (
@@ -303,7 +305,7 @@ function Step2Docs({ selectedDocIds, setSelectedDocIds }: Step2Props) {
                 onCheckedChange={() => toggle(doc.id)}
                 className="shrink-0"
               />
-              <span className="text-lg">{getIcon(doc.mimeType)}</span>
+              {(() => { const FileIcon = getIcon(doc.mimeType); return <FileIcon className="w-4 h-4 text-muted-foreground shrink-0" />; })()}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{doc.originalName}</p>
                 {doc.wordCount && (

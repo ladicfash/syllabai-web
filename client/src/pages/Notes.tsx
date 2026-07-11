@@ -472,10 +472,10 @@ export default function Notes() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setSortBy("newest")}>{sortBy === "newest" && "✓ "}Newest first</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy("oldest")}>{sortBy === "oldest" && "✓ "}Oldest first</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy("title")}>{sortBy === "title" && "✓ "}Title (A-Z)</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy("color")}>{sortBy === "color" && "✓ "}By color</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSortBy("newest")} className="gap-2"><Check className={cn("w-3.5 h-3.5", sortBy !== "newest" && "opacity-0")} />Newest first</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSortBy("oldest")} className="gap-2"><Check className={cn("w-3.5 h-3.5", sortBy !== "oldest" && "opacity-0")} />Oldest first</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSortBy("title")} className="gap-2"><Check className={cn("w-3.5 h-3.5", sortBy !== "title" && "opacity-0")} />Title (A-Z)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSortBy("color")} className="gap-2"><Check className={cn("w-3.5 h-3.5", sortBy !== "color" && "opacity-0")} />By color</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

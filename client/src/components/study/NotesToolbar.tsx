@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Search, SortAsc, Trash2, MoreVertical } from 'lucide-react';
+import { Search, SortAsc, Trash2, MoreVertical, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -59,17 +60,17 @@ export function NotesToolbar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onSortChange('newest')}>
-              {sortBy === 'newest' && '✓ '}Newest First
+            <DropdownMenuItem onClick={() => onSortChange('newest')} className="gap-2">
+              <Check className={cn("w-3.5 h-3.5", sortBy !== 'newest' && "opacity-0")} />Newest First
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onSortChange('oldest')}>
-              {sortBy === 'oldest' && '✓ '}Oldest First
+            <DropdownMenuItem onClick={() => onSortChange('oldest')} className="gap-2">
+              <Check className={cn("w-3.5 h-3.5", sortBy !== 'oldest' && "opacity-0")} />Oldest First
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onSortChange('title')}>
-              {sortBy === 'title' && '✓ '}Title (A-Z)
+            <DropdownMenuItem onClick={() => onSortChange('title')} className="gap-2">
+              <Check className={cn("w-3.5 h-3.5", sortBy !== 'title' && "opacity-0")} />Title (A-Z)
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onSortChange('color')}>
-              {sortBy === 'color' && '✓ '}By Color
+            <DropdownMenuItem onClick={() => onSortChange('color')} className="gap-2">
+              <Check className={cn("w-3.5 h-3.5", sortBy !== 'color' && "opacity-0")} />By Color
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

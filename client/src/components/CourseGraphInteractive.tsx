@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Lock } from "lucide-react";
+import { Lock, CheckCircle2, CircleDashed, Circle, X } from "lucide-react";
 
 cytoscape.use(cose as any);
 
@@ -84,7 +84,7 @@ export function CourseGraphInteractive({
       ...topics.map((topic) => ({
         data: {
           id: topic.id,
-          label: isLocked(topic) ? `🔒 ${topic.name}` : topic.name,
+          label: topic.name,
           description: topic.description,
           type: "topic",
           completed: topic.completed,
@@ -298,15 +298,15 @@ export function CourseGraphInteractive({
               <div className="flex gap-2 mt-4">
                 {selectedTopic.completed ? (
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
-                    ✓ Completed
+                    <CheckCircle2 className="w-3 h-3" /> Completed
                   </span>
                 ) : selectedTopic.inProgress ? (
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium">
-                    ◐ In Progress
+                    <CircleDashed className="w-3 h-3" /> In Progress
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-500/20 text-slate-400 text-xs font-medium">
-                    ○ Not Started
+                    <Circle className="w-3 h-3" /> Not Started
                   </span>
                 )}
               </div>
@@ -315,7 +315,7 @@ export function CourseGraphInteractive({
               onClick={() => setSelectedTopic(null)}
               className="text-slate-400 hover:text-white transition-colors"
             >
-              ✕
+              <X className="w-4 h-4" />
             </button>
           </div>
         </Card>

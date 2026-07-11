@@ -6,7 +6,7 @@ import StudyLayout from '@/components/StudyLayout';
 import { CourseGraphInteractive } from '@/components/CourseGraphInteractive';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, X } from 'lucide-react';
 
 interface Topic {
   id: string;
@@ -179,10 +179,10 @@ export const CourseGraph: React.FC = () => {
               </div>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon-sm"
                 onClick={() => setSelectedTopic(null)}
               >
-                ✕
+                <X className="w-4 h-4" />
               </Button>
             </div>
           </Card>

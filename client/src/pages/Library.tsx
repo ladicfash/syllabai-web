@@ -11,7 +11,7 @@ import { useLocation } from "wouter";
 import {
   Upload, FileText, Image, File, X, Eye, Trash2, Brain, Search,
   Download, ChevronRight, AlertCircle, CheckCircle2, Loader2,
-  FolderOpen, Plus, RefreshCw, ArrowRightLeft, MessageCircle
+  FolderOpen, Plus, RefreshCw, ArrowRightLeft, MessageCircle, Tag
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow, format } from "date-fns";
@@ -376,7 +376,7 @@ export default function Library() {
                     title="Manage tags"
                     onClick={() => setShowTagDialog(doc.id)}
                   >
-                    <span className="text-xs">🏷️</span>
+                    <Tag className="w-3.5 h-3.5" />
                   </Button>
                   <Button
                     size="sm"
@@ -553,7 +553,7 @@ export default function Library() {
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowTagDialog(null)}>
           <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md animate-scale-in p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="font-semibold flex items-center gap-2"><span className="text-lg">🏷️</span> Manage Tags</h3>
+              <h3 className="font-semibold flex items-center gap-2"><Tag className="w-4 h-4" /> Manage Tags</h3>
               <button onClick={() => setShowTagDialog(null)} className="text-muted-foreground hover:text-foreground transition-colors">
                 <X className="w-5 h-5" />
               </button>
