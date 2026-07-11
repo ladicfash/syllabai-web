@@ -143,7 +143,7 @@ export default function Landing() {
             <Button variant="ghost" size="sm" onClick={handleStart} className="hidden sm:flex hover:text-foreground">
               Sign in
             </Button>
-            <Button size="sm" onClick={handleStart} className="gap-1.5">
+            <Button size="sm" onClick={handleStart} className="gap-1.5 text-primary-foreground">
               Get Started <ArrowRight className="w-3.5 h-3.5" />
             </Button>
           </div>
@@ -184,7 +184,7 @@ export default function Landing() {
               <Button
                 size="lg"
                 onClick={handleStart}
-                className="gap-2 px-8 w-full sm:w-auto"
+                className="gap-2 px-8 w-full sm:w-auto text-primary-foreground"
               >
                 Start studying free
                 <ArrowRight className="w-4 h-4" />
@@ -319,7 +319,7 @@ export default function Landing() {
           <Button
             size="lg"
             onClick={handleStart}
-            className="gap-2 px-8"
+            className="gap-2 px-8 text-primary-foreground"
           >
             Get started free
             <ArrowRight className="w-4 h-4" />
