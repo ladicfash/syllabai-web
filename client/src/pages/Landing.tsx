@@ -135,12 +135,12 @@ export default function Landing() {
       }`}>
         <div className="container flex items-center justify-between h-16">
           <img src={LOGO_URL} alt="syllabAI" className="h-8 object-contain" />
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-foreground/70">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#coursegraph" className="hover:text-foreground transition-colors">CourseGraph</a>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={handleStart} className="hidden sm:flex text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="sm" onClick={handleStart} className="hidden sm:flex text-foreground/70 hover:text-foreground">
               Sign in
             </Button>
             <Button size="sm" onClick={handleStart} className="gap-1.5">
@@ -150,6 +150,7 @@ export default function Landing() {
         </div>
       </nav>
 
+      <main id="main-content" className="flex-1">
       {/* ── Hero ───────────────────────────────────────────────────────── */}
       <section className="relative pt-16 overflow-hidden">
         <div className="absolute inset-0 landing-grid [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]" />
@@ -325,6 +326,7 @@ export default function Landing() {
           </Button>
         </div>
       </section>
+      </main>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <footer className="border-t border-border bg-muted/25 py-12">
