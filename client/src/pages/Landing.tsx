@@ -150,7 +150,7 @@ export default function Landing() {
         </div>
       </nav>
 
-      <main id="main-content" className="flex-1">
+      <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
       {/* ── Hero ───────────────────────────────────────────────────────── */}
       <section className="relative pt-16 overflow-hidden">
         <div className="absolute inset-0 landing-grid [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]" />
