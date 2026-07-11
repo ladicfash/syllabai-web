@@ -3,12 +3,11 @@ import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
+import { MasteryGraphHero } from "@/components/marketing/MasteryGraphHero";
 import {
-  Brain, Zap, Clock, FileText, Mic, FlaskConical,
-  ArrowRight, CheckCircle2, ChevronRight, Star,
-  BookOpen, Target, Calendar, StickyNote, BarChart3,
-  Upload, Layers, Sparkles, TrendingUp, Code2, Landmark, Globe,
-  Search, Video, Eye, Lightbulb, Network, Compass, Award
+  Brain, Zap, Clock, FlaskConical,
+  ArrowRight, BarChart3,
+  Search, Video, Eye, Network, Compass, Award
 } from "lucide-react";
 
 const LOGO_URL = "/manus-storage/syllibai-logo_2db0f2cf.png";
@@ -77,19 +76,6 @@ const features = [
   },
 ];
 
-const toolMarqueeItems = [
-  "CourseGraph", "Study Studio", "Source Hub", "Focus Lock Quiz", "Video Editor",
-  "Flashcards", "Mind Maps", "Cornell Notes", "Spaced Repetition",
-  "Pomodoro Timer", "Voice Notes", "AI Simulations", "Planner",
-];
-
-const stats = [
-  { value: "13+", label: "Research DBs" },
-  { value: "AI", label: "Powered" },
-  { value: "∞", label: "Documents" },
-  { value: "Free", label: "To Start" },
-];
-
 const courseGraphFeatures = [
   {
     icon: Network,
@@ -138,8 +124,6 @@ export default function Landing() {
     }
   };
 
-  const doubled = [...toolMarqueeItems, ...toolMarqueeItems];
-
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
 
@@ -154,13 +138,12 @@ export default function Landing() {
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#coursegraph" className="hover:text-foreground transition-colors">CourseGraph</a>
-            <a href="#new" className="hover:text-foreground transition-colors">What's New</a>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={handleStart} className="hidden sm:flex text-muted-foreground hover:text-foreground">
               Sign in
             </Button>
-            <Button size="sm" onClick={handleStart} className="gap-1.5 shadow-md shadow-primary/20">
+            <Button size="sm" onClick={handleStart} className="gap-1.5">
               Get Started <ArrowRight className="w-3.5 h-3.5" />
             </Button>
           </div>
@@ -168,145 +151,69 @@ export default function Landing() {
       </nav>
 
       {/* ── Hero ───────────────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center pt-16 overflow-hidden">
-        {/* Background layers */}
-        <div className="absolute inset-0 landing-grid" />
-        <div className="absolute inset-0 landing-glow" />
-        <div className="absolute inset-0 landing-noise pointer-events-none" />
+      <section className="relative pt-16 overflow-hidden">
+        <div className="absolute inset-0 landing-grid [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]" />
 
-        {/* Animated gradient orbs */}
-        <div
-          className="absolute top-1/3 -left-48 w-96 h-96 rounded-full opacity-[0.07] blur-3xl pointer-events-none"
-          style={{
-            background: "oklch(0.62 0.19 232)",
-            transform: `translateY(${scrollY * 0.12}px)`,
-            animation: "float 6s ease-in-out infinite",
-          }}
-        />
-        <div
-          className="absolute bottom-1/3 -right-48 w-96 h-96 rounded-full opacity-[0.06] blur-3xl pointer-events-none"
-          style={{
-            background: "oklch(0.62 0.19 232)",
-            transform: `translateY(${scrollY * -0.08}px)`,
-            animation: "float 8s ease-in-out infinite reverse",
-          }}
-        />
-
-        <div className="container relative z-10 flex flex-col items-center text-center gap-8 py-24">
-          {/* Badge */}
-          <div className="pill-badge animate-fade-in">
-            <Sparkles className="w-3 h-3" />
-            Personalized Academic Intelligence
-          </div>
-
-          {/* Headline */}
-          <h1
-            className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-bold leading-[0.92] tracking-tight max-w-5xl animate-slide-up"
-            style={{ animationDelay: "0.05s" }}
-          >
-            Study Smarter.{" "}
-            <br className="hidden sm:block" />
-            <span className="relative inline-block mt-2">
-              <span className="gradient-text">Not Harder.</span>
-              {/* Underline squiggle */}
-              <svg
-                className="absolute -bottom-3 left-0 w-full"
-                viewBox="0 0 400 14"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                preserveAspectRatio="none"
-              >
-                <path
-                  d="M2 9 Q50 3 100 9 Q150 15 200 9 Q250 3 300 9 Q350 15 398 9"
-                  stroke="oklch(0.52 0.19 232)"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  fill="none"
-                  opacity="0.55"
-                />
-              </svg>
-            </span>
-          </h1>
-
-          {/* Subheadline */}
-          <p
-            className="text-lg sm:text-xl text-muted-foreground max-w-2xl leading-relaxed animate-slide-up"
-            style={{ animationDelay: "0.1s" }}
-          >
-            The first AI study platform that understands your course, tracks your mastery, and tells you what to study next.
-          </p>
-
-          {/* CTAs */}
-          <div
-            className="flex flex-col sm:flex-row items-center gap-4 animate-slide-up"
-            style={{ animationDelay: "0.15s" }}
-          >
-            <Button
-              size="lg"
-              onClick={handleStart}
-              className="gap-2 px-8 h-12 text-base shadow-xl shadow-primary/30 hover:shadow-primary/45 transition-all hover:-translate-y-0.5"
-            >
-              Start Studying Free
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="gap-2 px-8 h-12 text-base bg-background/60 backdrop-blur-sm"
-              onClick={() => document.getElementById("coursegraph")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              <Network className="w-4 h-4" />
-              Explore CourseGraph
-            </Button>
-          </div>
-
-          {/* Trust signals */}
-          <div
-            className="flex items-center gap-2 text-sm text-muted-foreground animate-fade-in"
-            style={{ animationDelay: "0.2s" }}
-          >
-            <div className="flex -space-x-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              ))}
+        <div className="container relative z-10 grid lg:grid-cols-[1.1fr_0.9fr] gap-16 items-center py-24 lg:py-32">
+          {/* Text column */}
+          <div className="flex flex-col items-start text-left gap-7">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-secondary animate-fade-in">
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+              Course-aware AI
             </div>
-            <span>No credit card required · Free to start</span>
-          </div>
 
-          {/* Stats row */}
-          <div
-            className="grid grid-cols-4 gap-8 mt-2 pt-8 border-t border-border/50 w-full max-w-md animate-fade-in"
-            style={{ animationDelay: "0.25s" }}
-          >
-            {stats.map((s) => (
-              <div key={s.label} className="text-center">
-                <div className="font-display text-3xl font-bold text-primary">{s.value}</div>
-                <div className="text-xs text-muted-foreground mt-1 font-medium">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+            <h1
+              className="font-display text-5xl sm:text-6xl lg:text-[4.75rem] font-bold leading-[0.98] tracking-tight animate-slide-up"
+              style={{ animationDelay: "0.05s" }}
+            >
+              Know what<br />you don't know.
+            </h1>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40 animate-rise">
-          <div className="w-px h-8 bg-gradient-to-b from-transparent to-primary" />
-          <ChevronRight className="w-4 h-4 rotate-90 text-primary" />
-        </div>
-      </section>
+            <p
+              className="text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed animate-slide-up"
+              style={{ animationDelay: "0.1s" }}
+            >
+              syllabAI turns your syllabus, notes, and quiz results into a live map of every topic in your course — so you always know exactly what to study next.
+            </p>
 
-      {/* ── Marquee ─────────────────────────────────────────────────────── */}
-      <section className="py-5 border-y border-border bg-muted/20 overflow-hidden">
-        <div className="flex overflow-hidden">
-          <div className="marquee-track">
-            {doubled.map((tool, i) => (
-              <span
-                key={i}
-                className="flex items-center gap-3 text-sm font-semibold text-muted-foreground whitespace-nowrap"
+            <div
+              className="flex flex-col sm:flex-row items-center gap-4 animate-slide-up"
+              style={{ animationDelay: "0.15s" }}
+            >
+              <Button
+                size="lg"
+                onClick={handleStart}
+                className="gap-2 px-8 w-full sm:w-auto"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-primary/60 inline-block flex-shrink-0" />
-                {tool}
-              </span>
-            ))}
+                Start studying free
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="gap-2 px-8 w-full sm:w-auto"
+                onClick={() => document.getElementById("coursegraph")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                <Network className="w-4 h-4" />
+                See how it works
+              </Button>
+            </div>
+
+            <p className="text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "0.2s" }}>
+              Free to start · No credit card required
+            </p>
+          </div>
+
+          {/* Signature visual: the actual mastery graph, not a stock illustration */}
+          <div className="relative flex flex-col items-center gap-4 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+            <div className="w-full max-w-md rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-6">
+              <MasteryGraphHero className="w-full h-auto" />
+              <div className="flex items-center justify-center gap-5 mt-2 text-xs text-muted-foreground font-medium">
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-primary" /> Mastered</span>
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full border-2 border-secondary" /> In progress</span>
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full border border-dashed border-muted-foreground" /> Not started</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -315,16 +222,15 @@ export default function Landing() {
       <section id="coursegraph" className="py-28 relative bg-muted/25">
         <div className="container">
           <div className="flex flex-col items-center text-center gap-4 mb-16">
-            <div className="pill-badge">
-              <Network className="w-3 h-3" />
-              Proprietary Technology
+            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-secondary">
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+              How it works
             </div>
             <h2 className="font-display text-4xl sm:text-5xl font-bold tracking-tight max-w-2xl leading-tight">
-              Meet{" "}
-              <span className="gradient-text">CourseGraph</span>
+              Meet CourseGraph
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl">
-              Personalized academic intelligence across every document, deadline, quiz, note, and study session.
+              A live map of your course — every document, deadline, quiz, and note feeds one picture of what you know and what you don't.
             </p>
           </div>
 
@@ -359,64 +265,20 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── What's New ──────────────────────────────────────────────────── */}
-      <section id="new" className="py-28 relative">
-        <div className="container">
-          <div className="flex flex-col items-center text-center gap-4 mb-16">
-            <div className="pill-badge">
-              <Lightbulb className="w-3 h-3" />
-              Latest Features
-            </div>
-            <h2 className="font-display text-4xl sm:text-5xl font-bold tracking-tight max-w-2xl leading-tight">
-              What's New in{" "}
-              <span className="gradient-text">syllabAI</span>
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-xl">
-              Four powerful new tools to supercharge your study workflow.
-            </p>
-          </div>
-
-          {/* New features grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {features.slice(0, 4).map((f, i) => (
-              <div
-                key={f.title}
-                className="group relative rounded-2xl border border-border/50 bg-card p-6 hover:border-primary/50 hover:shadow-lg transition-all duration-300"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                {/* Badge */}
-                {f.badge && (
-                  <div className="absolute top-4 right-4 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
-                    {f.badge}
-                  </div>
-                )}
-                
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-4`}>
-                  <f.icon className={`w-6 h-6 ${f.iconColor}`} />
-                </div>
-                <h3 className="font-display font-semibold text-lg mb-2 leading-snug">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── Features ────────────────────────────────────────────────────── */}
-      <section id="features" className="py-28 bg-muted/25 relative">
+      <section id="features" className="py-28 relative border-t border-border">
         <div className="container">
           {/* Section header */}
           <div className="flex flex-col items-center text-center gap-4 mb-16">
-            <div className="pill-badge">
-              <Layers className="w-3 h-3" />
-              Complete Toolkit
+            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-secondary">
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+              Complete toolkit
             </div>
             <h2 className="font-display text-4xl sm:text-5xl font-bold tracking-tight max-w-2xl leading-tight">
-              Everything You Need{" "}
-              <span className="gradient-text">to Ace Your Exams</span>
+              Everything you need to actually learn the material
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl">
-              From AI-generated study materials to fullscreen quizzes, spaced repetition, and voice notes — all seamlessly integrated.
+              AI-generated study materials, fullscreen quizzes, spaced repetition, and voice notes — all feeding the same mastery map.
             </p>
           </div>
 
@@ -425,9 +287,14 @@ export default function Landing() {
             {features.map((f, i) => (
               <div
                 key={f.title}
-                className="feature-card group"
+                className="feature-card group relative"
                 style={{ animationDelay: `${i * 0.05}s` }}
               >
+                {f.badge && (
+                  <div className="absolute top-4 right-4 px-2 py-0.5 rounded-full bg-secondary/15 text-secondary text-[10px] font-bold tracking-wide">
+                    {f.badge}
+                  </div>
+                )}
                 <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${f.color} flex items-center justify-center mb-3`}>
                   <f.icon className={`w-5 h-5 ${f.iconColor}`} />
                 </div>
@@ -440,20 +307,20 @@ export default function Landing() {
       </section>
 
       {/* ── CTA Section ─────────────────────────────────────────────────── */}
-      <section className="py-20 relative">
+      <section className="py-24 relative border-t border-border">
         <div className="container max-w-2xl text-center">
           <h2 className="font-display text-4xl sm:text-5xl font-bold mb-6 tracking-tight">
-            Ready to study smarter?
+            Stop guessing what to study.
           </h2>
           <p className="text-muted-foreground text-lg mb-8">
-            Join thousands of students using syllabAI to master their courses with CourseGraph.
+            Upload your syllabus and see your first mastery map in minutes.
           </p>
           <Button
             size="lg"
             onClick={handleStart}
-            className="gap-2 px-8 h-12 text-base shadow-xl shadow-primary/30"
+            className="gap-2 px-8"
           >
-            Get Started Free
+            Get started free
             <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
@@ -462,21 +329,18 @@ export default function Landing() {
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <footer className="border-t border-border bg-muted/25 py-12">
         <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-8">
             <div>
               <h3 className="font-semibold text-sm mb-4">Product</h3>
               <ul className="space-y-2 text-xs text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition">Features</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Pricing</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Security</a></li>
+                <li><a href="#features" className="hover:text-foreground transition">Features</a></li>
+                <li><a href="#coursegraph" className="hover:text-foreground transition">CourseGraph</a></li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold text-sm mb-4">Company</h3>
               <ul className="space-y-2 text-xs text-muted-foreground">
                 <li><a href="/about" className="hover:text-foreground transition">About</a></li>
-                <li><a href="#" className="hover:text-foreground transition"></a></li>
-                <li><a href="#" className="hover:text-foreground transition"></a></li>
               </ul>
             </div>
             <div>
@@ -487,17 +351,9 @@ export default function Landing() {
                 <li><a href="https://trust.manus.im/" className="hover:text-foreground transition">GDPR</a></li>
               </ul>
             </div>
-            <div>
-              <h3 className="font-semibold text-sm mb-4">Connect</h3>
-              <ul className="space-y-2 text-xs text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition">Twitter</a></li>
-                <li><a href="#" className="hover:text-foreground transition"></a></li>
-                <li><a href="#" className="hover:text-foreground transition">Email</a></li>
-              </ul>
-            </div>
           </div>
           <div className="border-t border-border pt-8 text-center text-xs text-muted-foreground">
-            <p>&copy; 2026 syllabAI. All rights reserved. | GDPR Compliant | SOC2 Certified | WCAG 2.1 AA</p>
+            <p>&copy; 2026 syllabAI. All rights reserved.</p>
           </div>
         </div>
       </footer>
