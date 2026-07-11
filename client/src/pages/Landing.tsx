@@ -140,7 +140,7 @@ export default function Landing() {
             <a href="#coursegraph" className="hover:text-foreground transition-colors">CourseGraph</a>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={handleStart} className="hidden sm:flex text-foreground/70 hover:text-foreground">
+            <Button variant="ghost" size="sm" onClick={handleStart} className="hidden sm:flex hover:text-foreground">
               Sign in
             </Button>
             <Button size="sm" onClick={handleStart} className="gap-1.5">
@@ -192,7 +192,7 @@ export default function Landing() {
               <Button
                 variant="outline"
                 size="lg"
-                className="gap-2 px-8 w-full sm:w-auto"
+                className="gap-2 px-8 w-full sm:w-auto text-foreground"
                 onClick={() => document.getElementById("coursegraph")?.scrollIntoView({ behavior: "smooth" })}
               >
                 <Network className="w-4 h-4" />
