@@ -135,9 +135,9 @@ export default function Landing() {
       }`}>
         <div className="container flex items-center justify-between h-16">
           <img src={LOGO_URL} alt="syllabAI" className="h-8 object-contain" />
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-foreground/70">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#coursegraph" className="hover:text-foreground transition-colors">CourseGraph</a>
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-foreground">
+            <a href="#features" className="opacity-70 hover:opacity-100 transition-opacity">Features</a>
+            <a href="#coursegraph" className="opacity-70 hover:opacity-100 transition-opacity">CourseGraph</a>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={handleStart} className="hidden sm:flex hover:text-foreground">
