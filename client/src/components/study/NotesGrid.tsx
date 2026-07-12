@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Download, MoreVertical, Pin, Trash2 } from "lucide-react";
+import { Download, MoreVertical, Pin, Trash2, FileText, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 
 interface Note {
   id: number;
@@ -16,11 +17,14 @@ interface Note {
   color?: string;
   isPinned?: boolean;
   createdAt?: string;
+  updatedAt?: string;
   folder?: string;
 }
 
 interface NotesGridProps {
   notes: Note[];
+  selectedIds?: Set<number>;
+  onSelect?: (id: number) => void;
   onPin?: (id: number) => void;
   onDelete?: (id: number) => void;
   onDownload?: (id: number) => void;
@@ -29,6 +33,8 @@ interface NotesGridProps {
 
 export function NotesGrid({
   notes,
+  selectedIds,
+  onSelect,
   onPin,
   onDelete,
   onDownload,
@@ -39,23 +45,23 @@ export function NotesGrid({
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.05,
+        staggerChildren: 0.03,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 12 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.3 },
+      transition: { duration: 0.2 },
     },
   };
 
   return (
     <motion.div
-      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 auto-rows-max"
+      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 auto-rows-max"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -64,6 +70,8 @@ export function NotesGrid({
         <NoteGridItem
           key={note.id}
           note={note}
+          selected={selectedIds?.has(note.id) ?? false}
+          onSelect={onSelect}
           onPin={onPin}
           onDelete={onDelete}
           onDownload={onDownload}
@@ -77,6 +85,8 @@ export function NotesGrid({
 
 interface NoteGridItemProps {
   note: Note;
+  selected: boolean;
+  onSelect?: (id: number) => void;
   onPin?: (id: number) => void;
   onDelete?: (id: number) => void;
   onDownload?: (id: number) => void;
@@ -86,134 +96,137 @@ interface NoteGridItemProps {
 
 function NoteGridItem({
   note,
+  selected,
+  onSelect,
   onPin,
   onDelete,
   onDownload,
   onClick,
   variants,
 }: NoteGridItemProps) {
-  const bgColor = note.color || "#f3f4f6";
-  const textColor = getContrastColor(bgColor);
+  const accent = note.color || "#94a3b8";
 
-  // Extract first line or first 50 chars for preview
+  // Extract first line or first 60 chars for the filename-style subtitle
   const previewText = note.preview
     ?.split("\n")[0]
     ?.replace(/^#+\s/, "")
-    ?.slice(0, 50) || "Untitled";
+    ?.slice(0, 60) || "Empty note";
+
+  const formattedDate = (note.updatedAt || note.createdAt)
+    ? formatDistanceToNow(new Date(note.updatedAt || note.createdAt || ""), { addSuffix: true })
+    : "";
 
   return (
     <motion.div
       variants={variants}
-      whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,0,0,0.15)" }}
-      className="group relative aspect-square rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-lg transition-shadow"
+      className={cn(
+        "group relative flex flex-col rounded-lg border bg-card overflow-hidden cursor-pointer transition-all",
+        selected
+          ? "border-primary ring-1 ring-primary bg-primary/5"
+          : "border-border hover:border-foreground/20 hover:shadow-md"
+      )}
       onClick={() => onClick?.(note.id)}
     >
-      {/* Background */}
-      <div
-        className="absolute inset-0"
-        style={{ backgroundColor: bgColor }}
-      />
+      {/* Thin colour accent, like a file-type stripe */}
+      <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: accent }} />
 
-      {/* Content */}
-      <div className="relative h-full flex flex-col p-3 z-10">
-        {/* Top bar with actions */}
-        <div className="flex justify-between items-start mb-auto">
-          <div className="flex-1" />
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-6 w-6 p-0 hover:bg-black/10"
-              onClick={(e) => {
-                e.stopPropagation();
-                onPin?.(note.id);
-              }}
-            >
-              <Pin className={cn("w-3 h-3", note.isPinned ? "fill-current" : "")} />
-            </Button>
+      {/* Top bar: checkbox (hover/selected) + actions (hover) */}
+      <div className="flex items-center justify-between px-2.5 pt-2.5">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect?.(note.id);
+          }}
+          className={cn(
+            "w-4 h-4 rounded border flex items-center justify-center transition-opacity flex-shrink-0",
+            selected
+              ? "opacity-100 bg-primary border-primary text-primary-foreground"
+              : "opacity-0 group-hover:opacity-100 border-border bg-background"
+          )}
+          title={selected ? "Deselect note" : "Select note"}
+        >
+          {selected && <Check className="w-3 h-3" />}
+        </button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 hover:bg-black/10"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreVertical className="w-3 h-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDownload?.(note.id);
-                  }}
-                  className="gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete?.(note.id);
-                  }}
-                  className="gap-2 text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        {/* Title and preview text */}
-        <div className="mb-2">
-          <h3
-            className="font-semibold text-sm line-clamp-2 mb-1"
-            style={{ color: textColor }}
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 w-6 p-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPin?.(note.id);
+            }}
+            title={note.isPinned ? "Unpin" : "Pin"}
           >
-            {note.title}
-          </h3>
-          <p
-            className="text-xs line-clamp-2 opacity-75"
-            style={{ color: textColor }}
-          >
-            {previewText}
-          </p>
-        </div>
+            <Pin className={cn("w-3 h-3", note.isPinned ? "fill-current text-primary" : "text-muted-foreground")} />
+          </Button>
 
-        {/* Bottom metadata */}
-        <div className="flex items-center justify-between pt-2 border-t border-black/5">
-          <span
-            className="text-xs font-medium"
-            style={{ color: textColor, opacity: 0.7 }}
-          >
-            {note.folder || "Notes"}
-          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="w-3 h-3 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownload?.(note.id);
+                }}
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Download
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.(note.id);
+                }}
+                className="gap-2 text-destructive"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      {/* Hover overlay */}
-      <motion.div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none"
-        style={{
-          background: "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 100%)",
-        }}
-      />
+      {/* File icon area, tinted faintly by the note's colour */}
+      <div
+        className="mx-2.5 mt-2 mb-2.5 aspect-[4/3] rounded-md flex items-center justify-center"
+        style={{ backgroundColor: `${accent}14` }}
+      >
+        <FileText className="w-7 h-7" style={{ color: accent }} strokeWidth={1.5} />
+      </div>
+
+      {/* Filename + metadata */}
+      <div className="px-2.5 pb-2.5">
+        <h3 className="font-medium text-sm text-foreground truncate">
+          {note.title || "Untitled"}
+        </h3>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">
+          {previewText}
+        </p>
+        <div className="flex items-center justify-between mt-1.5 gap-1.5">
+          <span className="text-[11px] text-muted-foreground truncate">
+            {note.folder || "Notes"}
+          </span>
+          {formattedDate && (
+            <span className="text-[11px] text-muted-foreground flex-shrink-0">
+              {formattedDate}
+            </span>
+          )}
+        </div>
+      </div>
     </motion.div>
   );
-}
-
-function getContrastColor(hexColor: string): string {
-  if (!hexColor || hexColor.length < 7) return "#000";
-
-  const r = parseInt(hexColor.slice(1, 3), 16);
-  const g = parseInt(hexColor.slice(3, 5), 16);
-  const b = parseInt(hexColor.slice(5, 7), 16);
-
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? "#000" : "#fff";
 }

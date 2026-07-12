@@ -243,7 +243,8 @@ export default function Notes() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const [pendingDeleteFolderId, setPendingDeleteFolderId] = useState<number | null>(null);
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "title" | "color">("newest");
+  const [sortField, setSortField] = useState<"modified" | "name" | "size">("modified");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [massDeleteOpen, setMassDeleteOpen] = useState(false);
   const massDeletingRef = useRef(false);
 
@@ -340,6 +341,16 @@ export default function Notes() {
     });
   };
 
+  // Clicking the same column again flips direction; switching columns picks a sensible default
+  const toggleSort = (field: "modified" | "name" | "size") => {
+    if (sortField === field) {
+      setSortDir(d => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "name" ? "asc" : "desc");
+    }
+  };
+
   const parseWhiteboardContent = (raw: string): { snapshot: WhiteboardSnapshot } | null => {
     if (typeof raw !== "string") return null;
     const match = raw.match(/^<!--syllabai-whiteboard:preview\n([\s\S]*?)\n-->$/);
@@ -376,13 +387,19 @@ export default function Notes() {
     n.title.toLowerCase().includes(search.toLowerCase()) ||
     n.content.toLowerCase().includes(search.toLowerCase())
   ).sort((a, b) => {
-    switch (sortBy) {
-      case "oldest": return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      case "title": return a.title.localeCompare(b.title);
-      case "color": return a.color.localeCompare(b.color);
-      case "newest":
-      default: return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    let cmp = 0;
+    switch (sortField) {
+      case "name":
+        cmp = a.title.localeCompare(b.title);
+        break;
+      case "size":
+        cmp = (a.content?.length ?? 0) - (b.content?.length ?? 0);
+        break;
+      case "modified":
+      default:
+        cmp = new Date(a.updatedAt ?? a.createdAt).getTime() - new Date(b.updatedAt ?? b.createdAt).getTime();
     }
+    return sortDir === "asc" ? cmp : -cmp;
   });
 
   // Sort folders: pinned first
@@ -472,10 +489,11 @@ export default function Notes() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setSortBy("newest")} className="gap-2"><Check className={cn("w-3.5 h-3.5", sortBy !== "newest" && "opacity-0")} />Newest first</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy("oldest")} className="gap-2"><Check className={cn("w-3.5 h-3.5", sortBy !== "oldest" && "opacity-0")} />Oldest first</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy("title")} className="gap-2"><Check className={cn("w-3.5 h-3.5", sortBy !== "title" && "opacity-0")} />Title (A-Z)</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy("color")} className="gap-2"><Check className={cn("w-3.5 h-3.5", sortBy !== "color" && "opacity-0")} />By color</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setSortField("modified"); setSortDir("desc"); }} className="gap-2"><Check className={cn("w-3.5 h-3.5", !(sortField === "modified" && sortDir === "desc") && "opacity-0")} />Newest first</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setSortField("modified"); setSortDir("asc"); }} className="gap-2"><Check className={cn("w-3.5 h-3.5", !(sortField === "modified" && sortDir === "asc") && "opacity-0")} />Oldest first</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setSortField("name"); setSortDir("asc"); }} className="gap-2"><Check className={cn("w-3.5 h-3.5", !(sortField === "name" && sortDir === "asc") && "opacity-0")} />Title (A-Z)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setSortField("name"); setSortDir("desc"); }} className="gap-2"><Check className={cn("w-3.5 h-3.5", !(sortField === "name" && sortDir === "desc") && "opacity-0")} />Title (Z-A)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setSortField("size"); setSortDir("desc"); }} className="gap-2"><Check className={cn("w-3.5 h-3.5", !(sortField === "size" && sortDir === "desc") && "opacity-0")} />Largest first</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -555,8 +573,11 @@ export default function Notes() {
                     color: n.color,
                     isPinned: n.isPinned,
                     createdAt: n.createdAt?.toISOString(),
+                    updatedAt: n.updatedAt?.toISOString(),
                     folder: folders.find(f => f.id === n.folderId)?.name,
                   }))}
+                  selectedIds={selectedNotes}
+                  onSelect={toggleSelect}
                   onClick={(id) => {
                     const note = unpinnedNotes.find(n => n.id === id);
                     if (note) {
@@ -573,7 +594,14 @@ export default function Notes() {
                   onDelete={(id) => requestDeleteNote(id)}
                   onDownload={(id) => {
                     const note = unpinnedNotes.find(n => n.id === id);
-                    if (note) downloadNote(note.title, note.content);
+                    if (note) {
+                      try {
+                        downloadNote(note, "markdown");
+                        toast.success("Note downloaded");
+                      } catch {
+                        toast.error("Failed to download note");
+                      }
+                    }
                   }}
                 />
               ) : (
@@ -585,8 +613,14 @@ export default function Notes() {
                     color: n.color,
                     isPinned: n.isPinned,
                     createdAt: n.createdAt?.toISOString(),
+                    updatedAt: n.updatedAt?.toISOString(),
                     folder: folders.find(f => f.id === n.folderId)?.name,
                   }))}
+                  selectedIds={selectedNotes}
+                  onSelect={toggleSelect}
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSortChange={toggleSort}
                   onClick={(id) => {
                     const note = unpinnedNotes.find(n => n.id === id);
                     if (note) {
@@ -603,7 +637,14 @@ export default function Notes() {
                   onDelete={(id) => requestDeleteNote(id)}
                   onDownload={(id) => {
                     const note = unpinnedNotes.find(n => n.id === id);
-                    if (note) downloadNote(note.title, note.content);
+                    if (note) {
+                      try {
+                        downloadNote(note, "markdown");
+                        toast.success("Note downloaded");
+                      } catch {
+                        toast.error("Failed to download note");
+                      }
+                    }
                   }}
                 />
               )}

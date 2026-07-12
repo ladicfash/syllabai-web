@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Download, MoreVertical, Pin, Trash2, FileText } from "lucide-react";
+import { Download, MoreVertical, Pin, Trash2, FileText, Check, Minus, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,67 +17,146 @@ interface Note {
   color?: string;
   isPinned?: boolean;
   createdAt?: string;
+  updatedAt?: string;
   folder?: string;
 }
 
+type SortField = "modified" | "name" | "size";
+type SortDir = "asc" | "desc";
+
 interface NotesListProps {
   notes: Note[];
+  selectedIds?: Set<number>;
+  onSelect?: (id: number) => void;
+  sortField?: SortField;
+  sortDir?: SortDir;
+  onSortChange?: (field: SortField) => void;
   onPin?: (id: number) => void;
   onDelete?: (id: number) => void;
   onDownload?: (id: number) => void;
   onClick?: (id: number) => void;
 }
 
+function formatSize(text: string): string {
+  const bytes = typeof Blob !== "undefined" ? new Blob([text || ""]).size : (text || "").length;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function SortHeader({
+  label,
+  field,
+  active,
+  sortDir,
+  onSortChange,
+  className,
+}: {
+  label: string;
+  field: SortField;
+  active: boolean;
+  sortDir?: SortDir;
+  onSortChange?: (field: SortField) => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSortChange?.(field)}
+      className={cn(
+        "flex items-center gap-1 text-xs font-medium uppercase tracking-wide transition-colors",
+        active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+        className
+      )}
+    >
+      {label}
+      {active && (sortDir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
+    </button>
+  );
+}
+
 export function NotesList({
   notes,
+  selectedIds,
+  onSelect,
+  sortField,
+  sortDir,
+  onSortChange,
   onPin,
   onDelete,
   onDownload,
   onClick,
 }: NotesListProps) {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.02,
-      },
-    },
+  const allSelected = notes.length > 0 && notes.every(n => selectedIds?.has(n.id));
+  const someSelected = !allSelected && notes.some(n => selectedIds?.has(n.id));
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      notes.forEach(n => { if (selectedIds?.has(n.id)) onSelect?.(n.id); });
+    } else {
+      notes.forEach(n => { if (!selectedIds?.has(n.id)) onSelect?.(n.id); });
+    }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.015 } },
+  };
   const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { duration: 0.2 },
-    },
+    hidden: { opacity: 0, x: -12 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.15 } },
   };
 
   return (
-    <motion.div
-      className="space-y-1"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      {notes.map((note) => (
-        <NoteListItem
-          key={note.id}
-          note={note}
-          onPin={onPin}
-          onDelete={onDelete}
-          onDownload={onDownload}
-          onClick={onClick}
-          variants={itemVariants}
-        />
-      ))}
-    </motion.div>
+    <div className="rounded-lg border border-border overflow-hidden">
+      {/* Header row */}
+      <div className="flex items-center gap-3 px-3 py-2 border-b border-border bg-muted/40">
+        <button
+          type="button"
+          onClick={handleSelectAll}
+          className={cn(
+            "w-4 h-4 rounded border flex items-center justify-center flex-shrink-0",
+            allSelected || someSelected
+              ? "bg-primary border-primary text-primary-foreground"
+              : "border-border bg-background"
+          )}
+          title={allSelected ? "Deselect all" : "Select all"}
+        >
+          {allSelected && <Check className="w-3 h-3" />}
+          {someSelected && <Minus className="w-3 h-3" />}
+        </button>
+        <div className="w-4 flex-shrink-0" />
+        <SortHeader label="Name" field="name" active={sortField === "name"} sortDir={sortDir} onSortChange={onSortChange} className="flex-1 min-w-0" />
+        <span className="w-28 hidden sm:block text-xs font-medium uppercase tracking-wide text-muted-foreground flex-shrink-0">Folder</span>
+        <SortHeader label="Last modified" field="modified" active={sortField === "modified"} sortDir={sortDir} onSortChange={onSortChange} className="w-32 hidden md:flex flex-shrink-0" />
+        <SortHeader label="Size" field="size" active={sortField === "size"} sortDir={sortDir} onSortChange={onSortChange} className="w-16 hidden lg:flex flex-shrink-0 justify-end" />
+        <div className="w-16 flex-shrink-0" />
+      </div>
+
+      {/* Rows */}
+      <motion.div variants={containerVariants} initial="hidden" animate="visible">
+        {notes.map((note) => (
+          <NoteListItem
+            key={note.id}
+            note={note}
+            selected={selectedIds?.has(note.id) ?? false}
+            onSelect={onSelect}
+            onPin={onPin}
+            onDelete={onDelete}
+            onDownload={onDownload}
+            onClick={onClick}
+            variants={itemVariants}
+          />
+        ))}
+      </motion.div>
+    </div>
   );
 }
 
 interface NoteListItemProps {
   note: Note;
+  selected: boolean;
+  onSelect?: (id: number) => void;
   onPin?: (id: number) => void;
   onDelete?: (id: number) => void;
   onDownload?: (id: number) => void;
@@ -87,130 +166,123 @@ interface NoteListItemProps {
 
 function NoteListItem({
   note,
+  selected,
+  onSelect,
   onPin,
   onDelete,
   onDownload,
   onClick,
   variants,
 }: NoteListItemProps) {
-  const bgColor = note.color || "#f3f4f6";
-  const textColor = getContrastColor(bgColor);
+  const accent = note.color || "#94a3b8";
 
-  // Extract first line for preview
   const previewText = note.preview
     ?.split("\n")[0]
     ?.replace(/^#+\s/, "")
     ?.slice(0, 80) || "No preview";
 
-  const formattedDate = note.createdAt
-    ? formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })
+  const formattedDate = (note.updatedAt || note.createdAt)
+    ? formatDistanceToNow(new Date(note.updatedAt || note.createdAt || ""), { addSuffix: true })
     : "";
 
   return (
     <motion.div
       variants={variants}
-      whileHover={{ x: 4, backgroundColor: "rgba(0,0,0,0.02)" }}
-      className="group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+      className={cn(
+        "group flex items-center gap-3 px-3 py-2.5 border-b border-border last:border-b-0 cursor-pointer transition-colors",
+        selected ? "bg-primary/5" : "hover:bg-accent/50"
+      )}
       onClick={() => onClick?.(note.id)}
     >
-      {/* Color indicator */}
+      {/* Checkbox */}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onSelect?.(note.id); }}
+        className={cn(
+          "w-4 h-4 rounded border flex items-center justify-center transition-opacity flex-shrink-0",
+          selected
+            ? "opacity-100 bg-primary border-primary text-primary-foreground"
+            : "opacity-0 group-hover:opacity-100 border-border bg-background"
+        )}
+        title={selected ? "Deselect note" : "Select note"}
+      >
+        {selected && <Check className="w-3 h-3" />}
+      </button>
+
+      {/* File icon, tinted by note colour */}
       <div
-        className="w-3 h-3 rounded-full flex-shrink-0"
-        style={{ backgroundColor: bgColor }}
-      />
+        className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0"
+        style={{ backgroundColor: `${accent}18` }}
+      >
+        <FileText className="w-3.5 h-3.5" style={{ color: accent }} strokeWidth={1.75} />
+      </div>
 
-      {/* Icon */}
-      <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-
-      {/* Content */}
+      {/* Name + preview */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-medium text-sm truncate" style={{ color: textColor }}>
-          {note.title}
+        <h3 className="font-medium text-sm text-foreground truncate">
+          {note.title || "Untitled"}
         </h3>
-        <p className="text-xs text-muted-foreground truncate">
+        <p className="text-xs text-muted-foreground truncate sm:hidden">
           {previewText}
         </p>
       </div>
 
-      {/* Metadata */}
-      <div className="flex items-center gap-3 flex-shrink-0">
-        {note.folder && (
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            {note.folder}
-          </span>
-        )}
-        {formattedDate && (
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            {formattedDate}
-          </span>
-        )}
+      {/* Folder */}
+      <span className="w-28 hidden sm:block text-xs text-muted-foreground truncate flex-shrink-0">
+        {note.folder || "—"}
+      </span>
 
-        {/* Actions */}
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 w-7 p-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPin?.(note.id);
-            }}
-          >
-            <Pin
-              className={cn(
-                "w-3.5 h-3.5",
-                note.isPinned ? "fill-current" : ""
-              )}
-            />
-          </Button>
+      {/* Last modified */}
+      <span className="w-32 hidden md:block text-xs text-muted-foreground truncate flex-shrink-0">
+        {formattedDate}
+      </span>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 w-7 p-0"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="w-3.5 h-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDownload?.(note.id);
-                }}
-                className="gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Download
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete?.(note.id);
-                }}
-                className="gap-2 text-destructive"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      {/* Size */}
+      <span className="w-16 hidden lg:block text-xs text-muted-foreground text-right flex-shrink-0">
+        {formatSize(note.preview)}
+      </span>
+
+      {/* Actions */}
+      <div className="w-16 flex items-center justify-end gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0"
+          onClick={(e) => { e.stopPropagation(); onPin?.(note.id); }}
+          title={note.isPinned ? "Unpin" : "Pin"}
+        >
+          <Pin className={cn("w-3.5 h-3.5", note.isPinned ? "fill-current text-primary" : "")} />
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreVertical className="w-3.5 h-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem
+              onClick={(e) => { e.stopPropagation(); onDownload?.(note.id); }}
+              className="gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Download
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => { e.stopPropagation(); onDelete?.(note.id); }}
+              className="gap-2 text-destructive"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </motion.div>
   );
-}
-
-function getContrastColor(hexColor: string): string {
-  if (!hexColor || hexColor.length < 7) return "#000";
-
-  const r = parseInt(hexColor.slice(1, 3), 16);
-  const g = parseInt(hexColor.slice(3, 5), 16);
-  const b = parseInt(hexColor.slice(5, 7), 16);
-
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? "#000" : "#fff";
 }
